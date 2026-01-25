@@ -150,6 +150,7 @@ export default function AdminPage() {
   const [savedEventName, setSavedEventName] = useState("");
   const [savedCategory, setSavedCategory] = useState<ArticleCategory>("세미나 안내");
   const [savedArticleId, setSavedArticleId] = useState<string | null>(null);
+  const [savedRelatedArticles, setSavedRelatedArticles] = useState<Article[]>([]); // 이미 저장된 관련 기사들
 
   // 기존 이벤트명 목록 (자동완성용)
   const existingEventNames = [...new Set(articles.map(a => a.eventName).filter(Boolean))] as string[];
@@ -411,7 +412,7 @@ export default function AdminPage() {
             setSavedKeyword(combinedKeywords);
             setSavedEventName(eventName);
             setSavedCategory(category as ArticleCategory);
-            startCrawling(combinedKeywords, publishedAt);
+            startCrawling(combinedKeywords, publishedAt, eventName, savedId, editingArticle);
           }
         } else {
           // 그 외: NH투자증권 + keyword
@@ -419,7 +420,7 @@ export default function AdminPage() {
             setSavedKeyword(keyword);
             setSavedEventName(eventName);
             setSavedCategory(category as ArticleCategory);
-            startCrawling(keyword, publishedAt);
+            startCrawling(keyword, publishedAt, eventName, savedId, editingArticle);
           }
         }
       } else {
@@ -432,14 +433,39 @@ export default function AdminPage() {
   };
 
   // 크롤링 시작 (keyword 기준, 발행일 ±1주일 필터링)
-  const startCrawling = async (keyword: string, publishedAt: Date) => {
+  const startCrawling = async (keyword: string, publishedAt: Date, eventName?: string, currentArticleId?: string, justSavedArticle?: Partial<Article>) => {
     setCrawlDialogOpen(true);
     setCrawlLoading(true);
     setCrawlResults([]);
+    setSavedRelatedArticles([]);
     setSelectedCrawlArticles(new Set());
 
     try {
-      // NH투자증권 + keyword로 검색 (쉼표로 구분된 키워드를 정리)
+      // 1. 이미 저장된 관련 기사 조회 (같은 eventName을 가진 기사들)
+      const relatedArticles: Article[] = [];
+
+      // 방금 저장한 기사 추가
+      if (justSavedArticle && currentArticleId) {
+        relatedArticles.push({
+          ...justSavedArticle,
+          _id: currentArticleId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          createdBy: "admin",
+        } as Article);
+      }
+
+      // 같은 eventName을 가진 기존 기사들 추가
+      if (eventName) {
+        const existingRelated = articles.filter(a =>
+          a.eventName === eventName && a._id !== currentArticleId
+        );
+        relatedArticles.push(...existingRelated);
+      }
+
+      setSavedRelatedArticles(relatedArticles);
+
+      // 2. NH투자증권 + keyword로 검색 (쉼표로 구분된 키워드를 정리)
       const cleanedKeywords = keyword.split(',').map(k => k.trim()).filter(k => k).join(',');
       const keywords = `NH투자증권,${cleanedKeywords}`;
 
@@ -449,7 +475,7 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        // 1. 필터링: NH투자/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
+        // 3. 필터링: NH투자/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
         const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k && k !== 'nh투자증권');
         const titleFilteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
@@ -466,7 +492,7 @@ export default function AdminPage() {
           return hasCore && hasOther;
         });
 
-        // 2. 발행일 기준 이후 1개월 필터링 (발행일 ~ 발행일+30일)
+        // 4. 발행일 기준 이후 1개월 필터링 (발행일 ~ 발행일+30일)
         const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
         const publishedAtTime = publishedAt.getTime();
         const publishedAtEndTime = publishedAtTime + oneMonthMs;
@@ -478,8 +504,14 @@ export default function AdminPage() {
           return articleTime >= publishedAtTime && articleTime <= publishedAtEndTime;
         });
 
-        // 3. 날짜 기준 내림차순 정렬 (최신이 위로)
-        const sortedResults = filteredResults.sort((a: CrawlResult, b: CrawlResult) => {
+        // 5. 이미 저장된 기사 URL 제외 (중복 방지)
+        const savedUrls = new Set(articles.map(a => a.articleUrl).filter(Boolean));
+        const newResults = filteredResults.filter((article: CrawlResult) =>
+          !savedUrls.has(article.link)
+        );
+
+        // 6. 날짜 기준 내림차순 정렬 (최신이 위로)
+        const sortedResults = newResults.sort((a: CrawlResult, b: CrawlResult) => {
           const dateA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
           const dateB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
           return dateB - dateA;
@@ -1134,24 +1166,26 @@ export default function AdminPage() {
             </Button>
           </DialogHeader>
 
-          {!crawlLoading && crawlResults.length > 0 && (
+          {!crawlLoading && (savedRelatedArticles.length > 0 || crawlResults.length > 0) && (
             <div className="flex items-center justify-between py-2 border-b">
               <span className="text-sm text-muted-foreground">
-                {crawlResults.length}건 검색됨 / {selectedCrawlArticles.size}건 선택
+                저장됨 {savedRelatedArticles.length}건 / 새로 검색됨 {crawlResults.length}건 / {selectedCrawlArticles.size}건 선택
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (selectedCrawlArticles.size === crawlResults.length) {
-                    setSelectedCrawlArticles(new Set());
-                  } else {
-                    setSelectedCrawlArticles(new Set(crawlResults.map((_, i) => i)));
-                  }
-                }}
-              >
-                {selectedCrawlArticles.size === crawlResults.length ? "전체해제" : "전체선택"}
-              </Button>
+              {crawlResults.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedCrawlArticles.size === crawlResults.length) {
+                      setSelectedCrawlArticles(new Set());
+                    } else {
+                      setSelectedCrawlArticles(new Set(crawlResults.map((_, i) => i)));
+                    }
+                  }}
+                >
+                  {selectedCrawlArticles.size === crawlResults.length ? "전체해제" : "전체선택"}
+                </Button>
+              )}
             </div>
           )}
 
@@ -1161,59 +1195,118 @@ export default function AdminPage() {
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 <span className="ml-3 text-muted-foreground">검색 중...</span>
               </div>
-            ) : crawlResults.length > 0 ? (
-              crawlResults.map((result, index) => (
-                <div
-                  key={index}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedCrawlArticles.has(index)
-                      ? "border-blue-500 bg-blue-50"
-                      : "hover:bg-muted"
-                  }`}
-                  onClick={() => toggleCrawlSelection(index)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
-                        selectedCrawlArticles.has(index)
-                          ? "border-blue-500 bg-blue-500"
-                          : "border-gray-300"
-                      }`}
-                    >
-                      {selectedCrawlArticles.has(index) && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium line-clamp-2">
-                        {result.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>{result.source}</span>
-                        <span>·</span>
-                        <span>
-                          {result.pubDate
-                            ? new Date(result.pubDate).toLocaleDateString("ko-KR")
-                            : "날짜 없음"}
-                        </span>
-                      </div>
-                    </div>
-                    <a
-                      href={result.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 p-1 hover:bg-muted rounded"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    </a>
-                  </div>
-                </div>
-              ))
             ) : (
-              <div className="py-12 text-center text-muted-foreground">
-                검색 결과가 없습니다.
-              </div>
+              <>
+                {/* 저장된 관련 기사 섹션 */}
+                {savedRelatedArticles.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1">
+                      <Check className="w-4 h-4" />
+                      저장된 관련 기사 ({savedRelatedArticles.length}건)
+                    </h4>
+                    <div className="space-y-2">
+                      {savedRelatedArticles.map((article) => (
+                        <div
+                          key={article._id}
+                          className="p-3 border rounded-lg bg-green-50 border-green-200"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-5 h-5 rounded border-2 border-green-500 bg-green-500 flex items-center justify-center mt-0.5">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium line-clamp-2">
+                                {article.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                <span>{article.mediaName || "알 수 없음"}</span>
+                                <span>·</span>
+                                <span>{formatDate(article.publishedAt)}</span>
+                                <Badge variant="secondary" className="text-[10px] h-4">저장됨</Badge>
+                              </div>
+                            </div>
+                            {article.articleUrl && (
+                              <a
+                                href={article.articleUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-shrink-0 p-1 hover:bg-green-100 rounded"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 새로 검색된 기사 섹션 */}
+                {crawlResults.length > 0 ? (
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                      <Search className="w-4 h-4" />
+                      새로 검색된 기사 ({crawlResults.length}건)
+                    </h4>
+                    <div className="space-y-2">
+                      {crawlResults.map((result, index) => (
+                        <div
+                          key={index}
+                          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedCrawlArticles.has(index)
+                              ? "border-blue-500 bg-blue-50"
+                              : "hover:bg-muted"
+                          }`}
+                          onClick={() => toggleCrawlSelection(index)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+                                selectedCrawlArticles.has(index)
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedCrawlArticles.has(index) && (
+                                <Check className="w-3 h-3 text-white" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium line-clamp-2">
+                                {result.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                <span>{result.source}</span>
+                                <span>·</span>
+                                <span>
+                                  {result.pubDate
+                                    ? new Date(result.pubDate).toLocaleDateString("ko-KR")
+                                    : "날짜 없음"}
+                                </span>
+                              </div>
+                            </div>
+                            <a
+                              href={result.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 p-1 hover:bg-muted rounded"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : savedRelatedArticles.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">
+                    검색 결과가 없습니다.
+                  </div>
+                ) : null}
+              </>
             )}
           </div>
 
