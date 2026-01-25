@@ -347,7 +347,7 @@ export default function AdminPage() {
   const handleNewArticle = () => {
     setEditingArticle({
       title: "",
-      keyword: "NH투자증권",
+      keyword: "",
       interviewee: "",
       publishedAt: new Date(),
       category: "인터뷰",
