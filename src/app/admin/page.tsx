@@ -536,16 +536,20 @@ export default function AdminPage() {
           return hasCore && hasOther;
         });
 
-        // 4. 발행일 기준 이후 1개월 필터링 (발행일 ~ 발행일+30일)
+        // 4. 발행일 기준 전후 1개월 필터링 (발행일 -7일 ~ 발행일+30일)
+        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
         const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
-        const publishedAtTime = publishedAt.getTime();
-        const publishedAtEndTime = publishedAtTime + oneMonthMs;
+        // 발행일 시작 시점을 00:00:00으로 설정
+        const publishedAtStart = new Date(publishedAt);
+        publishedAtStart.setHours(0, 0, 0, 0);
+        const publishedAtStartTime = publishedAtStart.getTime() - oneWeekMs; // 7일 전부터
+        const publishedAtEndTime = publishedAtStart.getTime() + oneMonthMs; // 30일 후까지
 
         const filteredResults = titleFilteredResults.filter((article: CrawlResult) => {
           if (!article.pubDate) return false;
           const articleTime = new Date(article.pubDate).getTime();
-          // 기사 날짜가 발행일 이후 ~ 발행일+30일 사이인지 확인
-          return articleTime >= publishedAtTime && articleTime <= publishedAtEndTime;
+          // 기사 날짜가 발행일 -7일 ~ 발행일+30일 사이인지 확인
+          return articleTime >= publishedAtStartTime && articleTime <= publishedAtEndTime;
         });
 
         // 5. 이미 저장된 기사 URL 제외 (중복 방지)
