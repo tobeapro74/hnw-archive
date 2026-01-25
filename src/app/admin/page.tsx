@@ -521,38 +521,20 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        // 3. 키워드 분류: 핵심 키워드 vs 기타 키워드
-        const corePatterns = ['nh투자증권', 'nh증권', 'nh투자', 'nh', '투자증권'];
-        const allKeywords = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
-        const inputCoreKeywords = allKeywords.filter(k => corePatterns.includes(k));
-        const otherKeywords = allKeywords.filter(k => !corePatterns.includes(k));
-
-        // 4. 1단계 필터링: 핵심 키워드 - 제목에서만 검색 (NH투자 또는 NH증권)
-        const coreFilteredResults = (data.data || []).filter((article: CrawlResult) => {
+        // 오직 제목에서 NH투자/NH증권 포함 여부만 필터링
+        const filteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
           return titleLower.includes('nh투자') || titleLower.includes('nh증권');
         });
 
-        // 기타 키워드 필터링 제거 - 핵심 키워드(NH투자/NH증권)만 적용
-        // 사용자가 직접 리스트에서 체크박스로 선택
-        const filteredResults = coreFilteredResults;
-
         console.log("검색 결과:", {
           원본: data.data?.length || 0,
-          "핵심키워드필터후": coreFilteredResults.length,
+          "제목필터후": filteredResults.length,
           기준발행일: publishedAt.toISOString().split('T')[0],
-          핵심키워드: ['nh투자', 'nh증권'],
-          기타키워드_참고용: otherKeywords,
         });
 
-        // 5. 이미 저장된 기사 URL 제외 (중복 방지)
-        const savedUrls = new Set(articles.map(a => a.articleUrl).filter(Boolean));
-        const newResults = filteredResults.filter((article: CrawlResult) =>
-          !savedUrls.has(article.link)
-        );
-
-        // 6. 날짜 기준 내림차순 정렬 (최신이 위로)
-        const sortedResults = newResults.sort((a: CrawlResult, b: CrawlResult) => {
+        // 날짜 기준 내림차순 정렬 (최신이 위로)
+        const sortedResults = filteredResults.sort((a: CrawlResult, b: CrawlResult) => {
           const dateA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
           const dateB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
           return dateB - dateA;
