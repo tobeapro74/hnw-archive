@@ -158,6 +158,9 @@ export default function AdminPage() {
   // OG 이미지 가져오기 상태
   const [fetchingOgImage, setFetchingOgImage] = useState(false);
 
+  // 기사 스크래핑 상태
+  const [scrapingArticle, setScrapingArticle] = useState(false);
+
   // 일괄 OG 이미지 업데이트 상태
   const [batchUpdating, setBatchUpdating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, success: 0 });
@@ -184,6 +187,37 @@ export default function AdminPage() {
       alert("이미지 가져오기에 실패했습니다.");
     } finally {
       setFetchingOgImage(false);
+    }
+  };
+
+  // URL에서 기사 정보 스크래핑
+  const scrapeArticle = async (url: string) => {
+    if (!url) return;
+
+    setScrapingArticle(true);
+    try {
+      const res = await fetch(`/api/article-scrape?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        const scraped = data.data;
+        setEditingArticle((prev) => ({
+          ...prev,
+          title: scraped.title || prev?.title || "",
+          description: scraped.description || prev?.description || "",
+          thumbnailUrl: scraped.thumbnailUrl || prev?.thumbnailUrl || "",
+          mediaName: scraped.mediaName || prev?.mediaName || "",
+          articleUrl: scraped.articleUrl || url,
+          publishedAt: scraped.publishedAt ? new Date(scraped.publishedAt) : prev?.publishedAt || new Date(),
+        }));
+      } else {
+        alert(data.error || "기사 정보를 불러올 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("Article scrape error:", error);
+      alert("기사 스크래핑에 실패했습니다.");
+    } finally {
+      setScrapingArticle(false);
     }
   };
 
@@ -884,6 +918,41 @@ export default function AdminPage() {
 
           {editingArticle && (
             <div className="space-y-4">
+              {/* URL 입력 (최상단) */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <label className="text-sm font-medium text-blue-700">기사 URL</label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={editingArticle.articleUrl || ""}
+                    onChange={(e) =>
+                      setEditingArticle({ ...editingArticle, articleUrl: e.target.value })
+                    }
+                    placeholder="https://... 기사 URL을 입력하세요"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => scrapeArticle(editingArticle.articleUrl || "")}
+                    disabled={!editingArticle.articleUrl || scrapingArticle}
+                  >
+                    {scrapingArticle ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        불러오는 중
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-1" />
+                        불러오기
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  URL 입력 후 &quot;불러오기&quot;를 클릭하면 기사 정보가 자동으로 채워집니다
+                </p>
+              </div>
+
               <div>
                 <label className="text-sm font-medium">제목 *</label>
                 <Input
@@ -1024,25 +1093,6 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium">기사 URL</label>
-                <Input
-                  value={editingArticle.articleUrl || ""}
-                  onChange={(e) => {
-                    const url = e.target.value;
-                    const media = extractMediaFromUrl(url);
-                    setEditingArticle({
-                      ...editingArticle,
-                      articleUrl: url,
-                      ...(media && (!editingArticle.mediaName || editingArticle.mediaName === extractMediaFromUrl(editingArticle.articleUrl || ""))
-                        ? { mediaName: media }
-                        : {}),
-                    });
-                  }}
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div>
                 <label className="text-sm font-medium">썸네일</label>
                 <div className="flex gap-2">
                   <Input
@@ -1050,7 +1100,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setEditingArticle({ ...editingArticle, thumbnailUrl: e.target.value })
                     }
-                    placeholder="https://..."
+                    placeholder="https://... (URL 불러오기 시 자동 입력)"
                     className="flex-1"
                   />
                   <Button
@@ -1058,6 +1108,7 @@ export default function AdminPage() {
                     variant="outline"
                     onClick={fetchOgImage}
                     disabled={!editingArticle.articleUrl || fetchingOgImage}
+                    title="이미지 다시 가져오기"
                   >
                     {fetchingOgImage ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1078,9 +1129,6 @@ export default function AdminPage() {
                     />
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  기사 URL 입력 후 버튼을 클릭하면 자동으로 이미지를 가져옵니다
-                </p>
               </div>
 
               <div>
