@@ -452,8 +452,8 @@ export default function AdminPage() {
           const titleLower = article.title.toLowerCase();
           const descLower = (article.description || '').toLowerCase();
           const combined = titleLower + ' ' + descLower;
-          // 핵심키워드: NH투자증권 또는 NH증권이 제목 또는 설명에 포함되어야 함 (API가 제목을 자를 수 있음)
-          const hasCore = combined.includes('nh투자증권') || combined.includes('nh증권');
+          // 핵심키워드: NH투자증권/NH증권/NH투자證 등이 제목 또는 설명에 포함되어야 함
+          const hasCore = combined.includes('nh투자증권') || combined.includes('nh증권') || combined.includes('nh투자증') || combined.includes('nh투자證');
           // 기타키워드: 1개 이상 포함되어야 함 (제목 또는 설명에서)
           const hasOther = keywordList.some(kw => combined.includes(kw));
           return hasCore && hasOther;
