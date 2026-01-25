@@ -452,10 +452,14 @@ export default function AdminPage() {
           const titleLower = article.title.toLowerCase();
           const descLower = (article.description || '').toLowerCase();
           const combined = titleLower + ' ' + descLower;
+          const combinedNoSpace = combined.replace(/\s/g, ''); // 공백 제거 버전
           // 핵심키워드: NH투자증권/NH증권/NH투자證 등이 제목 또는 설명에 포함되어야 함
           const hasCore = combined.includes('nh투자증권') || combined.includes('nh증권') || combined.includes('nh투자증') || combined.includes('nh투자證');
-          // 기타키워드: 1개 이상 포함되어야 함 (제목 또는 설명에서)
-          const hasOther = keywordList.some(kw => combined.includes(kw));
+          // 기타키워드: 1개 이상 포함되어야 함 (공백 유무 상관없이 비교)
+          const hasOther = keywordList.some(kw => {
+            const kwNoSpace = kw.replace(/\s/g, '');
+            return combined.includes(kw) || combinedNoSpace.includes(kwNoSpace);
+          });
           return hasCore && hasOther;
         });
 
