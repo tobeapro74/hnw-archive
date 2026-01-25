@@ -1333,14 +1333,14 @@ export default function AdminPage() {
                 )}
 
                 {/* 새로 검색된 기사 섹션 */}
-                {crawlResults.length > 0 ? (
+                {filteredCrawlResults.length > 0 ? (
                   <div>
                     <h4 className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-1">
                       <Search className="w-4 h-4" />
-                      새로 검색된 기사 ({crawlResults.length}건)
+                      새로 검색된 기사 ({filteredCrawlResults.length}건)
                     </h4>
                     <div className="space-y-2">
-                      {crawlResults.map((result, index) => (
+                      {filteredCrawlResults.map((result, index) => (
                           <div
                             key={index}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
