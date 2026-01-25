@@ -446,15 +446,15 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        // 1. 필터링: NH투자증권/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
-        const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
+        // 1. 필터링: NH투자/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
+        const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k && k !== 'nh투자증권');
         const titleFilteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
           const descLower = (article.description || '').toLowerCase();
           const combined = titleLower + ' ' + descLower;
           const combinedNoSpace = combined.replace(/\s/g, ''); // 공백 제거 버전
-          // 핵심키워드: NH투자증권/NH증권/NH투자證 등이 제목 또는 설명에 포함되어야 함
-          const hasCore = combined.includes('nh투자증권') || combined.includes('nh증권') || combined.includes('nh투자증') || combined.includes('nh투자證');
+          // 핵심키워드: NH투자 또는 NH증권이 제목 또는 설명에 포함되어야 함
+          const hasCore = combined.includes('nh투자') || combined.includes('nh증권');
           // 기타키워드: 1개 이상 포함되어야 함 (공백 유무 상관없이 비교)
           const hasOther = keywordList.some(kw => {
             const kwNoSpace = kw.replace(/\s/g, '');
@@ -1100,8 +1100,8 @@ export default function AdminPage() {
               관련 기사 검색
             </DialogTitle>
             <div className="text-sm text-muted-foreground space-y-1">
-              <p><span className="font-medium text-foreground">핵심키워드:</span> NH투자증권 / NH증권</p>
-              <p><span className="font-medium text-foreground">기타키워드:</span> {savedKeyword.split(',').map(k => k.trim()).filter(k => k).join(', ')}</p>
+              <p><span className="font-medium text-foreground">핵심키워드:</span> NH투자 / NH증권</p>
+              <p><span className="font-medium text-foreground">기타키워드:</span> {savedKeyword.split(',').map(k => k.trim()).filter(k => k && k.toLowerCase() !== 'nh투자증권').join(', ')}</p>
             </div>
             <p className="text-xs text-muted-foreground">
               발행일 이후 1개월 / 핵심키워드 + 기타키워드 1개 이상 포함된 기사만 표시
