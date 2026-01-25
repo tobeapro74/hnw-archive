@@ -861,14 +861,18 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium">키워드 *</label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  <span className="font-medium text-foreground">핵심키워드:</span> NH투자 / NH증권 (자동 적용)
+                </p>
+                <label className="text-sm font-medium">기타 키워드 *</label>
                 <Input
                   value={editingArticle.keyword || ""}
                   onChange={(e) =>
                     setEditingArticle({ ...editingArticle, keyword: e.target.value })
                   }
-                  placeholder="검색용 키워드"
+                  placeholder="예: 패밀리오피스, 세미나"
                 />
+                <p className="text-xs text-muted-foreground mt-1">NH투자증권은 입력하지 않아도 됩니다</p>
               </div>
 
               {/* 인터뷰이 (인터뷰 카테고리일 때만) */}
