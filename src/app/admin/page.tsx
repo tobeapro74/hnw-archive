@@ -149,6 +149,7 @@ export default function AdminPage() {
   const [savedKeyword, setSavedKeyword] = useState("");
   const [savedEventName, setSavedEventName] = useState("");
   const [savedCategory, setSavedCategory] = useState<ArticleCategory>("세미나 안내");
+  const [savedArticleId, setSavedArticleId] = useState<string | null>(null);
 
   // 기존 이벤트명 목록 (자동완성용)
   const existingEventNames = [...new Set(articles.map(a => a.eventName).filter(Boolean))] as string[];
@@ -392,9 +393,11 @@ export default function AdminPage() {
         const category = editingArticle.category || "세미나 안내";
         const eventName = editingArticle.eventName || "";
         const publishedAt = editingArticle.publishedAt ? new Date(editingArticle.publishedAt) : new Date();
+        const savedId = data.data?._id || editingArticle._id;
 
         setEditDialogOpen(false);
         setEditingArticle(null);
+        setSavedArticleId(savedId);
         fetchArticles();
 
         // 카테고리별 크롤링 로직 (발행일 기준 ±1주일 필터링)
@@ -1114,7 +1117,17 @@ export default function AdminPage() {
               variant="outline"
               size="sm"
               className="mt-2"
-              onClick={() => setCrawlDialogOpen(false)}
+              onClick={() => {
+                setCrawlDialogOpen(false);
+                // 저장된 기사를 다시 수정 모드로 열기
+                if (savedArticleId) {
+                  const articleToEdit = articles.find(a => a._id === savedArticleId);
+                  if (articleToEdit) {
+                    setEditingArticle(articleToEdit);
+                    setEditDialogOpen(true);
+                  }
+                }
+              }}
             >
               <Edit className="w-4 h-4 mr-1" />
               설정 수정하러 가기
