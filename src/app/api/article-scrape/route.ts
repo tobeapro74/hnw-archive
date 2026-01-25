@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     const thumbnailUrl = extractImage(html, url);
     const publishedAt = extractPublishedDate(html);
     const mediaName = extractMediaName(parsedUrl.hostname);
+    const keyword = extractKeywords(title, description);
 
     return NextResponse.json({
       success: true,
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
         thumbnailUrl,
         publishedAt,
         mediaName,
+        keyword,
         articleUrl: url,
       },
     });
@@ -322,4 +324,107 @@ function decodeHtmlEntities(text: string): string {
       String.fromCharCode(parseInt(hex, 16))
     )
     .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
+}
+
+// 제목과 설명에서 검색용 키워드 추출 (5개 이내)
+function extractKeywords(title: string, description: string): string {
+  // 제외할 단어들 (불용어, 핵심키워드, 일반적인 단어)
+  const stopWords = new Set([
+    // 핵심 키워드 (자동 적용되므로 제외)
+    "nh투자증권", "nh증권", "nh투자", "nh", "투자증권",
+    // 조사, 접속사
+    "의", "을", "를", "이", "가", "에", "와", "과", "로", "으로", "에서", "까지", "부터", "도", "만", "은", "는",
+    // 일반적인 동사/형용사
+    "있다", "없다", "하다", "되다", "한다", "했다", "된다", "됐다", "있는", "없는", "하는", "되는",
+    // 일반적인 명사
+    "것", "수", "등", "때", "중", "내", "후", "전", "위", "년", "월", "일", "억", "만", "원", "달러",
+    // 뉴스 관련 일반 단어
+    "기자", "뉴스", "속보", "단독", "특집", "인터뷰", "기사", "보도", "발표", "공개", "관련",
+    // 기타 불용어
+    "및", "또는", "그리고", "하지만", "그러나", "따라서", "때문에", "통해", "대한", "위한", "따른",
+  ]);
+
+  // 텍스트 결합 (제목 우선)
+  const text = `${title} ${description}`.toLowerCase();
+
+  // 특수문자 제거하고 단어 추출
+  const words = text
+    .replace(/[^\w\s가-힣]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length >= 2);
+
+  // 키워드 후보 추출
+  const keywordCandidates: Map<string, number> = new Map();
+
+  for (const word of words) {
+    // 불용어 제외
+    if (stopWords.has(word)) continue;
+    // 숫자만 있는 단어 제외
+    if (/^\d+$/.test(word)) continue;
+    // 너무 짧거나 긴 단어 제외
+    if (word.length < 2 || word.length > 20) continue;
+
+    const count = keywordCandidates.get(word) || 0;
+    keywordCandidates.set(word, count + 1);
+  }
+
+  // 복합 키워드 추출 (인접한 2-3개 단어 조합)
+  const titleWords = title
+    .replace(/[^\w\s가-힣]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length >= 2);
+
+  for (let i = 0; i < titleWords.length - 1; i++) {
+    // 2단어 조합
+    const twoWord = `${titleWords[i]} ${titleWords[i + 1]}`.toLowerCase();
+    if (!Array.from(stopWords).some(sw => twoWord.includes(sw))) {
+      const existing = keywordCandidates.get(twoWord) || 0;
+      keywordCandidates.set(twoWord, existing + 2); // 복합어에 가중치
+    }
+
+    // 3단어 조합
+    if (i < titleWords.length - 2) {
+      const threeWord = `${titleWords[i]} ${titleWords[i + 1]} ${titleWords[i + 2]}`.toLowerCase();
+      if (threeWord.length <= 15 && !Array.from(stopWords).some(sw => threeWord.includes(sw))) {
+        const existing = keywordCandidates.get(threeWord) || 0;
+        keywordCandidates.set(threeWord, existing + 3); // 3단어 조합에 더 높은 가중치
+      }
+    }
+  }
+
+  // 고유명사 패턴 추출 (대문자로 시작하는 영어, 따옴표 안의 단어 등)
+  const properNounPatterns = [
+    /["']([^"']+)["']/g, // 따옴표 안의 단어
+    /([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/g, // 영어 고유명사
+  ];
+
+  for (const pattern of properNounPatterns) {
+    let match;
+    while ((match = pattern.exec(title)) !== null) {
+      const noun = match[1].trim().toLowerCase();
+      if (noun.length >= 2 && noun.length <= 20 && !stopWords.has(noun)) {
+        const existing = keywordCandidates.get(noun) || 0;
+        keywordCandidates.set(noun, existing + 3); // 고유명사에 가중치
+      }
+    }
+  }
+
+  // 점수순 정렬 후 상위 5개 선택
+  const sortedKeywords = Array.from(keywordCandidates.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([keyword]) => keyword);
+
+  // 중복 제거 (부분 문자열 관계인 경우 긴 것 우선)
+  const finalKeywords: string[] = [];
+  for (const kw of sortedKeywords) {
+    const isSubstring = finalKeywords.some(
+      existing => existing.includes(kw) || kw.includes(existing)
+    );
+    if (!isSubstring) {
+      finalKeywords.push(kw);
+    }
+  }
+
+  return finalKeywords.slice(0, 5).join(", ");
 }

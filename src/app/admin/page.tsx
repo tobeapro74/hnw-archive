@@ -205,6 +205,7 @@ export default function AdminPage() {
         setEditingArticle((prev) => ({
           ...prev,
           title: scraped.title || prev?.title || "",
+          keyword: scraped.keyword || prev?.keyword || "",
           description: scraped.description || prev?.description || "",
           thumbnailUrl: scraped.thumbnailUrl || prev?.thumbnailUrl || "",
           mediaName: scraped.mediaName || prev?.mediaName || "",
