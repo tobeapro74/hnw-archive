@@ -649,20 +649,23 @@ export default function AdminPage() {
     return articles.filter(a => a.eventName === eventName).length;
   };
 
-  // 발행일 당일 기사만 필터링
-  const filteredCrawlResults = savedPublishedAt
-    ? crawlResults.filter((article) => {
-        if (!article.pubDate) return false;
-        const articleDate = new Date(article.pubDate);
-        const targetDate = new Date(savedPublishedAt);
-        // 년, 월, 일이 같은지 비교
-        return (
-          articleDate.getFullYear() === targetDate.getFullYear() &&
-          articleDate.getMonth() === targetDate.getMonth() &&
-          articleDate.getDate() === targetDate.getDate()
-        );
-      })
-    : crawlResults;
+  // 발행일 당일 기사만 필터링 (원본 인덱스 포함)
+  const filteredCrawlResultsWithIndex = savedPublishedAt
+    ? crawlResults
+        .map((article, originalIndex) => ({ ...article, originalIndex }))
+        .filter((article) => {
+          if (!article.pubDate) return false;
+          const articleDate = new Date(article.pubDate);
+          const targetDate = new Date(savedPublishedAt);
+          return (
+            articleDate.getFullYear() === targetDate.getFullYear() &&
+            articleDate.getMonth() === targetDate.getMonth() &&
+            articleDate.getDate() === targetDate.getDate()
+          );
+        })
+    : crawlResults.map((article, originalIndex) => ({ ...article, originalIndex }));
+
+  const filteredCrawlResults = filteredCrawlResultsWithIndex;
 
   if (loading) {
     return (
@@ -1236,14 +1239,16 @@ export default function AdminPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (selectedCrawlArticles.size === crawlResults.length) {
+                    const filteredIndices = new Set(filteredCrawlResults.map(r => r.originalIndex));
+                    const allSelected = filteredCrawlResults.every(r => selectedCrawlArticles.has(r.originalIndex));
+                    if (allSelected) {
                       setSelectedCrawlArticles(new Set());
                     } else {
-                      setSelectedCrawlArticles(new Set(crawlResults.map((_, i) => i)));
+                      setSelectedCrawlArticles(filteredIndices);
                     }
                   }}
                 >
-                  {selectedCrawlArticles.size === crawlResults.length ? "전체해제" : "전체선택"}
+                  {filteredCrawlResults.every(r => selectedCrawlArticles.has(r.originalIndex)) ? "전체해제" : "전체선택"}
                 </Button>
               )}
             </div>
@@ -1311,25 +1316,25 @@ export default function AdminPage() {
                       새로 검색된 기사 ({filteredCrawlResults.length}건)
                     </h4>
                     <div className="space-y-2">
-                      {filteredCrawlResults.map((result, index) => (
+                      {filteredCrawlResults.map((result) => (
                           <div
-                            key={index}
+                            key={result.originalIndex}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                              selectedCrawlArticles.has(index)
+                              selectedCrawlArticles.has(result.originalIndex)
                                 ? "border-blue-500 bg-blue-50"
                                 : "hover:bg-muted"
                             }`}
-                            onClick={() => toggleCrawlSelection(index)}
+                            onClick={() => toggleCrawlSelection(result.originalIndex)}
                           >
                             <div className="flex items-start gap-3">
                               <div
                                 className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
-                                  selectedCrawlArticles.has(index)
+                                  selectedCrawlArticles.has(result.originalIndex)
                                     ? "border-blue-500 bg-blue-500"
                                     : "border-gray-300"
                                 }`}
                               >
-                                {selectedCrawlArticles.has(index) && (
+                                {selectedCrawlArticles.has(result.originalIndex) && (
                                   <Check className="w-3 h-3 text-white" />
                                 )}
                               </div>
