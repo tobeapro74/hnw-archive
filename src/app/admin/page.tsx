@@ -389,7 +389,7 @@ export default function AdminPage() {
       keyword: "",
       interviewee: "",
       publishedAt: new Date(),
-      category: "인터뷰",
+      category: "세미나 안내",
       tag: "보도기사",
       thumbnailUrl: "",
       articleUrl: "",
@@ -527,39 +527,22 @@ export default function AdminPage() {
         const inputCoreKeywords = allKeywords.filter(k => corePatterns.includes(k));
         const otherKeywords = allKeywords.filter(k => !corePatterns.includes(k));
 
-        // 4. 1단계 필터링: 핵심 키워드 (NH투자 또는 NH증권 필수)
+        // 4. 1단계 필터링: 핵심 키워드 - 제목에서만 검색 (NH투자 또는 NH증권)
         const coreFilteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
-          const descLower = (article.description || '').toLowerCase();
-          const combined = titleLower + ' ' + descLower;
-          return combined.includes('nh투자') || combined.includes('nh증권');
+          return titleLower.includes('nh투자') || titleLower.includes('nh증권');
         });
 
-        // 5. 2단계 필터링: 기타 키워드 중 1개 이상 포함
-        const keywordFilteredResults = otherKeywords.length > 0
-          ? coreFilteredResults.filter((article: CrawlResult) => {
-              const titleLower = article.title.toLowerCase();
-              const descLower = (article.description || '').toLowerCase();
-              const combined = titleLower + ' ' + descLower;
-              const combinedNoSpace = combined.replace(/\s/g, '');
-              return otherKeywords.some(kw => {
-                const kwNoSpace = kw.replace(/\s/g, '');
-                return combined.includes(kw) || combinedNoSpace.includes(kwNoSpace);
-              });
-            })
-          : coreFilteredResults; // 기타 키워드 없으면 핵심 필터만 적용
-
-        // 날짜 필터링은 프론트엔드에서 표시할 때 적용
-        const filteredResults = keywordFilteredResults;
+        // 기타 키워드 필터링 제거 - 핵심 키워드(NH투자/NH증권)만 적용
+        // 사용자가 직접 리스트에서 체크박스로 선택
+        const filteredResults = coreFilteredResults;
 
         console.log("검색 결과:", {
           원본: data.data?.length || 0,
-          "1_핵심키워드필터후": coreFilteredResults.length,
-          "2_기타키워드필터후": keywordFilteredResults.length,
+          "핵심키워드필터후": coreFilteredResults.length,
           기준발행일: publishedAt.toISOString().split('T')[0],
-          "프론트필터범위": `${publishedAt.toISOString().split('T')[0]} ~ +1개월 (UI에서 필터링)`,
-          핵심키워드: inputCoreKeywords.length > 0 ? inputCoreKeywords : ['자동: nh투자/nh증권'],
-          기타키워드: otherKeywords,
+          핵심키워드: ['nh투자', 'nh증권'],
+          기타키워드_참고용: otherKeywords,
         });
 
         // 5. 이미 저장된 기사 URL 제외 (중복 방지)
@@ -684,14 +667,18 @@ export default function AdminPage() {
     return articles.filter(a => a.eventName === eventName).length;
   };
 
-  // 프론트엔드에서 날짜 필터링 적용 (발행일 기준 이후 1개월 이내만)
+  // 발행일 당일 기사만 필터링
   const filteredCrawlResults = savedPublishedAt
     ? crawlResults.filter((article) => {
-        if (!article.pubDate) return true; // 날짜 없으면 포함
-        const oneMonth = 30 * 24 * 60 * 60 * 1000;
-        const pubDateMs = savedPublishedAt.getTime();
-        const articleDate = new Date(article.pubDate).getTime();
-        return articleDate >= pubDateMs && articleDate <= pubDateMs + oneMonth;
+        if (!article.pubDate) return false;
+        const articleDate = new Date(article.pubDate);
+        const targetDate = new Date(savedPublishedAt);
+        // 년, 월, 일이 같은지 비교
+        return (
+          articleDate.getFullYear() === targetDate.getFullYear() &&
+          articleDate.getMonth() === targetDate.getMonth() &&
+          articleDate.getDate() === targetDate.getDate()
+        );
       })
     : crawlResults;
 
@@ -1278,27 +1265,14 @@ export default function AdminPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    // filteredCrawlResults의 원본 인덱스를 찾아서 선택
-                    const filteredIndices = crawlResults
-                      .map((r, i) => ({ result: r, index: i }))
-                      .filter(({ result }) => {
-                        if (!savedPublishedAt) return true;
-                        if (!result.pubDate) return true;
-                        const oneMonth = 30 * 24 * 60 * 60 * 1000;
-                        const pubDateMs = savedPublishedAt.getTime();
-                        const articleDate = new Date(result.pubDate).getTime();
-                        return articleDate >= pubDateMs && articleDate <= pubDateMs + oneMonth;
-                      })
-                      .map(({ index }) => index);
-
-                    if (selectedCrawlArticles.size === filteredIndices.length) {
+                    if (selectedCrawlArticles.size === crawlResults.length) {
                       setSelectedCrawlArticles(new Set());
                     } else {
-                      setSelectedCrawlArticles(new Set(filteredIndices));
+                      setSelectedCrawlArticles(new Set(crawlResults.map((_, i) => i)));
                     }
                   }}
                 >
-                  {selectedCrawlArticles.size === filteredCrawlResults.length ? "전체해제" : "전체선택"}
+                  {selectedCrawlArticles.size === crawlResults.length ? "전체해제" : "전체선택"}
                 </Button>
               )}
             </div>
@@ -1359,30 +1333,14 @@ export default function AdminPage() {
                 )}
 
                 {/* 새로 검색된 기사 섹션 */}
-                {filteredCrawlResults.length > 0 ? (
+                {crawlResults.length > 0 ? (
                   <div>
                     <h4 className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-1">
                       <Search className="w-4 h-4" />
-                      새로 검색된 기사 ({filteredCrawlResults.length}건)
-                      {savedPublishedAt && (
-                        <span className="font-normal text-xs text-muted-foreground ml-2">
-                          ({savedPublishedAt.toLocaleDateString('ko-KR')} ~ +1개월)
-                        </span>
-                      )}
+                      새로 검색된 기사 ({crawlResults.length}건)
                     </h4>
                     <div className="space-y-2">
-                      {crawlResults.map((result, index) => {
-                        // 날짜 필터링 적용
-                        if (savedPublishedAt && result.pubDate) {
-                          const oneMonth = 30 * 24 * 60 * 60 * 1000;
-                          const pubDateMs = savedPublishedAt.getTime();
-                          const articleDate = new Date(result.pubDate).getTime();
-                          if (articleDate < pubDateMs || articleDate > pubDateMs + oneMonth) {
-                            return null; // 범위 밖이면 렌더링하지 않음
-                          }
-                        }
-
-                        return (
+                      {crawlResults.map((result, index) => (
                           <div
                             key={index}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -1429,18 +1387,12 @@ export default function AdminPage() {
                               </a>
                             </div>
                           </div>
-                        );
-                      })}
+                      ))}
                     </div>
                   </div>
                 ) : savedRelatedArticles.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground">
                     검색 결과가 없습니다.
-                    {crawlResults.length > 0 && savedPublishedAt && (
-                      <p className="text-xs mt-2">
-                        (전체 {crawlResults.length}건 중 발행일 기준 1개월 이내 기사 없음)
-                      </p>
-                    )}
                   </div>
                 ) : null}
               </>
