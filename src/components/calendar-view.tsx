@@ -1,0 +1,172 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Article } from "@/lib/types";
+import { cn, getMonthName, getDaysInMonth, getFirstDayOfMonth } from "@/lib/utils";
+
+interface CalendarViewProps {
+  articles: Article[];
+  onDateSelect?: (date: Date, articles: Article[]) => void;
+}
+
+export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // 해당 월의 기사들을 날짜별로 그룹화
+  const articlesByDate = useMemo(() => {
+    const map = new Map<string, Article[]>();
+    articles.forEach((article) => {
+      const date = new Date(article.publishedAt);
+      if (date.getFullYear() === year && date.getMonth() === month) {
+        const key = date.getDate().toString();
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key)!.push(article);
+      }
+    });
+    return map;
+  }, [articles, year, month]);
+
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDayOfMonth = getFirstDayOfMonth(year, month);
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+    setSelectedDate(null);
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+    setSelectedDate(null);
+  };
+
+  const handleDateClick = (day: number) => {
+    const date = new Date(year, month, day);
+    setSelectedDate(date);
+    const dayArticles = articlesByDate.get(day.toString()) || [];
+    onDateSelect?.(date, dayArticles);
+  };
+
+  const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
+
+  // 달력 그리드 생성
+  const calendarDays = [];
+
+  // 빈 칸 (이전 달)
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarDays.push(null);
+  }
+
+  // 현재 달의 날짜
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  return (
+    <div className="bg-card rounded-xl p-4 shadow-sm">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-4">
+        <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <h2 className="text-lg font-semibold">
+          {year}년 {getMonthName(month)}
+        </h2>
+        <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* 요일 헤더 */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {weekDays.map((day, index) => (
+          <div
+            key={day}
+            className={cn(
+              "text-center text-xs font-medium py-2",
+              index === 0 && "text-red-500",
+              index === 6 && "text-blue-500"
+            )}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* 달력 그리드 */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarDays.map((day, index) => {
+          if (day === null) {
+            return <div key={`empty-${index}`} className="aspect-square" />;
+          }
+
+          const dayArticles = articlesByDate.get(day.toString()) || [];
+          const hasArticles = dayArticles.length > 0;
+          const isSelected = selectedDate?.getDate() === day &&
+                           selectedDate?.getMonth() === month &&
+                           selectedDate?.getFullYear() === year;
+          const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
+          const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+          return (
+            <button
+              key={day}
+              onClick={() => handleDateClick(day)}
+              className={cn(
+                "aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors relative",
+                hasArticles && "font-medium",
+                isSelected && "bg-primary text-primary-foreground",
+                !isSelected && hasArticles && "bg-muted hover:bg-muted/80",
+                !isSelected && !hasArticles && "hover:bg-muted/50",
+                dayOfWeek === 0 && !isSelected && "text-red-500",
+                dayOfWeek === 6 && !isSelected && "text-blue-500",
+                isToday && !isSelected && "ring-2 ring-primary ring-offset-1"
+              )}
+            >
+              <span>{day}</span>
+              {hasArticles && (
+                <div className="flex gap-0.5 mt-0.5">
+                  {dayArticles.slice(0, 3).map((article, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full",
+                        article.category === "인터뷰" && "bg-purple-500",
+                        article.category === "세미나 안내" && "bg-orange-500",
+                        article.category === "소개 및 홍보" && "bg-blue-500"
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 범례 */}
+      <div className="flex justify-center gap-4 mt-4 pt-4 border-t">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+          <span className="text-xs text-muted-foreground">인터뷰</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+          <span className="text-xs text-muted-foreground">세미나</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+          <span className="text-xs text-muted-foreground">솔루션</span>
+        </div>
+      </div>
+    </div>
+  );
+}
