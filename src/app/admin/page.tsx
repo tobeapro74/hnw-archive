@@ -1102,6 +1102,15 @@ export default function AdminPage() {
             <p className="text-xs text-muted-foreground">
               발행일 이후 1개월 / 핵심키워드 + 기타키워드 1개 이상 포함된 기사만 표시
             </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => setCrawlDialogOpen(false)}
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              설정 수정하러 가기
+            </Button>
           </DialogHeader>
 
           {!crawlLoading && crawlResults.length > 0 && (
