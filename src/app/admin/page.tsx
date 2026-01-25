@@ -520,7 +520,8 @@ export default function AdminPage() {
 
       if (data.success) {
         // 3. 필터링: NH투자/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
-        const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k && k !== 'nh투자증권');
+        const coreKeywords = new Set(['nh투자증권', 'nh증권', 'nh투자', 'nh', '투자증권']);
+        const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k && !coreKeywords.has(k));
         const titleFilteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
           const descLower = (article.description || '').toLowerCase();
@@ -536,14 +537,23 @@ export default function AdminPage() {
           return hasCore && hasOther;
         });
 
-        // 4. 날짜 필터링 제거 - 키워드 필터링만 적용
-        // (API에서 이미 최근 기사 위주로 반환하므로 추가 필터링 불필요)
-        const filteredResults = titleFilteredResults;
+        // 4. 날짜 필터링: 발행일 기준 ±30일
+        const pubDateMs = publishedAt.getTime();
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        const dateFilteredResults = titleFilteredResults.filter((article: CrawlResult) => {
+          if (!article.pubDate) return true; // 날짜 없으면 포함
+          const articleDate = new Date(article.pubDate).getTime();
+          return articleDate >= pubDateMs - thirtyDays && articleDate <= pubDateMs + thirtyDays;
+        });
+
+        const filteredResults = dateFilteredResults;
 
         console.log("검색 결과:", {
           원본: data.data?.length || 0,
           키워드필터후: titleFilteredResults.length,
+          날짜필터후: dateFilteredResults.length,
           키워드목록: keywordList,
+          기준날짜: publishedAt.toISOString().split('T')[0],
         });
 
         // 5. 이미 저장된 기사 URL 제외 (중복 방지)
