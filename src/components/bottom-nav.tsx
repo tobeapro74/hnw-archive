@@ -20,7 +20,7 @@ export function BottomNav({ activeTab, onTabChange, isAdmin }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t safe-area-bottom z-40">
+    <nav className="fixed bottom-0 left-0 right-0 border-t safe-area-bottom z-40" style={{ backgroundColor: 'var(--background)' }}>
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
