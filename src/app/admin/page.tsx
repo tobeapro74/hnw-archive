@@ -152,6 +152,7 @@ export default function AdminPage() {
   const [savedArticleId, setSavedArticleId] = useState<string | null>(null);
   const [savedRelatedArticles, setSavedRelatedArticles] = useState<Article[]>([]); // 이미 저장된 관련 기사들
   const [pendingArticle, setPendingArticle] = useState<Partial<Article> | null>(null); // 검색 전 임시 저장할 기사
+  const [savedPublishedAt, setSavedPublishedAt] = useState<Date | null>(null); // 발행일 (프론트엔드 필터링용)
 
   // 기존 이벤트명 목록 (자동완성용)
   const existingEventNames = [...new Set(articles.map(a => a.eventName).filter(Boolean))] as string[];
@@ -443,6 +444,7 @@ export default function AdminPage() {
     setSavedCategory(category as ArticleCategory);
 
     setEditDialogOpen(false);
+    setSavedPublishedAt(publishedAt); // 프론트엔드 필터링용 발행일 저장
     startCrawling(searchKeyword, publishedAt, eventName, undefined, editingArticle);
   };
 
@@ -519,41 +521,45 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        // 3. 필터링: NH투자/NH증권 (필수) + 기타키워드 중 1개 이상 (제목 또는 설명에서)
-        const coreKeywords = new Set(['nh투자증권', 'nh증권', 'nh투자', 'nh', '투자증권']);
-        const keywordList = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k && !coreKeywords.has(k));
-        const titleFilteredResults = (data.data || []).filter((article: CrawlResult) => {
+        // 3. 키워드 분류: 핵심 키워드 vs 기타 키워드
+        const corePatterns = ['nh투자증권', 'nh증권', 'nh투자', 'nh', '투자증권'];
+        const allKeywords = keyword.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
+        const inputCoreKeywords = allKeywords.filter(k => corePatterns.includes(k));
+        const otherKeywords = allKeywords.filter(k => !corePatterns.includes(k));
+
+        // 4. 1단계 필터링: 핵심 키워드 (NH투자 또는 NH증권 필수)
+        const coreFilteredResults = (data.data || []).filter((article: CrawlResult) => {
           const titleLower = article.title.toLowerCase();
           const descLower = (article.description || '').toLowerCase();
           const combined = titleLower + ' ' + descLower;
-          const combinedNoSpace = combined.replace(/\s/g, ''); // 공백 제거 버전
-          // 핵심키워드: NH투자 또는 NH증권이 제목 또는 설명에 포함되어야 함
-          const hasCore = combined.includes('nh투자') || combined.includes('nh증권');
-          // 기타키워드: 1개 이상 포함되어야 함 (공백 유무 상관없이 비교)
-          const hasOther = keywordList.some(kw => {
-            const kwNoSpace = kw.replace(/\s/g, '');
-            return combined.includes(kw) || combinedNoSpace.includes(kwNoSpace);
-          });
-          return hasCore && hasOther;
+          return combined.includes('nh투자') || combined.includes('nh증권');
         });
 
-        // 4. 날짜 필터링: 발행일 기준 ±30일
-        const pubDateMs = publishedAt.getTime();
-        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-        const dateFilteredResults = titleFilteredResults.filter((article: CrawlResult) => {
-          if (!article.pubDate) return true; // 날짜 없으면 포함
-          const articleDate = new Date(article.pubDate).getTime();
-          return articleDate >= pubDateMs - thirtyDays && articleDate <= pubDateMs + thirtyDays;
-        });
+        // 5. 2단계 필터링: 기타 키워드 중 1개 이상 포함
+        const keywordFilteredResults = otherKeywords.length > 0
+          ? coreFilteredResults.filter((article: CrawlResult) => {
+              const titleLower = article.title.toLowerCase();
+              const descLower = (article.description || '').toLowerCase();
+              const combined = titleLower + ' ' + descLower;
+              const combinedNoSpace = combined.replace(/\s/g, '');
+              return otherKeywords.some(kw => {
+                const kwNoSpace = kw.replace(/\s/g, '');
+                return combined.includes(kw) || combinedNoSpace.includes(kwNoSpace);
+              });
+            })
+          : coreFilteredResults; // 기타 키워드 없으면 핵심 필터만 적용
 
-        const filteredResults = dateFilteredResults;
+        // 날짜 필터링은 프론트엔드에서 표시할 때 적용
+        const filteredResults = keywordFilteredResults;
 
         console.log("검색 결과:", {
           원본: data.data?.length || 0,
-          키워드필터후: titleFilteredResults.length,
-          날짜필터후: dateFilteredResults.length,
-          키워드목록: keywordList,
-          기준날짜: publishedAt.toISOString().split('T')[0],
+          "1_핵심키워드필터후": coreFilteredResults.length,
+          "2_기타키워드필터후": keywordFilteredResults.length,
+          기준발행일: publishedAt.toISOString().split('T')[0],
+          "프론트필터범위": `${publishedAt.toISOString().split('T')[0]} ~ +1개월 (UI에서 필터링)`,
+          핵심키워드: inputCoreKeywords.length > 0 ? inputCoreKeywords : ['자동: nh투자/nh증권'],
+          기타키워드: otherKeywords,
         });
 
         // 5. 이미 저장된 기사 URL 제외 (중복 방지)
@@ -677,6 +683,17 @@ export default function AdminPage() {
     if (!eventName) return 0;
     return articles.filter(a => a.eventName === eventName).length;
   };
+
+  // 프론트엔드에서 날짜 필터링 적용 (발행일 기준 이후 1개월 이내만)
+  const filteredCrawlResults = savedPublishedAt
+    ? crawlResults.filter((article) => {
+        if (!article.pubDate) return true; // 날짜 없으면 포함
+        const oneMonth = 30 * 24 * 60 * 60 * 1000;
+        const pubDateMs = savedPublishedAt.getTime();
+        const articleDate = new Date(article.pubDate).getTime();
+        return articleDate >= pubDateMs && articleDate <= pubDateMs + oneMonth;
+      })
+    : crawlResults;
 
   if (loading) {
     return (
@@ -1230,7 +1247,7 @@ export default function AdminPage() {
               <p><span className="font-medium text-foreground">기타키워드:</span> {savedKeyword.split(',').map(k => k.trim()).filter(k => k && k.toLowerCase() !== 'nh투자증권').join(', ')}</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              발행일 이후 1개월 / 핵심키워드 + 기타키워드 1개 이상 포함된 기사만 표시
+              핵심키워드 + 기타키워드 매칭 / 발행일 이후 1개월 이내만 표시
             </p>
             <Button
               variant="outline"
@@ -1251,24 +1268,37 @@ export default function AdminPage() {
             </Button>
           </DialogHeader>
 
-          {!crawlLoading && (savedRelatedArticles.length > 0 || crawlResults.length > 0) && (
+          {!crawlLoading && (savedRelatedArticles.length > 0 || filteredCrawlResults.length > 0) && (
             <div className="flex items-center justify-between py-2 border-b">
               <span className="text-sm text-muted-foreground">
-                저장됨 {savedRelatedArticles.length}건 / 새로 검색됨 {crawlResults.length}건 / {selectedCrawlArticles.size}건 선택
+                저장됨 {savedRelatedArticles.length}건 / 검색됨 {filteredCrawlResults.length}건 (전체 {crawlResults.length}건) / {selectedCrawlArticles.size}건 선택
               </span>
-              {crawlResults.length > 0 && (
+              {filteredCrawlResults.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (selectedCrawlArticles.size === crawlResults.length) {
+                    // filteredCrawlResults의 원본 인덱스를 찾아서 선택
+                    const filteredIndices = crawlResults
+                      .map((r, i) => ({ result: r, index: i }))
+                      .filter(({ result }) => {
+                        if (!savedPublishedAt) return true;
+                        if (!result.pubDate) return true;
+                        const oneMonth = 30 * 24 * 60 * 60 * 1000;
+                        const pubDateMs = savedPublishedAt.getTime();
+                        const articleDate = new Date(result.pubDate).getTime();
+                        return articleDate >= pubDateMs && articleDate <= pubDateMs + oneMonth;
+                      })
+                      .map(({ index }) => index);
+
+                    if (selectedCrawlArticles.size === filteredIndices.length) {
                       setSelectedCrawlArticles(new Set());
                     } else {
-                      setSelectedCrawlArticles(new Set(crawlResults.map((_, i) => i)));
+                      setSelectedCrawlArticles(new Set(filteredIndices));
                     }
                   }}
                 >
-                  {selectedCrawlArticles.size === crawlResults.length ? "전체해제" : "전체선택"}
+                  {selectedCrawlArticles.size === filteredCrawlResults.length ? "전체해제" : "전체선택"}
                 </Button>
               )}
             </div>
@@ -1329,66 +1359,88 @@ export default function AdminPage() {
                 )}
 
                 {/* 새로 검색된 기사 섹션 */}
-                {crawlResults.length > 0 ? (
+                {filteredCrawlResults.length > 0 ? (
                   <div>
                     <h4 className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-1">
                       <Search className="w-4 h-4" />
-                      새로 검색된 기사 ({crawlResults.length}건)
+                      새로 검색된 기사 ({filteredCrawlResults.length}건)
+                      {savedPublishedAt && (
+                        <span className="font-normal text-xs text-muted-foreground ml-2">
+                          ({savedPublishedAt.toLocaleDateString('ko-KR')} ~ +1개월)
+                        </span>
+                      )}
                     </h4>
                     <div className="space-y-2">
-                      {crawlResults.map((result, index) => (
-                        <div
-                          key={index}
-                          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                            selectedCrawlArticles.has(index)
-                              ? "border-blue-500 bg-blue-50"
-                              : "hover:bg-muted"
-                          }`}
-                          onClick={() => toggleCrawlSelection(index)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
-                                selectedCrawlArticles.has(index)
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              {selectedCrawlArticles.has(index) && (
-                                <Check className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium line-clamp-2">
-                                {result.title}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                <span>{result.source}</span>
-                                <span>·</span>
-                                <span>
-                                  {result.pubDate
-                                    ? new Date(result.pubDate).toLocaleDateString("ko-KR")
-                                    : "날짜 없음"}
-                                </span>
+                      {crawlResults.map((result, index) => {
+                        // 날짜 필터링 적용
+                        if (savedPublishedAt && result.pubDate) {
+                          const oneMonth = 30 * 24 * 60 * 60 * 1000;
+                          const pubDateMs = savedPublishedAt.getTime();
+                          const articleDate = new Date(result.pubDate).getTime();
+                          if (articleDate < pubDateMs || articleDate > pubDateMs + oneMonth) {
+                            return null; // 범위 밖이면 렌더링하지 않음
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                              selectedCrawlArticles.has(index)
+                                ? "border-blue-500 bg-blue-50"
+                                : "hover:bg-muted"
+                            }`}
+                            onClick={() => toggleCrawlSelection(index)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+                                  selectedCrawlArticles.has(index)
+                                    ? "border-blue-500 bg-blue-500"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {selectedCrawlArticles.has(index) && (
+                                  <Check className="w-3 h-3 text-white" />
+                                )}
                               </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium line-clamp-2">
+                                  {result.title}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                  <span>{result.source}</span>
+                                  <span>·</span>
+                                  <span>
+                                    {result.pubDate
+                                      ? new Date(result.pubDate).toLocaleDateString("ko-KR")
+                                      : "날짜 없음"}
+                                  </span>
+                                </div>
+                              </div>
+                              <a
+                                href={result.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-shrink-0 p-1 hover:bg-muted rounded"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                              </a>
                             </div>
-                            <a
-                              href={result.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-shrink-0 p-1 hover:bg-muted rounded"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                            </a>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : savedRelatedArticles.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground">
                     검색 결과가 없습니다.
+                    {crawlResults.length > 0 && savedPublishedAt && (
+                      <p className="text-xs mt-2">
+                        (전체 {crawlResults.length}건 중 발행일 기준 1개월 이내 기사 없음)
+                      </p>
+                    )}
                   </div>
                 ) : null}
               </>
