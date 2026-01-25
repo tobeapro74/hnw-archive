@@ -208,7 +208,9 @@ export default function Home() {
 
   // 탭 변경
   const handleTabChange = (tab: ViewType) => {
-    if (tab === "admin" && !user?.is_admin) {
+    if (tab === "admin") {
+      if (!user?.is_admin) return;
+      window.location.href = "/admin";
       return;
     }
     setCurrentView(tab);

@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { formatDate, formatDateForInput } from "@/lib/utils";
+import { BottomNav } from "@/components/bottom-nav";
 
 interface UserInfo {
   id: string;
@@ -669,9 +670,15 @@ export default function AdminPage() {
     );
   }
 
+  // 탭 변경 핸들러
+  const handleTabChange = (tab: "home" | "list" | "calendar" | "admin") => {
+    if (tab === "admin") return; // 이미 admin 페이지
+    router.push("/");
+  };
+
   // 관리자 대시보드
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* 헤더 */}
       <header className="bg-gradient-to-r from-blue-700 to-blue-600 safe-area-top sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -1213,6 +1220,12 @@ export default function AdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BottomNav
+        activeTab="admin"
+        onTabChange={handleTabChange}
+        isAdmin={true}
+      />
     </div>
   );
 }

@@ -1,0 +1,48 @@
+{
+  "project": {
+    "name": "HNW 홍보 아카이브",
+    "description": "NH투자증권 HNW 본부 홍보 기사 아카이브 시스템",
+    "type": "web-app"
+  },
+  "stack": {
+    "framework": "Next.js 15",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS",
+    "ui": "shadcn/ui",
+    "database": "MongoDB Atlas",
+    "deployment": "Vercel"
+  },
+  "conventions": {
+    "components": "React Functional Components with TypeScript",
+    "styling": "Tailwind CSS utility classes",
+    "api": "Next.js API Routes (App Router)",
+    "state": "React useState/useEffect hooks"
+  },
+  "paths": {
+    "components": "src/components",
+    "pages": "src/app",
+    "api": "src/app/api",
+    "lib": "src/lib",
+    "types": "src/lib/types.ts"
+  },
+  "features": {
+    "authentication": {
+      "type": "JWT cookie-based",
+      "routes": "/api/auth/*"
+    },
+    "articles": {
+      "crud": "/api/articles",
+      "categories": ["인터뷰", "세미나 홍보", "솔루션 소개/홍보"],
+      "tags": ["단독기사", "특집기사", "보도기사"]
+    },
+    "news_search": {
+      "source": "Google News RSS",
+      "core_keywords": ["NH투자증권", "NH증권"],
+      "filter": "발행일 이후 1개월"
+    }
+  },
+  "documentation": {
+    "architecture": "docs/architecture.md",
+    "troubleshooting": "docs/troubleshooting.md"
+  }
+}
