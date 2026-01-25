@@ -151,6 +151,7 @@ export default function AdminPage() {
   const [savedCategory, setSavedCategory] = useState<ArticleCategory>("세미나 안내");
   const [savedArticleId, setSavedArticleId] = useState<string | null>(null);
   const [savedRelatedArticles, setSavedRelatedArticles] = useState<Article[]>([]); // 이미 저장된 관련 기사들
+  const [pendingArticle, setPendingArticle] = useState<Partial<Article> | null>(null); // 검색 전 임시 저장할 기사
 
   // 기존 이벤트명 목록 (자동완성용)
   const existingEventNames = [...new Set(articles.map(a => a.eventName).filter(Boolean))] as string[];
@@ -405,7 +406,46 @@ export default function AdminPage() {
     setEditDialogOpen(true);
   };
 
-  // 기사 저장
+  // 관련 기사 검색 (저장 전 검색)
+  const handleSearchRelated = () => {
+    if (!editingArticle) return;
+
+    const keyword = editingArticle.keyword;
+    const interviewee = (editingArticle as { interviewee?: string }).interviewee;
+    const category = editingArticle.category || "세미나 안내";
+    const eventName = editingArticle.eventName || "";
+    const publishedAt = editingArticle.publishedAt ? new Date(editingArticle.publishedAt) : new Date();
+
+    // 검색할 키워드 확인
+    let searchKeyword = "";
+    if (category === "인터뷰") {
+      if (interviewee && interviewee.trim()) {
+        searchKeyword = keyword && keyword.trim() && keyword !== "NH투자증권"
+          ? `${interviewee}, ${keyword}`
+          : interviewee;
+      }
+    } else {
+      if (keyword && keyword.trim() && keyword !== "NH투자증권") {
+        searchKeyword = keyword;
+      }
+    }
+
+    if (!searchKeyword) {
+      alert("검색할 키워드를 입력해주세요.");
+      return;
+    }
+
+    // 임시 저장 (아직 DB에 저장하지 않음)
+    setPendingArticle(editingArticle);
+    setSavedKeyword(searchKeyword);
+    setSavedEventName(eventName);
+    setSavedCategory(category as ArticleCategory);
+
+    setEditDialogOpen(false);
+    startCrawling(searchKeyword, publishedAt, eventName, undefined, editingArticle);
+  };
+
+  // 기사 저장 (수정 시에만 사용)
   const handleSaveArticle = async () => {
     if (!editingArticle) return;
 
@@ -423,40 +463,9 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        const keyword = editingArticle.keyword;
-        const interviewee = (editingArticle as { interviewee?: string }).interviewee;
-        const category = editingArticle.category || "세미나 안내";
-        const eventName = editingArticle.eventName || "";
-        const publishedAt = editingArticle.publishedAt ? new Date(editingArticle.publishedAt) : new Date();
-        const savedId = data.data?._id || editingArticle._id;
-
         setEditDialogOpen(false);
         setEditingArticle(null);
-        setSavedArticleId(savedId);
         fetchArticles();
-
-        // 카테고리별 크롤링 로직 (발행일 기준 ±1주일 필터링)
-        if (category === "인터뷰") {
-          // 인터뷰: NH투자증권 + 인터뷰이 + keyword (있으면)
-          if (interviewee && interviewee.trim()) {
-            // 인터뷰이와 keyword를 합침
-            const combinedKeywords = keyword && keyword.trim() && keyword !== "NH투자증권"
-              ? `${interviewee}, ${keyword}`
-              : interviewee;
-            setSavedKeyword(combinedKeywords);
-            setSavedEventName(eventName);
-            setSavedCategory(category as ArticleCategory);
-            startCrawling(combinedKeywords, publishedAt, eventName, savedId, editingArticle);
-          }
-        } else {
-          // 그 외: NH투자증권 + keyword
-          if (keyword && keyword.trim() && keyword !== "NH투자증권") {
-            setSavedKeyword(keyword);
-            setSavedEventName(eventName);
-            setSavedCategory(category as ArticleCategory);
-            startCrawling(keyword, publishedAt, eventName, savedId, editingArticle);
-          }
-        }
       } else {
         alert(data.error || "저장에 실패했습니다.");
       }
@@ -570,14 +579,26 @@ export default function AdminPage() {
     setSelectedCrawlArticles(newSelected);
   };
 
-  // 선택된 크롤링 기사 저장
+  // 선택된 크롤링 기사 저장 (원본 기사 + 선택한 기사 모두 저장)
   const saveCrawledArticles = async () => {
-    if (selectedCrawlArticles.size === 0) return;
-
     setSavingCrawledArticles(true);
     let savedCount = 0;
 
     try {
+      // 1. 원본 기사 저장 (pendingArticle이 있으면)
+      if (pendingArticle) {
+        const res = await fetch("/api/articles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pendingArticle),
+        });
+
+        if (res.ok) {
+          savedCount++;
+        }
+      }
+
+      // 2. 선택된 크롤링 기사 저장
       for (const index of selectedCrawlArticles) {
         const result = crawlResults[index];
         if (!result) continue;
@@ -606,8 +627,10 @@ export default function AdminPage() {
         }
       }
 
-      alert(`${savedCount}개의 기사가 저장되었습니다.`);
+      const pendingMsg = pendingArticle ? " (원본 기사 포함)" : "";
+      alert(`${savedCount}개의 기사가 저장되었습니다${pendingMsg}.`);
       setCrawlDialogOpen(false);
+      setPendingArticle(null);
       fetchArticles();
     } catch (error) {
       console.error("Save crawled articles error:", error);
@@ -1150,10 +1173,17 @@ export default function AdminPage() {
               <X className="w-4 h-4 mr-2" />
               취소
             </Button>
-            <Button onClick={handleSaveArticle}>
-              <Save className="w-4 h-4 mr-2" />
-              저장
-            </Button>
+            {isNewArticle ? (
+              <Button onClick={handleSearchRelated}>
+                <Search className="w-4 h-4 mr-2" />
+                관련 기사 검색
+              </Button>
+            ) : (
+              <Button onClick={handleSaveArticle}>
+                <Save className="w-4 h-4 mr-2" />
+                저장
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1199,13 +1229,11 @@ export default function AdminPage() {
               className="mt-2"
               onClick={() => {
                 setCrawlDialogOpen(false);
-                // 저장된 기사를 다시 수정 모드로 열기
-                if (savedArticleId) {
-                  const articleToEdit = articles.find(a => a._id === savedArticleId);
-                  if (articleToEdit) {
-                    setEditingArticle(articleToEdit);
-                    setEditDialogOpen(true);
-                  }
+                // pendingArticle이 있으면 (새 기사 검색 중) 다시 수정 모드로 열기
+                if (pendingArticle) {
+                  setEditingArticle(pendingArticle);
+                  setIsNewArticle(true);
+                  setEditDialogOpen(true);
                 }
               }}
             >
@@ -1361,18 +1389,21 @@ export default function AdminPage() {
           <DialogFooter className="border-t pt-4">
             <div className="flex items-center justify-between w-full">
               <span className="text-sm text-muted-foreground">
-                {selectedCrawlArticles.size}개 선택됨
+                {pendingArticle ? "원본 기사 + " : ""}{selectedCrawlArticles.size}개 선택됨
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setCrawlDialogOpen(false)}
+                  onClick={() => {
+                    setCrawlDialogOpen(false);
+                    setPendingArticle(null);
+                  }}
                 >
-                  닫기
+                  취소
                 </Button>
                 <Button
                   onClick={saveCrawledArticles}
-                  disabled={selectedCrawlArticles.size === 0 || savingCrawledArticles}
+                  disabled={!pendingArticle && selectedCrawlArticles.size === 0 || savingCrawledArticles}
                 >
                   {savingCrawledArticles ? (
                     <>
@@ -1382,7 +1413,11 @@ export default function AdminPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      선택 기사 저장
+                      {pendingArticle
+                        ? selectedCrawlArticles.size > 0
+                          ? `${1 + selectedCrawlArticles.size}개 기사 저장`
+                          : "원본 기사만 저장"
+                        : "선택 기사 저장"}
                     </>
                   )}
                 </Button>
