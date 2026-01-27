@@ -557,7 +557,7 @@ export default function Home() {
 
             {/* 중앙: 타이틀 */}
             <h1 className="text-xl font-bold text-white text-center">
-              {currentView === "home" && "HNW 홍보·세미나 매니저"}
+              {currentView === "home" && "HNW 홍보 아카이브"}
               {currentView === "list" && "홍보 목록"}
               {currentView === "seminar" && "세미나 관리"}
               {currentView === "calendar" && "홍보 캘린더"}
