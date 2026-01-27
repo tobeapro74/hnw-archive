@@ -154,6 +154,14 @@ export default function AdminPage() {
   const [pendingArticle, setPendingArticle] = useState<Partial<Article> | null>(null); // 검색 전 임시 저장할 기사
   const [savedPublishedAt, setSavedPublishedAt] = useState<Date | null>(null); // 발행일 (프론트엔드 필터링용)
 
+  // 기사 일괄 선택/수정
+  const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
+  const [batchEditDialogOpen, setBatchEditDialogOpen] = useState(false);
+  const [batchEditCategory, setBatchEditCategory] = useState<ArticleCategory | "">("");
+  const [batchEditTag, setBatchEditTag] = useState<ArticleTag | "">("");
+  const [batchEditEventName, setBatchEditEventName] = useState("");
+  const [batchSaving, setBatchSaving] = useState(false);
+
   // 기존 이벤트명 목록 (자동완성용)
   const existingEventNames = [...new Set(articles.map(a => a.eventName).filter(Boolean))] as string[];
 
@@ -643,6 +651,98 @@ export default function AdminPage() {
     }
   };
 
+  // 기사 선택 토글
+  const toggleArticleSelection = (articleId: string) => {
+    const newSelected = new Set(selectedArticles);
+    if (newSelected.has(articleId)) {
+      newSelected.delete(articleId);
+    } else {
+      newSelected.add(articleId);
+    }
+    setSelectedArticles(newSelected);
+  };
+
+  // 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (selectedArticles.size === articles.length) {
+      setSelectedArticles(new Set());
+    } else {
+      setSelectedArticles(new Set(articles.map(a => a._id!)));
+    }
+  };
+
+  // 일괄 수정 다이얼로그 열기
+  const openBatchEditDialog = () => {
+    setBatchEditCategory("");
+    setBatchEditTag("");
+    setBatchEditEventName("");
+    setBatchEditDialogOpen(true);
+  };
+
+  // 일괄 수정 적용
+  const handleBatchEdit = async () => {
+    if (selectedArticles.size === 0) return;
+
+    setBatchSaving(true);
+    let successCount = 0;
+
+    try {
+      for (const articleId of selectedArticles) {
+        const article = articles.find(a => a._id === articleId);
+        if (!article) continue;
+
+        const updateData: Partial<Article> = {};
+        if (batchEditCategory) updateData.category = batchEditCategory;
+        if (batchEditTag) updateData.tag = batchEditTag;
+        if (batchEditEventName) updateData.eventName = batchEditEventName;
+
+        // 변경할 내용이 없으면 스킵
+        if (Object.keys(updateData).length === 0) continue;
+
+        const res = await fetch(`/api/articles/${articleId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        if (res.ok) successCount++;
+      }
+
+      alert(`${successCount}/${selectedArticles.size}개 기사가 수정되었습니다.`);
+      setBatchEditDialogOpen(false);
+      setSelectedArticles(new Set());
+      fetchArticles();
+    } catch (error) {
+      console.error("Batch edit error:", error);
+      alert("일괄 수정 중 오류가 발생했습니다.");
+    } finally {
+      setBatchSaving(false);
+    }
+  };
+
+  // 일괄 삭제
+  const handleBatchDelete = async () => {
+    if (selectedArticles.size === 0) return;
+
+    if (!confirm(`선택한 ${selectedArticles.size}개의 기사를 삭제하시겠습니까?`)) return;
+
+    let successCount = 0;
+    for (const articleId of selectedArticles) {
+      try {
+        const res = await fetch(`/api/articles/${articleId}`, {
+          method: "DELETE",
+        });
+        if (res.ok) successCount++;
+      } catch (error) {
+        console.error("Delete error:", error);
+      }
+    }
+
+    alert(`${successCount}/${selectedArticles.size}개 기사가 삭제되었습니다.`);
+    setSelectedArticles(new Set());
+    fetchArticles();
+  };
+
   // 같은 이벤트의 기사 수 계산
   const getRelatedArticleCount = (eventName: string | undefined) => {
     if (!eventName) return 0;
@@ -866,12 +966,74 @@ export default function AdminPage() {
 
         {/* 기사 목록 */}
         <div className="space-y-3">
+          {/* 일괄 선택 툴바 */}
+          {articles.length > 0 && (
+            <Card className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={toggleSelectAll}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      selectedArticles.size === articles.length && articles.length > 0
+                        ? "border-blue-500 bg-blue-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {selectedArticles.size === articles.length && articles.length > 0 && (
+                      <Check className="w-3 h-3 text-white" />
+                    )}
+                  </button>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedArticles.size > 0
+                      ? `${selectedArticles.size}개 선택됨`
+                      : `전체 ${articles.length}개`}
+                  </span>
+                </div>
+                {selectedArticles.size > 0 && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={openBatchEditDialog}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      일괄 수정
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBatchDelete}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      일괄 삭제
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
           {articles.length > 0 ? (
             articles.map((article) => {
               const relatedCount = getRelatedArticleCount(article.eventName);
+              const isSelected = selectedArticles.has(article._id!);
               return (
-                <Card key={article._id} className="p-4">
+                <Card key={article._id} className={`p-4 ${isSelected ? "ring-2 ring-blue-500" : ""}`}>
                   <div className="flex gap-3">
+                    {/* 체크박스 */}
+                    <button
+                      onClick={() => toggleArticleSelection(article._id!)}
+                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-5 transition-colors ${
+                        isSelected
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-gray-300 hover:border-blue-400"
+                      }`}
+                    >
+                      {isSelected && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </button>
+
                     {/* 썸네일 */}
                     <div className="flex-shrink-0 w-16 h-16 bg-muted rounded-lg overflow-hidden">
                       {article.thumbnailUrl ? (
@@ -1206,6 +1368,80 @@ export default function AdminPage() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteArticle}>
               삭제
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 일괄 수정 다이얼로그 */}
+      <Dialog open={batchEditDialogOpen} onOpenChange={setBatchEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>일괄 수정</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            선택한 {selectedArticles.size}개 기사의 설정을 일괄 변경합니다.
+            <br />
+            <span className="text-xs">변경하지 않을 항목은 빈칸으로 두세요.</span>
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">카테고리</label>
+              <select
+                value={batchEditCategory}
+                onChange={(e) => setBatchEditCategory(e.target.value as ArticleCategory | "")}
+                className="w-full mt-1 p-2 border rounded-md"
+              >
+                <option value="">변경 안함</option>
+                <option value="인터뷰">인터뷰</option>
+                <option value="세미나 안내">세미나 안내</option>
+                <option value="소개 및 홍보">소개 및 홍보</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">태그</label>
+              <select
+                value={batchEditTag}
+                onChange={(e) => setBatchEditTag(e.target.value as ArticleTag | "")}
+                className="w-full mt-1 p-2 border rounded-md"
+              >
+                <option value="">변경 안함</option>
+                <option value="단독기사">단독기사</option>
+                <option value="특집기사">특집기사</option>
+                <option value="보도기사">보도기사</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">이벤트명</label>
+              <Input
+                value={batchEditEventName}
+                onChange={(e) => setBatchEditEventName(e.target.value)}
+                placeholder="빈칸이면 변경 안함"
+                list="batch-event-names"
+              />
+              <datalist id="batch-event-names">
+                {existingEventNames.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setBatchEditDialogOpen(false)}>
+              취소
+            </Button>
+            <Button
+              onClick={handleBatchEdit}
+              disabled={batchSaving || (!batchEditCategory && !batchEditTag && !batchEditEventName)}
+            >
+              {batchSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  적용 중...
+                </>
+              ) : (
+                "적용"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
