@@ -219,26 +219,58 @@ export default function Home() {
   }, [yearFilteredArticles]);
 
   // 월별 데이터 (연도 필터 적용)
-  // "전체" 선택 시: 기사가 있는 가장 최근 연도 데이터 표시
+  // "전체" 선택 시: 최근 12개월 롤링 데이터
   // 특정 연도 선택 시: 해당 연도 데이터 표시
-  const timelineYear = useMemo(() => {
-    if (selectedYear !== "all") return selectedYear;
+  const timelineYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
 
-    // 기사가 있는 가장 최근 연도 찾기
-    if (articles.length === 0) return new Date().getFullYear();
-    return Math.max(...articles.map(a => new Date(a.publishedAt).getFullYear()));
-  }, [selectedYear, articles]);
+  // 롤링 12개월 데이터 (전체 선택 시 사용)
+  const rollingMonthlyData = useMemo(() => {
+    if (selectedYear !== "all") return null;
 
-  const monthlyData = useMemo(() => {
-    const data = Array(12).fill(0);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // 최근 12개월 생성 (현재 월 포함, 과거 11개월)
+    const months: { year: number; month: number; count: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      let targetMonth = currentMonth - i;
+      let targetYear = currentYear;
+      if (targetMonth < 0) {
+        targetMonth += 12;
+        targetYear -= 1;
+      }
+      months.push({ year: targetYear, month: targetMonth, count: 0 });
+    }
+
+    // 기사 수 집계
     articles.forEach((article) => {
       const date = new Date(article.publishedAt);
-      if (date.getFullYear() === timelineYear) {
+      const articleYear = date.getFullYear();
+      const articleMonth = date.getMonth();
+
+      const idx = months.findIndex(m => m.year === articleYear && m.month === articleMonth);
+      if (idx !== -1) {
+        months[idx].count += 1;
+      }
+    });
+
+    return months;
+  }, [articles, selectedYear]);
+
+  // 단일 연도 월별 데이터 (특정 연도 선택 시 사용)
+  const monthlyData = useMemo(() => {
+    const data = Array(12).fill(0);
+    if (selectedYear === "all") return data;
+
+    articles.forEach((article) => {
+      const date = new Date(article.publishedAt);
+      if (date.getFullYear() === selectedYear) {
         data[date.getMonth()] += 1;
       }
     });
     return data;
-  }, [articles, timelineYear]);
+  }, [articles, selectedYear]);
 
   // 하이라이트 기사 (단독/특집 중 최신 5개)
   const highlightArticles = useMemo(() => {
@@ -355,6 +387,7 @@ export default function Home() {
               monthlyData={monthlyData}
               year={timelineYear}
               onMonthClick={handleMonthClick}
+              rollingData={rollingMonthlyData ?? undefined}
             />
           </div>
         </div>
