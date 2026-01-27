@@ -550,16 +550,19 @@ function HomeContent() {
           >
             전체
           </Button>
-          {tags.map((tag) => (
-            <Button
-              key={tag.id}
-              variant={selectedTag === tag.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedTag(tag.id)}
-            >
-              {tag.name}
-            </Button>
-          ))}
+          {tags.map((tag) => {
+            const distinctCount = tagDistinctStats[tag.id] || 0;
+            return (
+              <Button
+                key={tag.id}
+                variant={selectedTag === tag.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedTag(tag.id)}
+              >
+                {tag.name} <span className="ml-1 opacity-70">{distinctCount}</span>
+              </Button>
+            );
+          })}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
