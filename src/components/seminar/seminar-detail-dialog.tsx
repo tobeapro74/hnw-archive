@@ -16,12 +16,7 @@ import { ProgressBar, PhaseProgress } from "./progress-bar";
 import { ChecklistSection, ChecklistTabs } from "./checklist-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface SeminarDetailDialogProps {
   seminarId: string | null;
@@ -217,15 +212,26 @@ export function SeminarDetailDialog({
   if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">로딩 중...</div>
         ) : seminar ? (
           <>
             {/* 헤더 */}
-            <div className={cn("p-4 pt-12", seminarCategoryBgColors[seminar.category])}>
-              <DialogHeader className="space-y-2">
+            <div className={cn("p-4", seminarCategoryBgColors[seminar.category])}>
+              {/* 닫기 핸들 */}
+              <div className="flex justify-center mb-2">
+                <div className="w-10 h-1 bg-white/30 rounded-full" />
+              </div>
+
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge
@@ -264,10 +270,18 @@ export function SeminarDetailDialog({
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20 w-8 h-8"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                <DialogTitle className="text-white text-lg">{seminar.title}</DialogTitle>
-              </DialogHeader>
+                <h2 className="text-white text-lg font-semibold">{seminar.title}</h2>
+              </div>
 
               {/* 기본 정보 */}
               <div className="mt-3 space-y-1 text-white/90 text-sm">
@@ -298,35 +312,38 @@ export function SeminarDetailDialog({
               </div>
             </div>
 
-            {/* 진행률 */}
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">전체 진행률</span>
-                <span className="text-sm font-bold">{seminar.progress.percentage}%</span>
+            {/* 스크롤 가능한 콘텐츠 */}
+            <div className="overflow-y-auto max-h-[calc(85vh-200px)]">
+              {/* 진행률 */}
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">전체 진행률</span>
+                  <span className="text-sm font-bold">{seminar.progress.percentage}%</span>
+                </div>
+                <ProgressBar percentage={seminar.progress.percentage} size="lg" />
+                <div className="mt-3">
+                  <PhaseProgress phaseProgress={seminar.phaseProgress} />
+                </div>
               </div>
-              <ProgressBar percentage={seminar.progress.percentage} size="lg" />
-              <div className="mt-3">
-                <PhaseProgress phaseProgress={seminar.phaseProgress} />
-              </div>
-            </div>
 
-            {/* 체크리스트 탭 */}
-            <ChecklistTabs
-              activePhase={activePhase}
-              onPhaseChange={setActivePhase}
-              phaseCounts={seminar.phaseProgress}
-            />
-
-            {/* 체크리스트 내용 */}
-            <div className="p-4">
-              <ChecklistSection
-                phase={activePhase}
-                items={seminar.checklist.filter((item) => item.phase === activePhase)}
-                seminarDate={seminar.date}
-                onToggleItem={handleToggleItem}
-                onDeleteItem={handleDeleteItem}
-                onAddItem={handleAddItem}
+              {/* 체크리스트 탭 */}
+              <ChecklistTabs
+                activePhase={activePhase}
+                onPhaseChange={setActivePhase}
+                phaseCounts={seminar.phaseProgress}
               />
+
+              {/* 체크리스트 내용 */}
+              <div className="p-4 pb-8">
+                <ChecklistSection
+                  phase={activePhase}
+                  items={seminar.checklist.filter((item) => item.phase === activePhase)}
+                  seminarDate={seminar.date}
+                  onToggleItem={handleToggleItem}
+                  onDeleteItem={handleDeleteItem}
+                  onAddItem={handleAddItem}
+                />
+              </div>
             </div>
           </>
         ) : (
@@ -334,7 +351,7 @@ export function SeminarDetailDialog({
             세미나 정보를 불러올 수 없습니다.
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

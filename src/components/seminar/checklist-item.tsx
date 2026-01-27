@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Star, Trash2, GripVertical } from "lucide-react";
+import { Check, Trash2, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType, getChecklistDueDate } from "@/lib/seminar-types";
 import { Button } from "@/components/ui/button";
@@ -92,11 +92,6 @@ export function ChecklistItemComponent({
       >
         {item.isCompleted && <Check className="w-3 h-3 text-white" />}
       </button>
-
-      {/* 우선순위 표시 (높음만) */}
-      {item.priority === 1 && !item.isCompleted && (
-        <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" fill="currentColor" />
-      )}
 
       {/* 항목 내용 */}
       <div className="flex-1 min-w-0">

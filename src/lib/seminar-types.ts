@@ -265,13 +265,13 @@ export const defaultChecklistTemplates: Omit<ChecklistTemplate, "_id">[] = [
   // 사전 (D-14 ~ D-1)
   { phase: "사전", title: "강의자료 초안 작성", priority: 1, dueOffset: -14, order: 1, isDefault: true },
   { phase: "사전", title: "강의자료 내부 검토", priority: 1, dueOffset: -10, order: 2, isDefault: true },
-  { phase: "사전", title: "참석자 명단 확정", priority: 1, dueOffset: -7, order: 3, isDefault: true },
-  { phase: "사전", title: "강의자료 최종본 확정", priority: 1, dueOffset: -5, order: 4, isDefault: true },
+  { phase: "사전", title: "참석자 명단 취합", priority: 1, dueOffset: -7, order: 3, isDefault: true },
+  { phase: "사전", title: "강의자료 확정", priority: 1, dueOffset: -5, order: 4, isDefault: true },
   { phase: "사전", title: "강의자료 제본", priority: 2, dueOffset: -5, order: 5, isDefault: true },
   { phase: "사전", title: "안내 문자/이메일 발송", priority: 1, dueOffset: -3, order: 6, isDefault: true },
   { phase: "사전", title: "현수막/배너 준비", priority: 2, dueOffset: -2, order: 7, isDefault: true },
   { phase: "사전", title: "기념품 준비", priority: 2, dueOffset: -1, order: 8, isDefault: true },
-  { phase: "사전", title: "참석 최종 확인", priority: 1, dueOffset: -1, order: 9, isDefault: true },
+  { phase: "사전", title: "참석자 명단 최종 확인", priority: 1, dueOffset: -1, order: 9, isDefault: true },
 
   // 당일 (D-day)
   { phase: "당일", title: "장소 세팅 확인", priority: 1, dueOffset: 0, order: 1, isDefault: true },

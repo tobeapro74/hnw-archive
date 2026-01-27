@@ -59,6 +59,10 @@ export function SeminarStats({ seminars, onStatClick }: SeminarStatsProps) {
     },
   ];
 
+  // 정기/비정기 통계
+  const regularCount = seminars.filter((s) => s.seminarType === "정기").length;
+  const irregularCount = seminars.filter((s) => s.seminarType === "비정기").length;
+
   return (
     <div className="space-y-2">
       {/* 주간 알림 */}
@@ -71,7 +75,25 @@ export function SeminarStats({ seminars, onStatClick }: SeminarStatsProps) {
         </div>
       )}
 
-      {/* 통계 카드 */}
+      {/* 정기/비정기 구분 */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-emerald-50">
+          <div className="w-2 h-8 rounded-full bg-emerald-500" />
+          <div>
+            <div className="text-xl font-bold text-emerald-600">{regularCount}</div>
+            <div className="text-[11px] text-muted-foreground">정기 세미나</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-amber-50">
+          <div className="w-2 h-8 rounded-full bg-amber-500" />
+          <div>
+            <div className="text-xl font-bold text-amber-600">{irregularCount}</div>
+            <div className="text-[11px] text-muted-foreground">비정기 세미나</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 상태별 통계 카드 */}
       <div className="grid grid-cols-3 gap-2">
         {statCards.map(({ key, label, count, icon: Icon, color, lightColor, textColor }) => (
           <button

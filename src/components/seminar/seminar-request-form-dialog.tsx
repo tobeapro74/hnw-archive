@@ -16,11 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -28,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 interface SeminarRequestFormDialogProps {
   open: boolean;
@@ -195,14 +191,34 @@ export function SeminarRequestFormDialog({
 
   const statuses: SeminarRequestStatus[] = ["요청접수", "검토중", "승인", "반려", "완료"];
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 고정 헤더 */}
         <div className="shrink-0 bg-background border-b px-6 py-4">
-          <DialogTitle>
-            {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
-          </DialogTitle>
+          {/* 닫기 핸들 */}
+          <div className="flex justify-center mb-2">
+            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
+            </h2>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
@@ -404,8 +420,8 @@ export function SeminarRequestFormDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 
