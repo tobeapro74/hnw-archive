@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { User, LogOut, ChevronDown, Search, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ interface UserInfo {
   is_admin: boolean;
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState<ViewType>("home");
   const [articles, setArticles] = useState<Article[]>([]);
@@ -731,5 +731,13 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
