@@ -95,6 +95,14 @@ export function SeminarView() {
     });
   }, [seminars, filterType, filterCategory]);
 
+  // 필터링된 비정기 요청 (유형 필터 적용)
+  const filteredRequests = useMemo(() => {
+    // "정기"만 선택하면 비정기 요청은 0개
+    if (filterType === "정기") return [];
+    // 카테고리 필터는 비정기 요청에 적용하지 않음 (비정기는 카테고리 없음)
+    return requests;
+  }, [requests, filterType]);
+
   // 다가오는 세미나 (D-day 기준 정렬)
   const upcomingSeminars = useMemo(() => {
     return filteredSeminars
@@ -271,13 +279,13 @@ export function SeminarView() {
         ) : (
           <>
             {/* 통계 */}
-            <SeminarStats seminars={filteredSeminars} requests={requests} />
+            <SeminarStats seminars={filteredSeminars} requests={filteredRequests} />
 
             {/* 캘린더/리스트 뷰 */}
             {viewMode === "calendar" ? (
               <SeminarCalendar
                 seminars={filteredSeminars}
-                requests={requests}
+                requests={filteredRequests}
                 onDateClick={handleDateClick}
                 onSeminarClick={handleSeminarClick}
                 onRequestClick={handleRequestClick}
@@ -320,23 +328,23 @@ export function SeminarView() {
             )}
 
             {/* 비정기 세미나 요청 */}
-            {requests.length > 0 && (
+            {filteredRequests.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">비정기 세미나 요청</h3>
-                  <Badge variant="secondary">{requests.length}건</Badge>
+                  <Badge variant="secondary">{filteredRequests.length}건</Badge>
                 </div>
                 <div className="space-y-2">
-                  {requests.slice(0, 3).map((request) => (
+                  {filteredRequests.slice(0, 3).map((request) => (
                     <SeminarRequestCard
                       key={request._id}
                       request={request}
                       onClick={() => handleRequestClick(request)}
                     />
                   ))}
-                  {requests.length > 3 && (
+                  {filteredRequests.length > 3 && (
                     <Button variant="ghost" className="w-full text-sm">
-                      {requests.length - 3}개 더보기
+                      {filteredRequests.length - 3}개 더보기
                     </Button>
                   )}
                 </div>
