@@ -203,18 +203,18 @@ export function SeminarRequestFormDialog({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 고정 헤더 */}
-        <div className="shrink-0 bg-background border-b px-6 py-4">
+        <div className="shrink-0 bg-amber-500 px-6 py-4">
           {/* 닫기 핸들 */}
           <div className="flex justify-center mb-2">
-            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+            <div className="w-10 h-1 bg-white/30 rounded-full" />
           </div>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg font-semibold text-white">
               {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
             </h2>
             <button
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+              className="p-1.5 rounded-full hover:bg-white/20 transition-colors text-white"
             >
               <X className="w-5 h-5" />
             </button>
