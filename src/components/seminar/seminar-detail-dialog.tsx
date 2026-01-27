@@ -241,7 +241,7 @@ export function SeminarDetailDialog({
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {loading ? (
@@ -249,7 +249,7 @@ export function SeminarDetailDialog({
         ) : seminar ? (
           <>
             {/* 컴팩트 헤더 */}
-            <div className={cn("px-4 py-2", seminarCategoryBgColors[seminar.category])}>
+            <div className={cn("shrink-0 px-4 py-2", seminarCategoryBgColors[seminar.category])}>
               {/* 핸들 + 액션버튼 */}
               <div className="flex items-center justify-between">
                 <div className="w-8" />
@@ -330,7 +330,7 @@ export function SeminarDetailDialog({
             </div>
 
             {/* 스크롤 가능한 콘텐츠 */}
-            <div className="overflow-y-auto max-h-[calc(85vh-200px)]">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {/* 진행률 */}
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between mb-2">
