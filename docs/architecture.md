@@ -8,6 +8,7 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 ## 기술 스택
 
 ### Frontend
+
 - **Next.js 16** - App Router 사용
 - **React 19** - 최신 React 기능 활용
 - **TypeScript** - 타입 안정성
@@ -16,20 +17,23 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 - **Lucide React** - 아이콘
 
 ### Backend
+
 - **Next.js API Routes** - 서버리스 API
 - **MongoDB Atlas** - 클라우드 데이터베이스
 
 ### External APIs
+
 - **Google News RSS** - 뉴스 기사 검색 및 수집
 
 ### Deployment
+
 - **Vercel** - 호스팅 및 CI/CD
 - **배포 URL**: https://hnw-archive.vercel.app
 
 ## 디렉토리 구조
 
 ```
-src/
+1024src/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API 라우트
 │   │   ├── auth/                 # 인증 API
@@ -92,21 +96,25 @@ docs/                             # 프로젝트 문서
 ## 주요 기능
 
 ### 1. 홈 화면 (메인 대시보드)
+
 - **통계 대시보드**: 전체 기사 수, 언론사 수
 - **카테고리별 통계**: 인터뷰, 세미나 안내, 소개 및 홍보 (게이지 그래프)
 - **최근 홍보**: 최근 등록된 기사 목록 (이벤트별 그룹화)
 
 ### 2. 홍보 목록 (리스트 뷰)
+
 - **검색**: 기사 제목, 키워드, 언론사명 검색
 - **카테고리 필터**: 인터뷰, 세미나 안내, 소개 및 홍보
 - **태그 필터**: 단독기사, 특집기사, 보도기사
 - **이벤트별 그룹화**: 같은 이벤트 기사 펼치기/접기
 
 ### 3. 홍보 캘린더
+
 - 월별 캘린더에 기사 표시
 - 날짜 클릭 시 해당 날짜 기사 목록
 
 ### 4. 세미나 관리 (신규)
+
 - **세미나 현황 대시보드**
   - 정기/비정기 세미나 통계 (대기/승인/완료)
   - 카테고리별 통계 (패밀리오피스/법인)
@@ -125,25 +133,27 @@ docs/                             # 프로젝트 문서
   - 항목 추가/삭제/완료 토글
 
 ### 5. 기사관리 (관리자)
+
 - **기사 CRUD**: 추가, 수정, 삭제
 - **자동 크롤링**: 기사 저장 후 관련 기사 자동 검색
 - **일괄 등록**: 검색된 기사 선택하여 일괄 저장
 
 ## 하단 네비게이션
 
-| 탭 | 아이콘 | 설명 |
-|----|--------|------|
-| 홈 | Home | 메인 대시보드 |
-| 목록 | List | 홍보 기사 목록 |
-| 캘린더 | Calendar | 홍보 캘린더 |
-| 세미나 | ClipboardList | 세미나 관리 |
-| 기사관리 | Settings | 관리자 전용 (로그인 시) |
+| 탭       | 아이콘        | 설명                    |
+| -------- | ------------- | ----------------------- |
+| 홈       | Home          | 메인 대시보드           |
+| 목록     | List          | 홍보 기사 목록          |
+| 캘린더   | Calendar      | 홍보 캘린더             |
+| 세미나   | ClipboardList | 세미나 관리             |
+| 기사관리 | Settings      | 관리자 전용 (로그인 시) |
 
 ## 데이터베이스 스키마
 
 ### MongoDB Collections
 
 #### articles (기사)
+
 ```javascript
 {
   _id: ObjectId,
@@ -164,6 +174,7 @@ docs/                             # 프로젝트 문서
 ```
 
 #### users (사용자)
+
 ```javascript
 {
   _id: ObjectId,
@@ -176,6 +187,7 @@ docs/                             # 프로젝트 문서
 ```
 
 #### seminars (세미나) - 신규
+
 ```javascript
 {
   _id: ObjectId,
@@ -198,6 +210,7 @@ docs/                             # 프로젝트 문서
 ```
 
 #### seminar_requests (비정기 세미나 요청) - 신규
+
 ```javascript
 {
   _id: ObjectId,
@@ -220,6 +233,7 @@ docs/                             # 프로젝트 문서
 ```
 
 #### checklist_items (체크리스트 항목) - 신규
+
 ```javascript
 {
   _id: ObjectId,
@@ -239,59 +253,67 @@ docs/                             # 프로젝트 문서
 ## API 엔드포인트
 
 ### 인증 API
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| POST | /api/auth/register | 회원가입 |
-| POST | /api/auth/login | 로그인 |
-| POST | /api/auth/logout | 로그아웃 |
-| GET | /api/auth/me | 현재 사용자 정보 |
+
+| 메서드 | 경로               | 설명             |
+| ------ | ------------------ | ---------------- |
+| POST   | /api/auth/register | 회원가입         |
+| POST   | /api/auth/login    | 로그인           |
+| POST   | /api/auth/logout   | 로그아웃         |
+| GET    | /api/auth/me       | 현재 사용자 정보 |
 
 ### 기사 API
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/articles | 기사 목록 조회 |
-| POST | /api/articles | 기사 등록 |
-| PUT | /api/articles/[id] | 기사 수정 |
-| DELETE | /api/articles/[id] | 기사 삭제 |
+
+| 메서드 | 경로               | 설명           |
+| ------ | ------------------ | -------------- |
+| GET    | /api/articles      | 기사 목록 조회 |
+| POST   | /api/articles      | 기사 등록      |
+| PUT    | /api/articles/[id] | 기사 수정      |
+| DELETE | /api/articles/[id] | 기사 삭제      |
 
 ### 뉴스 검색 API
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/news/search | Google News RSS 검색 |
+
+| 메서드 | 경로             | 설명                 |
+| ------ | ---------------- | -------------------- |
+| GET    | /api/news/search | Google News RSS 검색 |
 
 ### 세미나 API (신규)
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/seminars | 세미나 목록 (필터: year, month, category, status) |
-| POST | /api/seminars | 세미나 생성 (+ 기본 체크리스트 자동 생성) |
-| GET | /api/seminars/[id] | 세미나 상세 + 체크리스트 |
-| PUT | /api/seminars/[id] | 세미나 수정 |
-| DELETE | /api/seminars/[id] | 세미나 삭제 (+ 체크리스트 삭제) |
+
+| 메서드 | 경로               | 설명                                              |
+| ------ | ------------------ | ------------------------------------------------- |
+| GET    | /api/seminars      | 세미나 목록 (필터: year, month, category, status) |
+| POST   | /api/seminars      | 세미나 생성 (+ 기본 체크리스트 자동 생성)         |
+| GET    | /api/seminars/[id] | 세미나 상세 + 체크리스트                          |
+| PUT    | /api/seminars/[id] | 세미나 수정                                       |
+| DELETE | /api/seminars/[id] | 세미나 삭제 (+ 체크리스트 삭제)                   |
 
 ### 비정기 세미나 요청 API (신규)
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/seminar-requests | 요청 목록 |
-| POST | /api/seminar-requests | 요청 등록 |
-| PUT | /api/seminar-requests/[id] | 요청 수정 |
+
+| 메서드 | 경로                       | 설명      |
+| ------ | -------------------------- | --------- |
+| GET    | /api/seminar-requests      | 요청 목록 |
+| POST   | /api/seminar-requests      | 요청 등록 |
+| PUT    | /api/seminar-requests/[id] | 요청 수정 |
 | DELETE | /api/seminar-requests/[id] | 요청 삭제 |
 
 ### 체크리스트 API (신규)
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/seminars/[id]/checklist | 체크리스트 조회 |
-| POST | /api/seminars/[id]/checklist | 체크리스트 항목 추가 |
-| PATCH | /api/checklist/[itemId] | 항목 완료 토글 |
-| DELETE | /api/checklist/[itemId] | 항목 삭제 |
+
+| 메서드 | 경로                         | 설명                 |
+| ------ | ---------------------------- | -------------------- |
+| GET    | /api/seminars/[id]/checklist | 체크리스트 조회      |
+| POST   | /api/seminars/[id]/checklist | 체크리스트 항목 추가 |
+| PATCH  | /api/checklist/[itemId]      | 항목 완료 토글       |
+| DELETE | /api/checklist/[itemId]      | 항목 삭제            |
 
 ## UI 컴포넌트
 
 ### 홍보 관련
+
 - **ArticleCard**: 기사 카드 컴포넌트
 - **ArticleGroup**: 이벤트별 기사 그룹 컴포넌트
 - **CalendarView**: 홍보 월별 캘린더
 
 ### 세미나 관련 (신규)
+
 - **SeminarView**: 세미나 메인 뷰 (캘린더/리스트 토글)
 - **SeminarCalendar**: 세미나 월별 캘린더
 - **SeminarCard/SeminarListItem**: 세미나 카드/리스트 항목
@@ -304,6 +326,7 @@ docs/                             # 프로젝트 문서
 - **ProgressBar/PhaseProgress**: 진행률 바
 
 ### 공통
+
 - **BottomNav**: 하단 네비게이션 (홈, 목록, 캘린더, 세미나, 기사관리)
 
 ## 기본 체크리스트 템플릿
@@ -311,54 +334,60 @@ docs/                             # 프로젝트 문서
 세미나 생성 시 자동으로 추가되는 기본 체크리스트:
 
 ### 사전 (D-14 ~ D-1)
-| 순서 | 항목 | 목표일 |
-|------|------|--------|
-| 1 | 강의자료 초안 작성 | D-14 |
-| 2 | 강의자료 내부 검토 | D-10 |
-| 3 | 참석자 명단 취합 | D-7 |
-| 4 | 강의자료 확정 | D-5 |
-| 5 | 강의자료 제본 | D-5 |
-| 6 | 안내 문자/이메일 발송 | D-3 |
-| 7 | 현수막/배너 준비 | D-2 |
-| 8 | 기념품 준비 | D-1 |
-| 9 | 참석자 명단 최종 확인 | D-1 |
+
+| 순서 | 항목                  | 목표일 |
+| ---- | --------------------- | ------ |
+| 1    | 강의자료 초안 작성    | D-14   |
+| 2    | 강의자료 내부 검토    | D-10   |
+| 3    | 참석자 명단 취합      | D-7    |
+| 4    | 강의자료 확정         | D-5    |
+| 5    | 강의자료 제본         | D-5    |
+| 6    | 안내 문자/이메일 발송 | D-3    |
+| 7    | 현수막/배너 준비      | D-2    |
+| 8    | 기념품 준비           | D-1    |
+| 9    | 참석자 명단 최종 확인 | D-1    |
 
 ### 당일 (D-day)
-| 순서 | 항목 |
-|------|------|
-| 1 | 장소 세팅 확인 |
-| 2 | 음향/영상 장비 점검 |
-| 3 | 참석자 등록 |
-| 4 | 강의 진행 |
-| 5 | 설문조사 수집 |
+
+| 순서 | 항목                |
+| ---- | ------------------- |
+| 1    | 장소 세팅 확인      |
+| 2    | 음향/영상 장비 점검 |
+| 3    | 참석자 등록         |
+| 4    | 강의 진행           |
+| 5    | 설문조사 수집       |
 
 ### 사후 (D+1 ~ D+7)
-| 순서 | 항목 | 목표일 |
-|------|------|--------|
-| 1 | 참석자 감사 문자 발송 | D+1 |
-| 2 | 강의자료 공유 | D+2 |
-| 3 | 설문조사 결과 정리 | D+3 |
-| 4 | 후속 미팅 스케줄링 | D+7 |
+
+| 순서 | 항목                  | 목표일 |
+| ---- | --------------------- | ------ |
+| 1    | 참석자 감사 문자 발송 | D+1    |
+| 2    | 강의자료 공유         | D+2    |
+| 3    | 설문조사 결과 정리    | D+3    |
+| 4    | 후속 미팅 스케줄링    | D+7    |
 
 ## 색상 코드
 
 ### 세미나 카테고리
-| 카테고리 | 색상 | Tailwind |
-|----------|------|----------|
+
+| 카테고리     | 색상 | Tailwind       |
+| ------------ | ---- | -------------- |
 | 패밀리오피스 | 보라 | `violet-500` |
-| 법인 | 하늘 | `sky-500` |
+| 법인         | 하늘 | `sky-500`    |
 
 ### 세미나 유형
-| 유형 | 색상 | Tailwind |
-|------|------|----------|
-| 정기 | 초록 | `emerald-500` |
-| 비정기 | 주황 | `amber-500` |
+
+| 유형   | 색상 | Tailwind        |
+| ------ | ---- | --------------- |
+| 정기   | 초록 | `emerald-500` |
+| 비정기 | 주황 | `amber-500`   |
 
 ### 체크리스트 단계
-| 단계 | 색상 | Tailwind |
-|------|------|----------|
-| 사전 | 노랑 | `amber-500` |
-| 당일 | 주황 | `orange-500` |
+
+| 단계 | 색상 | Tailwind        |
+| ---- | ---- | --------------- |
+| 사전 | 노랑 | `amber-500`   |
+| 당일 | 주황 | `orange-500`  |
 | 사후 | 초록 | `emerald-500` |
 
 ## 환경 변수
@@ -369,12 +398,56 @@ MONGODB_URI=mongodb+srv://...
 
 # Auth
 JWT_SECRET=your-jwt-secret
-ADMIN_SECRET_KEY=your-admin-key  # 관리자 회원가입 시 필요
+ADMIN_SECRET_KEY=hnw-admin-2025  # 관리자 회원가입 시 필요
 ```
+
+## 관리자 계정
+
+### 기본 관리자 계정
+
+| 항목     | 값                 |
+| -------- | ------------------ |
+| 이메일   | admin@hnw.co.kr    |
+| 비밀번호 | admin1234          |
+| 권한     | admin              |
+
+### 계정 리셋 방법
+
+MongoDB에서 직접 리셋:
+```javascript
+// Node.js 스크립트
+const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
+
+const uri = 'mongodb+srv://tobeapro:1023@cluster0.ppfoisv.mongodb.net/hnw-archive';
+const client = new MongoClient(uri);
+
+await client.connect();
+const db = client.db('hnw-archive');
+
+// 기존 사용자 삭제
+await db.collection('users').deleteMany({});
+
+// 새 관리자 생성
+const hashedPassword = await bcrypt.hash('admin1234', 10);
+await db.collection('users').insertOne({
+  email: 'admin@hnw.co.kr',
+  password: hashedPassword,
+  name: 'HNW Admin',
+  role: 'admin',
+  createdAt: new Date(),
+});
+```
+
+### 새 관리자 추가 (회원가입)
+
+1. 앱 접속 → 로그인 화면 → 회원가입
+2. 관리자 키 입력: `hnw-admin-2025`
 
 ## 배포
 
 ### Vercel 배포
+
 ```bash
 # 프로덕션 배포
 npx vercel --prod
