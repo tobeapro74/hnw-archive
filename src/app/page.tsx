@@ -229,7 +229,9 @@ function HomeContent() {
     return stats;
   }, [yearFilteredArticles]);
 
-  // 태그별 distinct 통계 (이벤트 기준 중복 제거)
+  // 태그별 distinct 통계 (중복 제거)
+  // - 보도기사: 이벤트명만으로 중복 판단 (같은 이벤트가 며칠에 걸쳐 발행될 수 있음)
+  // - 단독기사/특집기사: 이벤트명 + 발행일로 중복 판단 (같은 인터뷰이라도 다른 날짜면 별개 기사)
   const tagDistinctStats = useMemo(() => {
     const stats: Record<string, number> = {
       "보도기사": 0,
@@ -237,21 +239,27 @@ function HomeContent() {
       "단독기사": 0,
     };
 
-    // 각 태그별로 unique eventName 수 + eventName 없는 기사 수 계산
     (["보도기사", "특집기사", "단독기사"] as const).forEach((tag) => {
       const tagArticles = yearFilteredArticles.filter((a) => a.tag === tag);
-      const eventNames = new Set<string>();
+      const uniqueKeys = new Set<string>();
       let noEventCount = 0;
 
       tagArticles.forEach((article) => {
         if (article.eventName) {
-          eventNames.add(article.eventName);
+          if (tag === "보도기사") {
+            // 보도기사: 이벤트명만으로 중복 판단
+            uniqueKeys.add(article.eventName);
+          } else {
+            // 단독기사/특집기사: 이벤트명 + 발행일로 중복 판단
+            const dateStr = new Date(article.publishedAt).toISOString().split("T")[0];
+            uniqueKeys.add(`${article.eventName}|${dateStr}`);
+          }
         } else {
           noEventCount += 1;
         }
       });
 
-      stats[tag] = eventNames.size + noEventCount;
+      stats[tag] = uniqueKeys.size + noEventCount;
     });
 
     return stats;
