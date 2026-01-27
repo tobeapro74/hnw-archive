@@ -5,8 +5,24 @@ import { getDb } from '@/lib/mongodb';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, oldValue, newValue, collection, field } = body;
+    const { action, oldValue, newValue, collection, field, email } = body;
 
+    const db = await getDb();
+
+    // 사용자 관리자 승격
+    if (action === 'make_admin' && email) {
+      const result = await db.collection('users').updateOne(
+        { email },
+        { $set: { is_admin: true } }
+      );
+      return NextResponse.json({
+        success: true,
+        matched: result.matchedCount,
+        modified: result.modifiedCount,
+      });
+    }
+
+    // 기존 필드 업데이트 로직
     if (action !== 'update_field') {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -15,7 +31,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const db = await getDb();
     const result = await db.collection(collection).updateMany(
       { [field]: oldValue },
       { $set: { [field]: newValue } }
