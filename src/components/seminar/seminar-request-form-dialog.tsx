@@ -202,23 +202,21 @@ export function SeminarRequestFormDialog({
         className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 고정 헤더 */}
-        <div className="shrink-0 bg-amber-500 px-6 py-4">
-          {/* 닫기 핸들 */}
-          <div className="flex justify-center mb-2">
-            <div className="w-10 h-1 bg-white/30 rounded-full" />
-          </div>
+        {/* 컴팩트 헤더 */}
+        <div className="shrink-0 bg-amber-500 px-4 py-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
-            </h2>
+            <div className="w-7" />
+            <div className="w-8 h-1 bg-white/30 rounded-full" />
             <button
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-full hover:bg-white/20 transition-colors text-white"
+              className="p-1 rounded-full hover:bg-white/20 transition-colors text-white"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
+          <h2 className="text-base font-semibold text-white text-center -mt-1">
+            {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
+          </h2>
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
