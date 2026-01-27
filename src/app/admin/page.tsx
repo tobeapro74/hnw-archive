@@ -657,6 +657,22 @@ export default function AdminPage() {
           if (!article.pubDate) return false;
           const articleDate = new Date(article.pubDate);
           const targetDate = new Date(savedPublishedAt);
+
+          // 디버그 로그 (처음 5개만)
+          if (article.originalIndex < 5) {
+            console.log("날짜 비교:", {
+              원본pubDate: article.pubDate,
+              articleDate: articleDate.toISOString(),
+              articleYear: articleDate.getFullYear(),
+              articleMonth: articleDate.getMonth() + 1,
+              articleDay: articleDate.getDate(),
+              targetDate: targetDate.toISOString(),
+              targetYear: targetDate.getFullYear(),
+              targetMonth: targetDate.getMonth() + 1,
+              targetDay: targetDate.getDate(),
+            });
+          }
+
           return (
             articleDate.getFullYear() === targetDate.getFullYear() &&
             articleDate.getMonth() === targetDate.getMonth() &&
