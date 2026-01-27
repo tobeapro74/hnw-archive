@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Check, Trash2 } from "lucide-react";
 import {
   SeminarRequest,
   SeminarRequestTopic,
@@ -17,9 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -35,6 +34,7 @@ interface SeminarRequestFormDialogProps {
   onOpenChange: (open: boolean) => void;
   request?: SeminarRequest | null;
   onSave: (request: SeminarRequest) => void;
+  onDelete?: (requestId: string) => void;
 }
 
 export function SeminarRequestFormDialog({
@@ -42,8 +42,10 @@ export function SeminarRequestFormDialog({
   onOpenChange,
   request,
   onSave,
+  onDelete,
 }: SeminarRequestFormDialogProps) {
   const isEditing = !!request;
+  const [deleting, setDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     requestingCenter: "",
@@ -52,7 +54,7 @@ export function SeminarRequestFormDialog({
     minAttendees: "",
     maxAttendees: "",
     requestedDate: "",
-    topic: "시황" as SeminarRequestTopic,
+    topics: [] as SeminarRequestTopic[],
     topicDetail: "",
     receiver: "",
     notes: "",
@@ -71,7 +73,7 @@ export function SeminarRequestFormDialog({
         minAttendees: request.minAttendees.toString(),
         maxAttendees: request.maxAttendees.toString(),
         requestedDate: reqDate.toISOString().split("T")[0],
-        topic: request.topic,
+        topics: request.topics || [],
         topicDetail: request.topicDetail || "",
         receiver: request.receiver,
         notes: request.notes || "",
@@ -85,7 +87,7 @@ export function SeminarRequestFormDialog({
         minAttendees: "",
         maxAttendees: "",
         requestedDate: "",
-        topic: "시황",
+        topics: [],
         topicDetail: "",
         receiver: "",
         notes: "",
@@ -94,15 +96,25 @@ export function SeminarRequestFormDialog({
     }
   }, [request, open]);
 
+  const toggleTopic = (topic: SeminarRequestTopic) => {
+    setFormData((prev) => ({
+      ...prev,
+      topics: prev.topics.includes(topic)
+        ? prev.topics.filter((t) => t !== topic)
+        : [...prev.topics, topic],
+    }));
+  };
+
   const handleSubmit = async () => {
     if (
       !formData.requestingCenter ||
       !formData.requestLocation ||
       !formData.targetCorporation ||
       !formData.requestedDate ||
-      !formData.receiver
+      !formData.receiver ||
+      formData.topics.length === 0
     ) {
-      alert("필수 항목을 입력해주세요.");
+      alert("필수 항목을 입력해주세요. (주제를 1개 이상 선택해주세요)");
       return;
     }
 
@@ -116,8 +128,8 @@ export function SeminarRequestFormDialog({
         minAttendees: parseInt(formData.minAttendees) || 0,
         maxAttendees: parseInt(formData.maxAttendees) || 0,
         requestedDate: formData.requestedDate,
-        topic: formData.topic,
-        topicDetail: formData.topic === "기타" ? formData.topicDetail : undefined,
+        topics: formData.topics,
+        topicDetail: formData.topics.includes("기타") ? formData.topicDetail : undefined,
         receiver: formData.receiver,
         notes: formData.notes || undefined,
       };
@@ -151,18 +163,46 @@ export function SeminarRequestFormDialog({
     }
   };
 
+  const handleDelete = async () => {
+    if (!request?._id) return;
+
+    if (!confirm("이 요청을 삭제하시겠습니까?")) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/seminar-requests/${request._id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        onDelete?.(request._id);
+        onOpenChange(false);
+      } else {
+        const error = await res.json();
+        alert(error.error || "삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to delete request:", error);
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const statuses: SeminarRequestStatus[] = ["요청접수", "검토중", "승인", "반려", "완료"];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+        {/* 고정 헤더 */}
+        <div className="shrink-0 bg-background border-b px-6 py-4">
           <DialogTitle>
             {isEditing ? "비정기 세미나 요청 수정" : "비정기 세미나 요청 등록"}
           </DialogTitle>
-        </DialogHeader>
+        </div>
 
-        <div className="space-y-4 py-4">
+        {/* 스크롤 가능한 콘텐츠 */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0">
           {/* 요청센터 & 장소 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -237,27 +277,31 @@ export function SeminarRequestFormDialog({
             />
           </div>
 
-          {/* 요청주제 */}
+          {/* 요청주제 (복수 선택) */}
           <div className="space-y-2">
-            <Label>요청주제 *</Label>
-            <Select
-              value={formData.topic}
-              onValueChange={(value) =>
-                setFormData({ ...formData, topic: value as SeminarRequestTopic })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {seminarRequestTopics.map((topic) => (
-                  <SelectItem key={topic} value={topic}>
+            <Label>요청주제 * (복수 선택 가능)</Label>
+            <div className="flex flex-wrap gap-2">
+              {seminarRequestTopics.map((topic) => {
+                const isSelected = formData.topics.includes(topic);
+                return (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => toggleTopic(topic)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-muted hover:border-primary/50"
+                    )}
+                  >
+                    {isSelected && <Check className="w-3 h-3 inline mr-1" />}
                     {topic}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formData.topic === "기타" && (
+                  </button>
+                );
+              })}
+            </div>
+            {formData.topics.includes("기타") && (
               <Input
                 value={formData.topicDetail}
                 onChange={(e) => setFormData({ ...formData, topicDetail: e.target.value })}
@@ -323,14 +367,28 @@ export function SeminarRequestFormDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            취소
-          </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
-            {saving ? "저장 중..." : isEditing ? "수정" : "등록"}
-          </Button>
-        </DialogFooter>
+        {/* 고정 푸터 */}
+        <div className="shrink-0 bg-background border-t px-6 py-4">
+          <div className="flex items-center gap-3">
+            {isEditing && onDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-sm text-destructive hover:underline disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4 inline mr-1" />
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            )}
+            <div className="flex-1" />
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              취소
+            </Button>
+            <Button onClick={handleSubmit} disabled={saving}>
+              {saving ? "저장 중..." : isEditing ? "수정" : "등록"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -344,6 +402,7 @@ interface SeminarRequestCardProps {
 
 export function SeminarRequestCard({ request, onClick }: SeminarRequestCardProps) {
   const requestDate = new Date(request.requestedDate);
+  const topicsDisplay = request.topics?.join(", ") || "";
 
   return (
     <button
@@ -376,8 +435,9 @@ export function SeminarRequestCard({ request, onClick }: SeminarRequestCardProps
         </div>
         <div className="flex items-center gap-2">
           <span>👥 {request.minAttendees}~{request.maxAttendees}명</span>
-          <span>•</span>
-          <span>📋 {request.topic}</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span>📋 {topicsDisplay || "-"}</span>
         </div>
         <div className="flex items-center gap-2">
           <span>👤 접수: {request.receiver}</span>

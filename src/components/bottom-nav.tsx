@@ -15,8 +15,8 @@ export function BottomNav({ activeTab, onTabChange, isAdmin }: BottomNavProps) {
   const tabs = [
     { id: "home" as TabType, icon: Home, label: "홈" },
     { id: "list" as TabType, icon: List, label: "목록" },
-    { id: "seminar" as TabType, icon: ClipboardList, label: "세미나" },
     { id: "calendar" as TabType, icon: Calendar, label: "캘린더" },
+    { id: "seminar" as TabType, icon: ClipboardList, label: "세미나" },
     ...(isAdmin ? [{ id: "admin" as TabType, icon: Settings, label: "기사관리" }] : []),
   ];
 

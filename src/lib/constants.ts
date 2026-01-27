@@ -3,52 +3,52 @@ import { ArticleCategory, ArticleTag } from "./types";
 
 // 카테고리별 색상
 export const categoryColors: Record<ArticleCategory, string> = {
-  "인터뷰": "purple",
-  "세미나 안내": "orange",
-  "소개 및 홍보": "cyan",
+  "인터뷰": "rose",
+  "세미나 안내": "amber",
+  "소개 및 홍보": "teal",
 };
 
 export const categoryBgColors: Record<ArticleCategory, string> = {
-  "인터뷰": "bg-purple-500",
-  "세미나 안내": "bg-orange-500",
-  "소개 및 홍보": "bg-cyan-500",
+  "인터뷰": "bg-rose-500",
+  "세미나 안내": "bg-amber-500",
+  "소개 및 홍보": "bg-teal-500",
 };
 
 export const categoryTextColors: Record<ArticleCategory, string> = {
-  "인터뷰": "text-purple-500",
-  "세미나 안내": "text-orange-500",
-  "소개 및 홍보": "text-cyan-500",
+  "인터뷰": "text-rose-600",
+  "세미나 안내": "text-amber-600",
+  "소개 및 홍보": "text-teal-600",
 };
 
 export const categoryLightBgColors: Record<ArticleCategory, string> = {
-  "인터뷰": "bg-purple-100",
-  "세미나 안내": "bg-orange-100",
-  "소개 및 홍보": "bg-cyan-100",
+  "인터뷰": "bg-rose-50",
+  "세미나 안내": "bg-amber-50",
+  "소개 및 홍보": "bg-teal-50",
 };
 
 // 태그별 색상
 export const tagColors: Record<ArticleTag, string> = {
-  "단독기사": "red",
-  "특집기사": "indigo",
-  "보도기사": "green",
+  "단독기사": "rose",
+  "특집기사": "violet",
+  "보도기사": "emerald",
 };
 
 export const tagBgColors: Record<ArticleTag, string> = {
-  "단독기사": "bg-red-500",
-  "특집기사": "bg-indigo-500",
-  "보도기사": "bg-green-500",
+  "단독기사": "bg-rose-500",
+  "특집기사": "bg-violet-500",
+  "보도기사": "bg-emerald-500",
 };
 
 export const tagTextColors: Record<ArticleTag, string> = {
-  "단독기사": "text-red-500",
-  "특집기사": "text-indigo-500",
-  "보도기사": "text-green-500",
+  "단독기사": "text-rose-600",
+  "특집기사": "text-violet-600",
+  "보도기사": "text-emerald-600",
 };
 
 export const tagLightBgColors: Record<ArticleTag, string> = {
-  "단독기사": "bg-red-100",
-  "특집기사": "bg-indigo-100",
-  "보도기사": "bg-green-100",
+  "단독기사": "bg-rose-50",
+  "특집기사": "bg-violet-50",
+  "보도기사": "bg-emerald-50",
 };
 
 // 카테고리별 아이콘
@@ -67,13 +67,13 @@ export const tagIcons: Record<ArticleTag, typeof Zap> = {
 
 // 차트용 HEX 색상
 export const categoryHexColors: Record<ArticleCategory, string> = {
-  "인터뷰": "#8b5cf6", // purple-500
-  "세미나 안내": "#f97316", // orange-500
-  "소개 및 홍보": "#06b6d4", // cyan-500
+  "인터뷰": "#f43f5e", // rose-500
+  "세미나 안내": "#f59e0b", // amber-500
+  "소개 및 홍보": "#14b8a6", // teal-500
 };
 
 export const tagHexColors: Record<ArticleTag, string> = {
-  "단독기사": "#ef4444", // red-500
-  "특집기사": "#6366f1", // indigo-500
-  "보도기사": "#22c55e", // green-500
+  "단독기사": "#f43f5e", // rose-500
+  "특집기사": "#8b5cf6", // violet-500
+  "보도기사": "#10b981", // emerald-500
 };

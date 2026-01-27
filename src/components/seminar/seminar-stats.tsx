@@ -60,38 +60,37 @@ export function SeminarStats({ seminars, onStatClick }: SeminarStatsProps) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* 주간 알림 */}
       {thisWeekSeminars > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-amber-500" />
-          <span className="text-sm text-amber-700">
-            이번 주 세미나가 <strong>{thisWeekSeminars}개</strong> 있습니다.
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          <span className="text-xs text-amber-700">
+            이번 주 세미나 <strong>{thisWeekSeminars}개</strong>
           </span>
         </div>
       )}
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {statCards.map(({ key, label, count, icon: Icon, color, lightColor, textColor }) => (
           <button
             key={key}
             onClick={() => onStatClick?.(key)}
             className={cn(
-              "p-4 rounded-xl text-left transition-all hover:scale-[1.02] active:scale-[0.98]",
+              "p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] active:scale-[0.98]",
               lightColor
             )}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={cn("p-1.5 rounded-lg", color)}>
-                <Icon className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between">
+              <div className={cn("p-1 rounded", color)}>
+                <Icon className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className={cn("text-xl font-bold", textColor)}>
+                {count}
               </div>
             </div>
-            <div className={cn("text-2xl font-bold", textColor)}>
-              {count}
-              <span className="text-sm font-normal ml-0.5">건</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">{label}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">{label}</div>
           </button>
         ))}
       </div>

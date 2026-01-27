@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { User, LogOut, ChevronDown, Search } from "lucide-react";
+import { User, LogOut, ChevronDown, Search, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -543,23 +543,41 @@ export default function Home() {
         {/* 헤더 */}
         <header className="bg-gradient-to-r from-blue-700 to-blue-600 safe-area-top sticky top-0 z-50">
           <div className="px-4 py-3 flex items-center justify-between">
-            <div className="w-10" />
+            {/* 좌측: 뒤로가기 버튼 (홈이 아닐 때만) */}
+            {currentView !== "home" ? (
+              <button
+                onClick={() => setCurrentView("home")}
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className="w-10" />
+            )}
+
+            {/* 중앙: 타이틀 */}
             <h1 className="text-xl font-bold text-white text-center">
-              HNW 홍보 아카이브
+              {currentView === "home" && "HNW 홍보·세미나 매니저"}
+              {currentView === "list" && "홍보 목록"}
+              {currentView === "seminar" && "세미나 관리"}
+              {currentView === "calendar" && "홍보 캘린더"}
+              {currentView === "admin" && "기사관리"}
             </h1>
+
+            {/* 우측: 사용자 메뉴 */}
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                 >
                   <User className="w-5 h-5" />
                   <ChevronDown className="w-3 h-3 absolute bottom-0 right-0" />
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-12 bg-card rounded-lg shadow-lg border min-w-[140px] py-1 z-50">
+                  <div className="absolute right-0 top-12 bg-white rounded-lg shadow-lg border min-w-[140px] py-1 z-50">
                     <div className="px-3 py-2 border-b">
-                      <p className="text-sm font-medium">{user.name}님</p>
+                      <p className="text-sm font-medium text-gray-900">{user.name}님</p>
                       {user.is_admin && (
                         <Badge variant="secondary" className="mt-1 text-xs">
                           관리자
@@ -568,7 +586,7 @@ export default function Home() {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2 text-destructive"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 text-rose-500"
                     >
                       <LogOut className="w-4 h-4" />
                       로그아웃
@@ -579,7 +597,7 @@ export default function Home() {
             ) : (
               <a
                 href="/admin"
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
               >
                 <User className="w-5 h-5" />
               </a>

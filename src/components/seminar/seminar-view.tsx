@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, FileText, Calendar as CalendarIcon, List } from "lucide-react";
+import { Calendar as CalendarIcon, List, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Seminar,
   SeminarRequest,
   SeminarCategory,
-  SeminarType,
   calculateDday,
 } from "@/lib/seminar-types";
-import { SeminarCalendar, MiniCalendar } from "./seminar-calendar";
+import { SeminarCalendar } from "./seminar-calendar";
 import { SeminarCard, SeminarListItem } from "./seminar-card";
 import { SeminarStats, SeminarTypeStats } from "./seminar-stats";
 import { SeminarDetailDialog } from "./seminar-detail-dialog";
@@ -18,7 +17,13 @@ import { SeminarFormDialog } from "./seminar-form-dialog";
 import { SeminarRequestFormDialog, SeminarRequestCard } from "./seminar-request-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ViewMode = "calendar" | "list";
 type FilterType = "all" | "정기" | "비정기";
@@ -39,6 +44,14 @@ export function SeminarView() {
   const [editingSeminar, setEditingSeminar] = useState<Seminar | null>(null);
   const [requestFormDialogOpen, setRequestFormDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<SeminarRequest | null>(null);
+
+  // 날짜 선택 팝업
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [selectedDateItems, setSelectedDateItems] = useState<{
+    date: Date;
+    seminars: Seminar[];
+    requests: SeminarRequest[];
+  } | null>(null);
 
   // 연도 필터
   const currentYear = new Date().getFullYear();
@@ -142,10 +155,23 @@ export function SeminarView() {
     }
   };
 
+  // 요청 삭제
+  const handleDeleteRequest = (requestId: string) => {
+    setRequests((prev) => prev.filter((r) => r._id !== requestId));
+  };
+
   // 요청 클릭
   const handleRequestClick = (request: SeminarRequest) => {
     setEditingRequest(request);
     setRequestFormDialogOpen(true);
+  };
+
+  // 날짜 클릭 (여러 항목이 있을 때)
+  const handleDateClick = (date: Date, daySeminars: Seminar[], dayRequests: SeminarRequest[]) => {
+    if (daySeminars.length + dayRequests.length > 1) {
+      setSelectedDateItems({ date, seminars: daySeminars, requests: dayRequests });
+      setDatePickerOpen(true);
+    }
   };
 
   // 사용 가능한 연도
@@ -153,110 +179,90 @@ export function SeminarView() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-30 border-b" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-xl font-bold">세미나 관리</h1>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleNewRequest}>
-              <FileText className="w-4 h-4 mr-1" />
-              요청등록
-            </Button>
-            <Button size="sm" onClick={handleNewSeminar}>
-              <Plus className="w-4 h-4 mr-1" />
-              세미나
-            </Button>
+      {/* 필터 및 버튼 */}
+      <div className="sticky top-0 z-30 border-b bg-background">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleNewRequest}>
+            비정기
+          </Button>
+          <Button size="sm" onClick={handleNewSeminar}>
+            정기
+          </Button>
+          <div className="flex-1" />
+          {/* 뷰 모드 토글 */}
+          <div className="flex gap-1 bg-muted rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={cn(
+                "p-1.5 rounded",
+                viewMode === "calendar" ? "bg-background shadow-sm" : ""
+              )}
+            >
+              <CalendarIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-1.5 rounded",
+                viewMode === "list" ? "bg-background shadow-sm" : ""
+              )}
+            >
+              <List className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* 연도 & 필터 */}
-        <div className="px-4 pb-3 space-y-2">
-          {/* 연도 탭 */}
-          <div className="flex gap-2">
-            {availableYears.map((year) => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                  selectedYear === year
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-
-          {/* 유형 & 카테고리 필터 */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-1">
-              {(["all", "정기", "비정기"] as FilterType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setFilterType(type)}
-                  className={cn(
-                    "px-2 py-1 rounded text-xs font-medium transition-colors",
-                    filterType === type
-                      ? type === "정기"
-                        ? "bg-emerald-500 text-white"
-                        : type === "비정기"
-                        ? "bg-amber-500 text-white"
-                        : "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {type === "all" ? "전체" : type}
-                </button>
+        {/* 필터 (드롭다운) */}
+        <div className="px-4 pb-3 flex items-center gap-2">
+          {/* 연도 */}
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(value) => setSelectedYear(parseInt(value))}
+          >
+            <SelectTrigger className="w-[90px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}년
+                </SelectItem>
               ))}
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex gap-1">
-              {(["all", "패밀리오피스", "법인"] as (SeminarCategory | "all")[]).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setFilterCategory(cat)}
-                  className={cn(
-                    "px-2 py-1 rounded text-xs font-medium transition-colors",
-                    filterCategory === cat
-                      ? cat === "패밀리오피스"
-                        ? "bg-purple-500 text-white"
-                        : cat === "법인"
-                        ? "bg-blue-500 text-white"
-                        : "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {cat === "all" ? "전체" : cat}
-                </button>
-              ))}
-            </div>
+            </SelectContent>
+          </Select>
 
-            {/* 뷰 모드 토글 */}
-            <div className="ml-auto flex gap-1 bg-muted rounded-lg p-0.5">
-              <button
-                onClick={() => setViewMode("calendar")}
-                className={cn(
-                  "p-1.5 rounded",
-                  viewMode === "calendar" ? "bg-background shadow-sm" : ""
-                )}
-              >
-                <CalendarIcon className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "p-1.5 rounded",
-                  viewMode === "list" ? "bg-background shadow-sm" : ""
-                )}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          {/* 유형 (정기/비정기) */}
+          <Select
+            value={filterType}
+            onValueChange={(value) => setFilterType(value as FilterType)}
+          >
+            <SelectTrigger className="w-[100px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 유형</SelectItem>
+              <SelectItem value="정기">정기</SelectItem>
+              <SelectItem value="비정기">비정기</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 카테고리 */}
+          <Select
+            value={filterCategory}
+            onValueChange={(value) => setFilterCategory(value as SeminarCategory | "all")}
+          >
+            <SelectTrigger className="w-[130px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 카테고리</SelectItem>
+              <SelectItem value="패밀리오피스">패밀리오피스</SelectItem>
+              <SelectItem value="법인">법인</SelectItem>
+            </SelectContent>
+          </Select>
+
         </div>
-      </header>
+      </div>
 
       {/* 컨텐츠 */}
       <div className="p-4 space-y-4">
@@ -271,7 +277,10 @@ export function SeminarView() {
             {viewMode === "calendar" ? (
               <SeminarCalendar
                 seminars={filteredSeminars}
+                requests={requests}
+                onDateClick={handleDateClick}
                 onSeminarClick={handleSeminarClick}
+                onRequestClick={handleRequestClick}
               />
             ) : (
               <div className="space-y-2">
@@ -361,7 +370,73 @@ export function SeminarView() {
         onOpenChange={setRequestFormDialogOpen}
         request={editingRequest}
         onSave={handleSaveRequest}
+        onDelete={handleDeleteRequest}
       />
+
+      {/* 날짜 선택 팝업 */}
+      {datePickerOpen && selectedDateItems && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setDatePickerOpen(false)}>
+          <div
+            className="w-full max-w-lg bg-background rounded-t-2xl p-4 pb-8 animate-in slide-in-from-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">
+                {selectedDateItems.date.toLocaleDateString("ko-KR", {
+                  month: "long",
+                  day: "numeric",
+                  weekday: "short",
+                })}
+              </h3>
+              <button onClick={() => setDatePickerOpen(false)} className="p-1 hover:bg-muted rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {selectedDateItems.seminars.map((seminar) => (
+                <button
+                  key={seminar._id}
+                  onClick={() => {
+                    setDatePickerOpen(false);
+                    handleSeminarClick(seminar);
+                  }}
+                  className="w-full text-left p-3 rounded-lg border hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      seminar.category === "패밀리오피스" ? "bg-violet-500" : "bg-sky-500"
+                    )} />
+                    <span className="font-medium">{seminar.title}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {seminar.location} · {seminar.seminarType}
+                  </div>
+                </button>
+              ))}
+              {selectedDateItems.requests.map((request) => (
+                <button
+                  key={request._id}
+                  onClick={() => {
+                    setDatePickerOpen(false);
+                    handleRequestClick(request);
+                  }}
+                  className="w-full text-left p-3 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="font-medium">{request.targetCorporation}</span>
+                    <Badge variant="outline" className="text-[10px] ml-auto">{request.status}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {request.requestingCenter} · {request.topics?.join(", ")}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

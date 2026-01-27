@@ -69,7 +69,8 @@ export async function POST(request: Request) {
       !body.requestLocation ||
       !body.targetCorporation ||
       !body.requestedDate ||
-      !body.topic ||
+      !body.topics ||
+      body.topics.length === 0 ||
       !body.receiver
     ) {
       return NextResponse.json(
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       minAttendees: body.minAttendees || 0,
       maxAttendees: body.maxAttendees || 0,
       requestedDate: new Date(body.requestedDate),
-      topic: body.topic,
+      topics: body.topics,
       topicDetail: body.topicDetail,
       receiver: body.receiver,
       status: "요청접수",

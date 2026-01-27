@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, Users, X, Edit2, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Users, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SeminarWithChecklist,
@@ -224,10 +224,10 @@ export function SeminarDetailDialog({
         ) : seminar ? (
           <>
             {/* 헤더 */}
-            <div className={cn("p-4", seminarCategoryBgColors[seminar.category])}>
+            <div className={cn("p-4 pt-12", seminarCategoryBgColors[seminar.category])}>
               <DialogHeader className="space-y-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge
                       className={cn(
                         "text-xs",
@@ -248,7 +248,7 @@ export function SeminarDetailDialog({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-white hover:bg-white/20"
+                        className="text-white hover:bg-white/20 w-8 h-8"
                         onClick={() => onEdit(seminar)}
                       >
                         <Edit2 className="w-4 h-4" />
@@ -258,7 +258,7 @@ export function SeminarDetailDialog({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-white hover:bg-white/20"
+                        className="text-white hover:bg-white/20 w-8 h-8"
                         onClick={handleDelete}
                       >
                         <Trash2 className="w-4 h-4" />

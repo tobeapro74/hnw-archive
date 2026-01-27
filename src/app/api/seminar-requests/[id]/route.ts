@@ -71,7 +71,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (body.minAttendees !== undefined) updateFields.minAttendees = body.minAttendees;
     if (body.maxAttendees !== undefined) updateFields.maxAttendees = body.maxAttendees;
     if (body.requestedDate !== undefined) updateFields.requestedDate = new Date(body.requestedDate);
-    if (body.topic !== undefined) updateFields.topic = body.topic;
+    if (body.topics !== undefined) updateFields.topics = body.topics;
     if (body.topicDetail !== undefined) updateFields.topicDetail = body.topicDetail;
     if (body.receiver !== undefined) updateFields.receiver = body.receiver;
     if (body.status !== undefined) updateFields.status = body.status;

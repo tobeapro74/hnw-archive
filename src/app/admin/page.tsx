@@ -981,7 +981,7 @@ export default function AdminPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/10"
             onClick={() => router.push("/")}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -990,7 +990,7 @@ export default function AdminPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/10"
             onClick={handleLogout}
           >
             <LogOut className="w-5 h-5" />

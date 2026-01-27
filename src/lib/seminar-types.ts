@@ -26,6 +26,7 @@ export type SeminarRequestTopic =
   | "주주가치 제고"
   | "IR/PR/공시 자문"
   | "가업승계"
+  | "네트워크"
   | "기타";
 
 // 체크리스트 단계
@@ -61,7 +62,7 @@ export interface SeminarRequest {
   minAttendees: number;               // 모집인원 최소
   maxAttendees: number;               // 모집인원 최대
   requestedDate: Date | string;       // 요청일자
-  topic: SeminarRequestTopic;         // 요청주제
+  topics: SeminarRequestTopic[];      // 요청주제 (복수 선택 가능)
   topicDetail?: string;               // 주제 상세 (기타인 경우)
   receiver: string;                   // 접수자
   status: SeminarRequestStatus;       // 요청 상태
@@ -142,7 +143,7 @@ export interface CreateSeminarRequestInput {
   minAttendees: number;
   maxAttendees: number;
   requestedDate: string;
-  topic: SeminarRequestTopic;
+  topics: SeminarRequestTopic[];
   topicDetail?: string;
   receiver: string;
   notes?: string;
@@ -173,49 +174,49 @@ export interface UpdateChecklistItemRequest {
   order?: number;
 }
 
-// 색상 상수
+// 색상 상수 (Premium Dark Theme)
 export const seminarCategoryColors: Record<SeminarCategory, string> = {
-  "패밀리오피스": "purple",
-  "법인": "blue",
+  "패밀리오피스": "violet",
+  "법인": "sky",
 };
 
 export const seminarCategoryBgColors: Record<SeminarCategory, string> = {
-  "패밀리오피스": "bg-purple-500",
-  "법인": "bg-blue-500",
+  "패밀리오피스": "bg-violet-500",
+  "법인": "bg-sky-500",
 };
 
 export const seminarCategoryLightBgColors: Record<SeminarCategory, string> = {
-  "패밀리오피스": "bg-purple-50",
-  "법인": "bg-blue-50",
+  "패밀리오피스": "bg-violet-50",
+  "법인": "bg-sky-50",
 };
 
 export const seminarCategoryTextColors: Record<SeminarCategory, string> = {
-  "패밀리오피스": "text-purple-600",
-  "법인": "text-blue-600",
+  "패밀리오피스": "text-violet-600",
+  "법인": "text-sky-600",
 };
 
 export const checklistPhaseBgColors: Record<ChecklistPhase, string> = {
-  "사전": "bg-yellow-500",
+  "사전": "bg-amber-500",
   "당일": "bg-orange-500",
-  "사후": "bg-green-500",
+  "사후": "bg-emerald-500",
 };
 
 export const checklistPhaseLightBgColors: Record<ChecklistPhase, string> = {
-  "사전": "bg-yellow-50",
+  "사전": "bg-amber-50",
   "당일": "bg-orange-50",
-  "사후": "bg-green-50",
+  "사후": "bg-emerald-50",
 };
 
 export const checklistPhaseTextColors: Record<ChecklistPhase, string> = {
-  "사전": "text-yellow-600",
+  "사전": "text-amber-600",
   "당일": "text-orange-600",
-  "사후": "text-green-600",
+  "사후": "text-emerald-600",
 };
 
 export const seminarStatusColors: Record<SeminarStatus, string> = {
-  "준비중": "bg-blue-500",
-  "완료": "bg-green-500",
-  "취소": "bg-slate-400",
+  "준비중": "bg-sky-500",
+  "완료": "bg-emerald-500",
+  "취소": "bg-slate-500",
 };
 
 // 세미나 유형 색상
@@ -237,10 +238,10 @@ export const seminarTypeTextColors: Record<SeminarType, string> = {
 // 비정기 세미나 요청 상태 색상
 export const seminarRequestStatusColors: Record<SeminarRequestStatus, string> = {
   "요청접수": "bg-slate-500",
-  "검토중": "bg-blue-500",
-  "승인": "bg-green-500",
-  "반려": "bg-red-500",
-  "완료": "bg-purple-500",
+  "검토중": "bg-sky-500",
+  "승인": "bg-emerald-500",
+  "반려": "bg-rose-500",
+  "완료": "bg-violet-500",
 };
 
 // 비정기 세미나 주제 목록
@@ -253,6 +254,7 @@ export const seminarRequestTopics: SeminarRequestTopic[] = [
   "주주가치 제고",
   "IR/PR/공시 자문",
   "가업승계",
+  "네트워크",
   "기타",
 ];
 
@@ -295,9 +297,9 @@ export function calculateDday(seminarDate: Date | string): number {
 
 // D-day 문자열 포맷
 export function formatDday(dday: number): string {
-  if (dday === 0) return "D-Day";
-  if (dday > 0) return `D-${dday}`;
-  return `D+${Math.abs(dday)}`;
+  if (dday === 0) return "오늘";
+  if (dday > 0) return `${dday}일 후`;
+  return `${Math.abs(dday)}일 전`;
 }
 
 // 체크리스트 항목의 마감일 계산
