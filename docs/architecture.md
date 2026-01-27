@@ -30,6 +30,12 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 - **Vercel** - 호스팅 및 CI/CD
 - **배포 URL**: https://hnw-archive.vercel.app
 
+### PWA (Progressive Web App)
+
+- **manifest.json** - 앱 메타데이터
+- **앱 아이콘**: 보라색 그라디언트 배경 + 메가폰(홍보) + 문서스택(아카이브) 디자인
+- **홈화면 추가**: Safari 공유 → 홈 화면에 추가
+
 ## 디렉토리 구조
 
 ```
@@ -85,6 +91,14 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
     ├── seminar-types.ts          # 세미나 타입 정의 (신규)
     └── utils.ts                  # 유틸리티 함수
 
+public/                           # 정적 파일
+├── manifest.json                 # PWA 매니페스트
+├── icon.svg                      # 앱 아이콘 (SVG)
+├── icon-192.png                  # 앱 아이콘 (192x192)
+├── icon-512.png                  # 앱 아이콘 (512x512)
+├── apple-touch-icon.png          # iOS 홈화면 아이콘
+└── favicon-32.png                # 파비콘
+
 docs/                             # 프로젝트 문서
 ├── architecture.md               # 아키텍처 문서
 └── troubleshooting.md            # 트러블슈팅 가이드
@@ -119,13 +133,16 @@ docs/                             # 프로젝트 문서
   - 정기/비정기 세미나 통계 (대기/승인/완료)
   - 카테고리별 통계 (패밀리오피스/법인)
   - 이번 주 세미나 알림
+  - **클릭 시 스크롤 이동**: 정기 카드 → 다가오는 세미나, 비정기 카드 → 비정기 요청 섹션
 - **세미나 캘린더**
   - 월별 캘린더에 세미나 일정 표시
   - 정기 세미나: 카테고리별 색상 (보라/하늘)
   - 비정기 요청: 주황색 점
-- **세미나 등록/수정**
+- **세미나 등록/수정** (하단 슬라이드 토스트 팝업)
   - 정기 세미나: 제목, 날짜, 장소, 카테고리, 예상 참석자 수
   - 비정기 요청: 요청센터, 대상법인, 주제, 요청일자 등
+- **비정기 세미나 요청 목록**
+  - 요청일자(requestedDate) 기준 오름차순 정렬 (임박한 요청이 상단)
 - **체크리스트 관리**
   - 사전/당일/사후 3단계 체크리스트
   - 진행률 시각화 (전체/단계별)
@@ -314,16 +331,23 @@ docs/                             # 프로젝트 문서
 
 ### 세미나 관련 (신규)
 
-- **SeminarView**: 세미나 메인 뷰 (캘린더/리스트 토글)
+- **SeminarView**: 세미나 메인 뷰 (캘린더/리스트 토글, 섹션별 스크롤 이동)
 - **SeminarCalendar**: 세미나 월별 캘린더
 - **SeminarCard/SeminarListItem**: 세미나 카드/리스트 항목
-- **SeminarStats**: 통합 통계 카드 (정기/비정기 구분)
-- **SeminarDetailDialog**: 세미나 상세 (슬라이드 팝업)
-- **SeminarFormDialog**: 정기 세미나 등록/수정 폼
-- **SeminarRequestFormDialog**: 비정기 요청 등록/수정 폼
+- **SeminarStats**: 통합 통계 카드 (정기/비정기 클릭 시 스크롤 이동)
+- **SeminarDetailDialog**: 세미나 상세 (하단 슬라이드 토스트 팝업)
+- **SeminarFormDialog**: 정기 세미나 등록/수정 폼 (하단 슬라이드 토스트 팝업)
+- **SeminarRequestFormDialog**: 비정기 요청 등록/수정 폼 (하단 슬라이드 토스트 팝업)
 - **ChecklistSection/ChecklistTabs**: 체크리스트 섹션 및 탭
 - **ChecklistItemComponent**: 개별 체크리스트 항목
 - **ProgressBar/PhaseProgress**: 진행률 바
+
+### UI 패턴
+
+- **토스트 팝업**: 하단에서 올라오는 슬라이드 팝업 (`animate-in slide-in-from-bottom`)
+  - 컴팩트 헤더: 카테고리별 배경색, 아이콘 버튼, 한 줄 메타 정보
+  - 스크롤 가능한 콘텐츠 영역
+  - 고정 푸터 (액션 버튼)
 
 ### 공통
 
@@ -434,7 +458,7 @@ await db.collection('users').insertOne({
   email: 'admin@hnw.co.kr',
   password: hashedPassword,
   name: 'HNW Admin',
-  role: 'admin',
+  is_admin: true,  // 중요: role이 아닌 is_admin 필드 사용
   createdAt: new Date(),
 });
 ```

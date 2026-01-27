@@ -218,18 +218,21 @@ export default function Home() {
     return stats;
   }, [yearFilteredArticles]);
 
-  // 월별 데이터 (연도 필터 적용, 선택된 연도 또는 현재 연도)
+  // 월별 데이터 (연도 필터 적용)
+  // "전체" 선택 시: 현재 연도(2026) 데이터 표시
+  // 특정 연도 선택 시: 해당 연도 데이터 표시
+  const timelineYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
+
   const monthlyData = useMemo(() => {
-    const targetYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
     const data = Array(12).fill(0);
     articles.forEach((article) => {
       const date = new Date(article.publishedAt);
-      if (date.getFullYear() === targetYear) {
+      if (date.getFullYear() === timelineYear) {
         data[date.getMonth()] += 1;
       }
     });
     return data;
-  }, [articles, selectedYear]);
+  }, [articles, timelineYear]);
 
   // 하이라이트 기사 (단독/특집 중 최신 5개)
   const highlightArticles = useMemo(() => {
@@ -307,8 +310,6 @@ export default function Home() {
 
   // 홈 화면 렌더링
   const renderHome = () => {
-    const displayYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
-
     return (
       <div className="p-4 space-y-4">
         {/* 연도 탭 */}
@@ -346,7 +347,7 @@ export default function Home() {
           <div className="bg-card rounded-xl p-4 shadow-sm">
             <MonthlyTimeline
               monthlyData={monthlyData}
-              year={displayYear}
+              year={timelineYear}
               onMonthClick={handleMonthClick}
             />
           </div>

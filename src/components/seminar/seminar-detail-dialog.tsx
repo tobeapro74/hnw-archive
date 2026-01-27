@@ -191,6 +191,30 @@ export function SeminarDetailDialog({
     }
   };
 
+  // 체크리스트 항목 목표일 수정
+  const handleUpdateDueDate = async (itemId: string, dueOffset: number | undefined) => {
+    try {
+      const res = await fetch(`/api/checklist/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dueOffset }),
+      });
+
+      if (res.ok && seminar) {
+        const updatedChecklist = seminar.checklist.map((item) =>
+          item._id === itemId ? { ...item, dueOffset } : item
+        );
+
+        setSeminar({
+          ...seminar,
+          checklist: updatedChecklist,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update due date:", error);
+    }
+  };
+
   // 세미나 삭제
   const handleDelete = async () => {
     if (!seminar || !confirm("이 세미나를 삭제하시겠습니까?")) return;
@@ -335,6 +359,7 @@ export function SeminarDetailDialog({
                   onToggleItem={handleToggleItem}
                   onDeleteItem={handleDeleteItem}
                   onAddItem={handleAddItem}
+                  onUpdateDueDate={handleUpdateDueDate}
                 />
               </div>
             </div>

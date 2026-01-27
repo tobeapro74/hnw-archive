@@ -21,6 +21,7 @@ interface ChecklistSectionProps {
   onToggleItem: (itemId: string, isCompleted: boolean) => void;
   onDeleteItem?: (itemId: string) => void;
   onAddItem?: (phase: ChecklistPhase, title: string) => void;
+  onUpdateDueDate?: (itemId: string, dueOffset: number | undefined) => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -32,6 +33,7 @@ export function ChecklistSection({
   onToggleItem,
   onDeleteItem,
   onAddItem,
+  onUpdateDueDate,
   isExpanded = true,
 }: ChecklistSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
@@ -94,7 +96,14 @@ export function ChecklistSection({
         <div className={cn("rounded-lg p-2 space-y-2", checklistPhaseLightBgColors[phase])}>
           {items.length > 0 ? (
             items
-              .sort((a, b) => a.order - b.order)
+              .sort((a, b) => {
+                // 목표일(dueOffset) 기준 오름차순 정렬 (빠른 날짜가 위)
+                // 목표일이 없는 항목은 맨 아래로
+                if (a.dueOffset === undefined && b.dueOffset === undefined) return a.order - b.order;
+                if (a.dueOffset === undefined) return 1;
+                if (b.dueOffset === undefined) return -1;
+                return a.dueOffset - b.dueOffset;
+              })
               .map((item) => (
                 <ChecklistItemComponent
                   key={item._id}
@@ -102,6 +111,7 @@ export function ChecklistSection({
                   seminarDate={seminarDate}
                   onToggle={onToggleItem}
                   onDelete={onDeleteItem}
+                  onUpdateDueDate={onUpdateDueDate}
                 />
               ))
           ) : (

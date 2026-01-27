@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Trash2, GripVertical } from "lucide-react";
+import { Check, Trash2, GripVertical, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType, getChecklistDueDate } from "@/lib/seminar-types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface ChecklistItemProps {
   item: ChecklistItemType;
   seminarDate: Date | string;
   onToggle: (itemId: string, isCompleted: boolean) => void;
   onDelete?: (itemId: string) => void;
+  onUpdateDueDate?: (itemId: string, dueOffset: number | undefined) => void;
   showDueDate?: boolean;
   isDraggable?: boolean;
 }
@@ -20,10 +22,16 @@ export function ChecklistItemComponent({
   seminarDate,
   onToggle,
   onDelete,
+  onUpdateDueDate,
   showDueDate = true,
   isDraggable = false,
 }: ChecklistItemProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+
+  // 세미나 날짜 파싱
+  const seminarDateObj = new Date(seminarDate);
+  seminarDateObj.setHours(0, 0, 0, 0);
 
   // D-day 계산
   const dueDate = item.dueOffset !== undefined
@@ -56,6 +64,48 @@ export function ChecklistItemComponent({
       await onDelete(item._id!);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 날짜를 YYYY-MM-DD 형식으로 변환
+  const formatDateForInput = (date: Date | null) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // 선택한 날짜로 dueOffset 계산
+  const handleDueDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onUpdateDueDate) return;
+
+    const selectedDate = e.target.value;
+    if (!selectedDate) {
+      // 날짜 삭제
+      setIsLoading(true);
+      try {
+        await onUpdateDueDate(item._id!, undefined);
+      } finally {
+        setIsLoading(false);
+        setIsEditingDueDate(false);
+      }
+      return;
+    }
+
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+
+    // dueOffset 계산: 선택한 날짜 - 세미나 날짜 (일 단위)
+    const diffTime = selected.getTime() - seminarDateObj.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    setIsLoading(true);
+    try {
+      await onUpdateDueDate(item._id!, diffDays);
+    } finally {
+      setIsLoading(false);
+      setIsEditingDueDate(false);
     }
   };
 
@@ -110,22 +160,46 @@ export function ChecklistItemComponent({
         )}
       </div>
 
-      {/* D-day 표시 */}
-      {showDueDate && item.dueOffset !== undefined && (
-        <div
-          className={cn(
-            "text-xs font-medium px-2 py-0.5 rounded flex-shrink-0",
-            item.isCompleted
-              ? "bg-muted text-muted-foreground"
-              : isOverdue
-              ? "bg-red-100 text-red-600"
-              : isDueSoon
-              ? "bg-yellow-100 text-yellow-600"
-              : "bg-muted text-muted-foreground"
+      {/* D-day 표시 / 날짜 편집 */}
+      {showDueDate && (
+        <>
+          {isEditingDueDate ? (
+            <Input
+              type="date"
+              className="w-32 h-7 text-xs"
+              defaultValue={formatDateForInput(dueDate)}
+              onChange={handleDueDateChange}
+              onBlur={() => setIsEditingDueDate(false)}
+              autoFocus
+              disabled={isLoading}
+            />
+          ) : (
+            <button
+              onClick={() => onUpdateDueDate && setIsEditingDueDate(true)}
+              className={cn(
+                "text-xs font-medium px-2 py-0.5 rounded flex-shrink-0 flex items-center gap-1",
+                onUpdateDueDate && "cursor-pointer hover:opacity-80",
+                item.isCompleted
+                  ? "bg-muted text-muted-foreground"
+                  : isOverdue
+                  ? "bg-red-100 text-red-600"
+                  : isDueSoon
+                  ? "bg-yellow-100 text-yellow-600"
+                  : "bg-muted text-muted-foreground"
+              )}
+              disabled={!onUpdateDueDate}
+            >
+              {dueDate ? (
+                `목표일: ${dueDate.getMonth() + 1}/${dueDate.getDate()}`
+              ) : (
+                <>
+                  <Calendar className="w-3 h-3" />
+                  목표일 설정
+                </>
+              )}
+            </button>
           )}
-        >
-          {dueDate ? `목표일: ${dueDate.getMonth() + 1}/${dueDate.getDate()}` : ""}
-        </div>
+        </>
       )}
 
       {/* 삭제 버튼 */}

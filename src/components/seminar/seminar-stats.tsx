@@ -7,9 +7,11 @@ import { Seminar, SeminarRequest, calculateDday } from "@/lib/seminar-types";
 interface SeminarStatsProps {
   seminars: Seminar[];
   requests?: SeminarRequest[];
+  onRegularClick?: () => void;
+  onIrregularClick?: () => void;
 }
 
-export function SeminarStats({ seminars, requests = [] }: SeminarStatsProps) {
+export function SeminarStats({ seminars, requests = [], onRegularClick, onIrregularClick }: SeminarStatsProps) {
   // 정기 세미나 통계 (seminars에서)
   const regularSeminars = seminars.filter((s) => s.seminarType === "정기");
   const regularStats = {
@@ -66,7 +68,10 @@ export function SeminarStats({ seminars, requests = [] }: SeminarStatsProps) {
       {/* 정기/비정기 통합 카드 */}
       <div className="grid grid-cols-2 gap-2">
         {/* 정기 */}
-        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+        <div
+          className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
+          onClick={onRegularClick}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-sm font-semibold text-emerald-700">정기</span>
@@ -88,7 +93,10 @@ export function SeminarStats({ seminars, requests = [] }: SeminarStatsProps) {
         </div>
 
         {/* 비정기 */}
-        <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+        <div
+          className="p-3 rounded-lg bg-amber-50 border border-amber-100 cursor-pointer hover:bg-amber-100 transition-colors"
+          onClick={onIrregularClick}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-sm font-semibold text-amber-700">비정기</span>

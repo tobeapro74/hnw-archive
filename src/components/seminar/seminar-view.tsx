@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Calendar as CalendarIcon, List, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -185,6 +185,19 @@ export function SeminarView() {
   // 사용 가능한 연도
   const availableYears = [currentYear - 1, currentYear, currentYear + 1];
 
+  // 섹션 refs
+  const upcomingSectionRef = useRef<HTMLDivElement>(null);
+  const irregularSectionRef = useRef<HTMLDivElement>(null);
+
+  // 스크롤 핸들러
+  const scrollToUpcoming = () => {
+    upcomingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToIrregular = () => {
+    irregularSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* 필터 및 버튼 */}
@@ -279,7 +292,12 @@ export function SeminarView() {
         ) : (
           <>
             {/* 통계 */}
-            <SeminarStats seminars={filteredSeminars} requests={filteredRequests} />
+            <SeminarStats
+              seminars={filteredSeminars}
+              requests={filteredRequests}
+              onRegularClick={scrollToUpcoming}
+              onIrregularClick={scrollToIrregular}
+            />
 
             {/* 캘린더/리스트 뷰 */}
             {viewMode === "calendar" ? (
@@ -312,7 +330,7 @@ export function SeminarView() {
 
             {/* 다가오는 세미나 */}
             {upcomingSeminars.length > 0 && viewMode === "calendar" && (
-              <div>
+              <div ref={upcomingSectionRef}>
                 <h3 className="text-sm font-semibold mb-2">다가오는 세미나</h3>
                 <div className="space-y-2">
                   {upcomingSeminars.map((seminar) => (
@@ -329,13 +347,16 @@ export function SeminarView() {
 
             {/* 비정기 세미나 요청 */}
             {filteredRequests.length > 0 && (
-              <div>
+              <div ref={irregularSectionRef}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">비정기 세미나 요청</h3>
                   <Badge variant="secondary">{filteredRequests.length}건</Badge>
                 </div>
                 <div className="space-y-2">
-                  {filteredRequests.slice(0, 3).map((request) => (
+                  {filteredRequests
+                    .sort((a, b) => new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime())
+                    .slice(0, 3)
+                    .map((request) => (
                     <SeminarRequestCard
                       key={request._id}
                       request={request}
