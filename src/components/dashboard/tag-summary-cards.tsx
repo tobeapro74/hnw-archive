@@ -5,17 +5,19 @@ import { tagIcons, tagBgColors, tagLightBgColors, tagTextColors } from "@/lib/co
 
 interface TagSummaryCardsProps {
   tagStats: Record<ArticleTag, number>;
+  distinctStats: Record<ArticleTag, number>;
   onTagClick: (tag: ArticleTag) => void;
 }
 
 const tagOrder: ArticleTag[] = ["보도기사", "특집기사", "단독기사"];
 
-export function TagSummaryCards({ tagStats, onTagClick }: TagSummaryCardsProps) {
+export function TagSummaryCards({ tagStats, distinctStats, onTagClick }: TagSummaryCardsProps) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {tagOrder.map((tag) => {
         const Icon = tagIcons[tag];
         const count = tagStats[tag] || 0;
+        const distinctCount = distinctStats[tag] || 0;
 
         return (
           <button
@@ -33,6 +35,11 @@ export function TagSummaryCards({ tagStats, onTagClick }: TagSummaryCardsProps) 
               <span className="text-sm font-normal ml-0.5">건</span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">{tag}</div>
+            {count !== distinctCount && (
+              <div className="text-[10px] text-muted-foreground/70 mt-0.5">
+                이벤트 {distinctCount}건
+              </div>
+            )}
           </button>
         );
       })}

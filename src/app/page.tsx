@@ -229,6 +229,34 @@ function HomeContent() {
     return stats;
   }, [yearFilteredArticles]);
 
+  // 태그별 distinct 통계 (이벤트 기준 중복 제거)
+  const tagDistinctStats = useMemo(() => {
+    const stats: Record<string, number> = {
+      "보도기사": 0,
+      "특집기사": 0,
+      "단독기사": 0,
+    };
+
+    // 각 태그별로 unique eventName 수 + eventName 없는 기사 수 계산
+    (["보도기사", "특집기사", "단독기사"] as const).forEach((tag) => {
+      const tagArticles = yearFilteredArticles.filter((a) => a.tag === tag);
+      const eventNames = new Set<string>();
+      let noEventCount = 0;
+
+      tagArticles.forEach((article) => {
+        if (article.eventName) {
+          eventNames.add(article.eventName);
+        } else {
+          noEventCount += 1;
+        }
+      });
+
+      stats[tag] = eventNames.size + noEventCount;
+    });
+
+    return stats;
+  }, [yearFilteredArticles]);
+
   // 월별 데이터 (연도 필터 적용)
   // "전체" 선택 시: 최근 12개월 롤링 데이터
   // 특정 연도 선택 시: 해당 연도 데이터 표시
@@ -378,6 +406,7 @@ function HomeContent() {
         {/* 태그별 요약 카드 */}
         <TagSummaryCards
           tagStats={tagStats as Record<ArticleTag, number>}
+          distinctStats={tagDistinctStats as Record<ArticleTag, number>}
           onTagClick={handleTagClick}
         />
 

@@ -77,7 +77,7 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │       └── notifications/    # D-day 알림
 │   ├── admin/                    # 관리자 페이지
 │   ├── layout.tsx                # 루트 레이아웃
-│   ├── page.tsx                  # 메인 페이지
+│   ├── page.tsx                  # 메인 페이지 (URL ?tab=xxx 딥링크 지원)
 │   └── globals.css               # 전역 스타일
 ├── components/
 │   ├── ui/                       # shadcn/ui 기본 컴포넌트
@@ -109,7 +109,8 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 
 public/                           # 정적 파일
 ├── manifest.json                 # PWA 매니페스트
-├── sw.js                         # Service Worker (푸시 알림) - 신규
+├── sw.js                         # Service Worker (푸시 알림)
+│                                 # - 클릭 시 /?tab=seminar로 이동
 ├── icon.svg                      # 앱 아이콘 (SVG)
 ├── icon-192.png                  # 앱 아이콘 (192x192)
 ├── icon-512.png                  # 앱 아이콘 (512x512)
@@ -188,6 +189,8 @@ docs/                             # 프로젝트 문서
 - **D-day 알림**: 매일 오전 9시(KST) 크론 작업
   - D-7, D-3, D-1, D-day 세미나 알림
 - **설정**: 설정 화면에서 알림 구독/해제
+- **알림 클릭 랜딩**: 세미나 탭으로 자동 이동 (`/?tab=seminar`)
+- **구독 방식**: 로그인 불필요, 브라우저 endpoint 기반 (아래 상세 설명)
 
 ## 하단 네비게이션
 
@@ -255,14 +258,25 @@ docs/                             # 프로젝트 문서
 ```javascript
 {
   _id: ObjectId,
-  endpoint: String,        // 푸시 엔드포인트 (unique)
-  keys: {
-    p256dh: String,        // 암호화 키
-    auth: String           // 인증 키
+  endpoint: String,        // 푸시 엔드포인트 (unique) - 브라우저 고유값
+  subscription: {          // 전체 구독 정보
+    endpoint: String,
+    keys: {
+      p256dh: String,      // 암호화 키
+      auth: String         // 인증 키
+    }
   },
-  createdAt: Date
+  userId: String | null,   // 로그인한 경우 사용자 ID (선택)
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
+
+**푸시 알림 구독 구조**:
+- 구독은 **브라우저 endpoint 기준**으로 관리 (로그인 불필요)
+- 같은 기기/브라우저에서 여러 사용자가 로그인해도 구독은 하나
+- 사용자 로그인 여부와 관계없이 설정 화면에서 알림 ON/OFF 가능
+- userId는 분석/통계 용도로만 사용 (필수 아님)
 
 #### seminars (세미나) - 신규
 
@@ -363,31 +377,31 @@ docs/                             # 프로젝트 문서
 
 ### 세미나 API (신규)
 
-| 메서드 | 경로               | 설명                                              |
-| ------ | ------------------ | ------------------------------------------------- |
-| GET    | /api/seminars      | 세미나 목록 (필터: year, month, category, status) |
-| POST   | /api/seminars      | 세미나 생성 (+ 기본 체크리스트 자동 생성)         |
-| GET    | /api/seminars/[id] | 세미나 상세 + 체크리스트                          |
-| PUT    | /api/seminars/[id] | 세미나 수정                                       |
-| DELETE | /api/seminars/[id] | 세미나 삭제 (+ 체크리스트 삭제)                   |
+| 메서드 | 경로               | 설명                                              | 권한     |
+| ------ | ------------------ | ------------------------------------------------- | -------- |
+| GET    | /api/seminars      | 세미나 목록 (필터: year, month, category, status) | 공개     |
+| POST   | /api/seminars      | 세미나 생성 (+ 기본 체크리스트 자동 생성)         | 관리자   |
+| GET    | /api/seminars/[id] | 세미나 상세 + 체크리스트                          | 공개     |
+| PUT    | /api/seminars/[id] | 세미나 수정                                       | 관리자   |
+| DELETE | /api/seminars/[id] | 세미나 삭제 (+ 체크리스트 삭제)                   | 관리자   |
 
 ### 비정기 세미나 요청 API (신규)
 
-| 메서드 | 경로                       | 설명      |
-| ------ | -------------------------- | --------- |
-| GET    | /api/seminar-requests      | 요청 목록 |
-| POST   | /api/seminar-requests      | 요청 등록 |
-| PUT    | /api/seminar-requests/[id] | 요청 수정 |
-| DELETE | /api/seminar-requests/[id] | 요청 삭제 |
+| 메서드 | 경로                       | 설명      | 권한     |
+| ------ | -------------------------- | --------- | -------- |
+| GET    | /api/seminar-requests      | 요청 목록 | 공개     |
+| POST   | /api/seminar-requests      | 요청 등록 | 관리자   |
+| PUT    | /api/seminar-requests/[id] | 요청 수정 | 관리자   |
+| DELETE | /api/seminar-requests/[id] | 요청 삭제 | 관리자   |
 
 ### 체크리스트 API (신규)
 
-| 메서드 | 경로                         | 설명                 |
-| ------ | ---------------------------- | -------------------- |
-| GET    | /api/seminars/[id]/checklist | 체크리스트 조회      |
-| POST   | /api/seminars/[id]/checklist | 체크리스트 항목 추가 |
-| PATCH  | /api/checklist/[itemId]      | 항목 완료 토글       |
-| DELETE | /api/checklist/[itemId]      | 항목 삭제            |
+| 메서드 | 경로                         | 설명                 | 권한     |
+| ------ | ---------------------------- | -------------------- | -------- |
+| GET    | /api/seminars/[id]/checklist | 체크리스트 조회      | 공개     |
+| POST   | /api/seminars/[id]/checklist | 체크리스트 항목 추가 | 관리자   |
+| PATCH  | /api/checklist/[itemId]      | 항목 완료 토글       | 관리자   |
+| DELETE | /api/checklist/[itemId]      | 항목 삭제            | 관리자   |
 
 ### 푸시 알림 API (신규)
 
@@ -413,6 +427,8 @@ docs/                             # 프로젝트 문서
 - **SeminarCard/SeminarListItem**: 세미나 카드/리스트 항목
 - **SeminarStats**: 통합 통계 카드 (정기/비정기 클릭 시 스크롤 이동)
 - **SeminarDetailDialog**: 세미나 상세 (하단 슬라이드 토스트 팝업)
+  - 탭 UI: 체크리스트 / 상세정보 탭으로 구분
+  - 정기/비정기 세미나 모달 높이 통일
 - **SeminarFormDialog**: 정기 세미나 등록/수정 폼 (하단 슬라이드 토스트 팝업)
 - **SeminarRequestFormDialog**: 비정기 요청 등록/수정 폼 (하단 슬라이드 토스트 팝업)
 - **ChecklistSection/ChecklistTabs**: 체크리스트 섹션 및 탭
@@ -495,12 +511,22 @@ interface UserPermissions {
    - `permissions[resource][action] === true` → 해당 권한 허용
    - 그 외 → 403 Forbidden
 
+### 접근 권한 구조
+
+| 사용자 유형 | 콘텐츠 조회 | 콘텐츠 수정 | 관리자 페이지 |
+|------------|------------|------------|--------------|
+| 비로그인 사용자 | ✅ 가능 | ❌ 불가 | ❌ 불가 |
+| 일반 사용자 | ✅ 가능 | ❌ 불가 (권한 없음) | ❌ 불가 |
+| 관리자 | ✅ 가능 | ✅ 가능 | ✅ 가능 |
+
+**참고**: 일반 열람 시 로그인이 필요 없음. 관리자 기능(세미나 등록/수정, 기사 관리 등)에만 로그인 필요.
+
 ### 기본 권한
 
 | 사용자 유형 | articles | seminars |
 |------------|----------|----------|
 | 관리자 (is_admin=true) | 모든 권한 | 모든 권한 |
-| 일반 사용자 (신규) | 모두 false | 모두 false |
+| 일반 사용자 | 모두 false | 모두 false |
 
 ### 보호된 계정
 
@@ -623,7 +649,17 @@ vercel env add ADMIN_SECRET_KEY
 
 ## 최근 업데이트 내역
 
-### 2026-01-28
+### 2026-01-28 (오후)
+- **푸시 알림 랜딩 개선**: 알림 클릭 시 세미나 탭으로 이동 (`/?tab=seminar`)
+- **세미나 API 권한 강화**: 세미나/비정기요청/체크리스트 CUD API에 관리자 권한 필수
+- **세미나 상세 모달 UI 개선**:
+  - 체크리스트/상세정보 탭 UI 추가 (쉬운 탐색)
+  - 정기/비정기 세미나 모달 높이 통일
+- **기사관리 썸네일 일괄 다운로드**: 기존 이미지가 있는 기사는 건너뛰기 (안내 메시지 추가)
+- **스크롤 위치 수정**: 정기/비정기 카드 클릭 시 섹션 제목이 최상단에 표시되도록 scroll-mt-32 적용
+- **푸시 구독 구조 명확화**: 로그인 불필요, 브라우저 endpoint 기반 구독 방식
+
+### 2026-01-28 (오전)
 - **사용자 권한 관리**: 관리자가 일반 사용자에게 세부 권한 부여 가능
 - **관리자 승격/해제**: UI에서 관리자 권한 토글 가능
 - **API 권한 체크**: 기사/세미나 CRUD API에 권한 검증 추가
