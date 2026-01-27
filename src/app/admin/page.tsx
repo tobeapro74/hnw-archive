@@ -158,8 +158,8 @@ export default function AdminPage() {
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
   const [batchEditDialogOpen, setBatchEditDialogOpen] = useState(false);
   const [batchEditCategory, setBatchEditCategory] = useState<ArticleCategory | "">("");
-  const [batchEditTag, setBatchEditTag] = useState<ArticleTag | "">("");
   const [batchEditEventName, setBatchEditEventName] = useState("");
+  const [batchEditPublishedAt, setBatchEditPublishedAt] = useState<Date | null>(null);
   const [batchSaving, setBatchSaving] = useState(false);
 
   // 기존 이벤트명 목록 (자동완성용)
@@ -674,8 +674,8 @@ export default function AdminPage() {
   // 일괄 수정 다이얼로그 열기
   const openBatchEditDialog = () => {
     setBatchEditCategory("");
-    setBatchEditTag("");
     setBatchEditEventName("");
+    setBatchEditPublishedAt(null);
     setBatchEditDialogOpen(true);
   };
 
@@ -693,8 +693,8 @@ export default function AdminPage() {
 
         const updateData: Partial<Article> = {};
         if (batchEditCategory) updateData.category = batchEditCategory;
-        if (batchEditTag) updateData.tag = batchEditTag;
         if (batchEditEventName) updateData.eventName = batchEditEventName;
+        if (batchEditPublishedAt) updateData.publishedAt = batchEditPublishedAt;
 
         // 변경할 내용이 없으면 스킵
         if (Object.keys(updateData).length === 0) continue;
@@ -1377,10 +1377,10 @@ export default function AdminPage() {
       <Dialog open={batchEditDialogOpen} onOpenChange={setBatchEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>일괄 수정</DialogTitle>
+            <DialogTitle>일괄 수정 ({selectedArticles.size}개 기사)</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground mb-4">
-            선택한 {selectedArticles.size}개 기사의 설정을 일괄 변경합니다.
+            선택한 기사들의 <span className="font-medium text-foreground">카테고리, 이벤트명, 발행일</span>을 일괄 변경합니다.
             <br />
             <span className="text-xs">변경하지 않을 항목은 빈칸으로 두세요.</span>
           </p>
@@ -1399,19 +1399,6 @@ export default function AdminPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium">태그</label>
-              <select
-                value={batchEditTag}
-                onChange={(e) => setBatchEditTag(e.target.value as ArticleTag | "")}
-                className="w-full mt-1 p-2 border rounded-md"
-              >
-                <option value="">변경 안함</option>
-                <option value="단독기사">단독기사</option>
-                <option value="특집기사">특집기사</option>
-                <option value="보도기사">보도기사</option>
-              </select>
-            </div>
-            <div>
               <label className="text-sm font-medium">이벤트명</label>
               <Input
                 value={batchEditEventName}
@@ -1425,6 +1412,23 @@ export default function AdminPage() {
                 ))}
               </datalist>
             </div>
+            <div>
+              <label className="text-sm font-medium">발행일</label>
+              <Input
+                type="date"
+                value={batchEditPublishedAt ? batchEditPublishedAt.toISOString().split('T')[0] : ""}
+                onChange={(e) => setBatchEditPublishedAt(e.target.value ? new Date(e.target.value) : null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">빈칸이면 변경 안함</p>
+            </div>
+
+            {/* 수정 불가 필드 안내 */}
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">일괄 수정 불가:</span> 제목, 태그, 썸네일, 기사URL, 언론사 등은 개별 수정만 가능합니다.
+              </p>
+            </div>
           </div>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setBatchEditDialogOpen(false)}>
@@ -1432,7 +1436,7 @@ export default function AdminPage() {
             </Button>
             <Button
               onClick={handleBatchEdit}
-              disabled={batchSaving || (!batchEditCategory && !batchEditTag && !batchEditEventName)}
+              disabled={batchSaving || (!batchEditCategory && !batchEditEventName && !batchEditPublishedAt)}
             >
               {batchSaving ? (
                 <>
@@ -1440,7 +1444,7 @@ export default function AdminPage() {
                   적용 중...
                 </>
               ) : (
-                "적용"
+                `${selectedArticles.size}개 기사에 적용`
               )}
             </Button>
           </DialogFooter>
