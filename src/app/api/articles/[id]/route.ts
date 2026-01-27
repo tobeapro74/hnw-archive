@@ -80,6 +80,47 @@ export async function PUT(
   }
 }
 
+// 기사 부분 수정 (PATCH - 일괄 수정용)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const db = await getDb();
+    const body = await request.json();
+
+    // 전달된 필드만 업데이트
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.eventName !== undefined) updateData.eventName = body.eventName;
+    if (body.publishedAt !== undefined) updateData.publishedAt = new Date(body.publishedAt);
+
+    const result = await db
+      .collection("articles")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: "기사를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: { _id: id, ...updateData } });
+  } catch (error) {
+    console.error("Failed to patch article:", error);
+    return NextResponse.json(
+      { success: false, error: "기사 수정에 실패했습니다." },
+      { status: 500 }
+    );
+  }
+}
+
 // 기사 삭제
 export async function DELETE(
   _request: NextRequest,
