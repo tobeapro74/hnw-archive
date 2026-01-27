@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f"/>
+      <stop offset="100%" style="stop-color:#2d5a87"/>
+    </linearGradient>
+    <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5568"/>
+      <stop offset="50%" style="stop-color:#718096"/>
+      <stop offset="100%" style="stop-color:#4a5568"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#skyGrad)"/>
+
+  <!-- Park One Tower stylized -->
+  <g transform="translate(156, 60)">
+    <!-- Main tower body -->
+    <path d="M100 0 L180 50 L180 400 L20 400 L20 50 Z" fill="url(#buildingGrad)" stroke="#2d3748" stroke-width="2"/>
+
+    <!-- Glass facade lines -->
+    <line x1="40" y1="60" x2="40" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="60" y1="55" x2="60" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="80" y1="50" x2="80" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="100" y1="45" x2="100" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="120" y1="50" x2="120" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="140" y1="50" x2="140" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+    <line x1="160" y1="55" x2="160" y2="390" stroke="#63b3ed" stroke-width="2" opacity="0.6"/>
+
+    <!-- Horizontal floor lines -->
+    <line x1="20" y1="100" x2="180" y2="100" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+    <line x1="20" y1="150" x2="180" y2="150" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+    <line x1="20" y1="200" x2="180" y2="200" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+    <line x1="20" y1="250" x2="180" y2="250" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+    <line x1="20" y1="300" x2="180" y2="300" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+    <line x1="20" y1="350" x2="180" y2="350" stroke="#2d3748" stroke-width="1" opacity="0.5"/>
+
+    <!-- Lit windows -->
+    <rect x="45" y="110" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+    <rect x="85" y="160" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+    <rect x="125" y="210" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+    <rect x="65" y="260" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+    <rect x="105" y="310" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+    <rect x="145" y="130" width="15" height="10" fill="#fbbf24" opacity="0.8"/>
+  </g>
+
+  <!-- NH text at bottom -->
+  <text x="256" y="480" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">NH</text>
+</svg>

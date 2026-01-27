@@ -16,6 +16,19 @@ export const metadata: Metadata = {
   title: "HNW 홍보 아카이브",
   description: "HNW지원부 홍보활동 아카이브 - 2025년 이후 인터뷰, 세미나 안내, 소개 및 홍보 기사 모음",
   keywords: ["HNW", "홍보", "아카이브", "인터뷰", "세미나", "솔루션"],
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HNW Archive",
+  },
 };
 
 export const viewport: Viewport = {
