@@ -4,7 +4,8 @@
 1. [뉴스 검색 관련](#뉴스-검색-관련)
 2. [인증 관련](#인증-관련)
 3. [데이터베이스 관련](#데이터베이스-관련)
-4. [배포 관련](#배포-관련)
+4. [세미나 관리 관련](#세미나-관리-관련)
+5. [배포 관련](#배포-관련)
 
 ---
 
@@ -131,6 +132,125 @@ const uniqueArticles = allArticles.filter((article, index, self) =>
 
 ---
 
+## 세미나 관리 관련
+
+### 문제: 세미나 생성 시 체크리스트가 자동 생성되지 않음
+
+**증상**: 세미나는 생성되지만 체크리스트가 비어있음
+
+**원인**: API에서 체크리스트 자동 생성 로직 오류
+
+**해결책**:
+1. `/api/seminars/route.ts`의 POST 핸들러 확인
+2. `defaultChecklistTemplates` 배열 확인 (`/lib/seminar-types.ts`)
+3. MongoDB `checklist_items` 컬렉션 권한 확인
+
+```typescript
+// 체크리스트 자동 생성 로직
+const checklistItems = defaultChecklistTemplates.map((template, index) => ({
+  seminarId: insertedId.toString(),
+  ...template,
+  isCompleted: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}));
+await db.collection("checklist_items").insertMany(checklistItems);
+```
+
+---
+
+### 문제: 체크리스트 항목 체크가 저장되지 않음
+
+**증상**: 체크박스를 클릭해도 새로고침 시 초기화됨
+
+**원인**: API 호출 실패 또는 상태 업데이트 오류
+
+**해결책**:
+1. 브라우저 개발자 도구에서 네트워크 탭 확인
+2. `/api/checklist/[itemId]` API 응답 확인
+3. MongoDB 업데이트 권한 확인
+
+---
+
+### 문제: 비정기 세미나 요청이 통계에 반영되지 않음
+
+**증상**: 비정기 요청을 등록했지만 통계 카드에 0으로 표시됨
+
+**원인**: `SeminarStats` 컴포넌트에 `requests` prop이 전달되지 않음
+
+**해결책**:
+```tsx
+// seminar-view.tsx에서 requests 전달 확인
+<SeminarStats seminars={filteredSeminars} requests={requests} />
+```
+
+---
+
+### 문제: 세미나 날짜가 잘못 표시됨 (하루 차이)
+
+**증상**: 저장한 날짜와 표시되는 날짜가 다름
+
+**원인**: 타임존 처리 문제 (UTC vs 로컬)
+
+**해결책**:
+1. 날짜 저장 시 ISO 문자열 사용
+2. 표시 시 로컬 타임존으로 변환:
+```typescript
+const seminarDate = new Date(seminar.date);
+seminarDate.toLocaleDateString("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+```
+
+---
+
+### 문제: D-day 계산이 맞지 않음
+
+**증상**: 오늘인데 "1일 후"로 표시됨
+
+**원인**: 시간 단위까지 비교되어 오차 발생
+
+**해결책**: 날짜 비교 시 시간을 0으로 설정
+```typescript
+// seminar-types.ts의 calculateDday 함수
+export function calculateDday(seminarDate: Date | string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);  // 시간 초기화
+  const targetDate = new Date(seminarDate);
+  targetDate.setHours(0, 0, 0, 0);  // 시간 초기화
+  const diffTime = targetDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+```
+
+---
+
+### 문제: 슬라이드 팝업이 닫히지 않음
+
+**증상**: 배경 클릭 시 팝업이 닫히지 않음
+
+**원인**: 이벤트 버블링 또는 클릭 핸들러 누락
+
+**해결책**:
+```tsx
+// 배경 클릭 시 닫기
+<div
+  className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+  onClick={() => onOpenChange(false)}
+>
+  <div
+    className="..."
+    onClick={(e) => e.stopPropagation()}  // 내부 클릭 시 닫힘 방지
+  >
+    {/* 콘텐츠 */}
+  </div>
+</div>
+```
+
+---
+
 ## 배포 관련
 
 ### 문제: Vercel 배포 후 API 오류
@@ -152,6 +272,19 @@ const uniqueArticles = allArticles.filter((article, index, self) =>
 1. 로컬에서 타입 체크: `npm run build`
 2. 누락된 타입 정의 추가
 3. `any` 타입 사용 최소화
+
+---
+
+### 문제: 빌드 실패 - Export 오류
+
+**증상**: `The export ... was not found in module ...`
+
+**원인**: 컴포넌트 이름 변경 또는 삭제 후 import 미수정
+
+**해결책**:
+1. `index.ts` export 목록 확인
+2. 해당 컴포넌트를 import하는 모든 파일 수정
+3. 삭제된 컴포넌트 import 제거
 
 ---
 
@@ -177,6 +310,23 @@ const uniqueArticles = allArticles.filter((article, index, self) =>
 1. 키워드를 더 일반적으로 변경 (예: "패밀리오피스" → "패밀리")
 2. 날짜 범위 확인 (현재 발행일 이후 1개월)
 3. Google News RSS 한계로 일부 기사가 누락될 수 있음
+
+### Q: 세미나 체크리스트 항목을 수정할 수 있나요?
+
+**A**:
+- 항목 추가: 각 단계(사전/당일/사후) 하단의 "항목 추가" 사용
+- 항목 삭제: 각 항목 오른쪽의 휴지통 아이콘 클릭
+- 기본 템플릿 수정: `/lib/seminar-types.ts`의 `defaultChecklistTemplates` 배열 수정
+
+### Q: 비정기 세미나 요청과 정기 세미나의 차이는?
+
+**A**:
+- **정기 세미나**: 정해진 일정에 따른 세미나 (패밀리오피스/법인)
+  - 체크리스트 관리 가능
+  - 진행률 추적
+- **비정기 요청**: 센터에서 요청하는 세미나
+  - 요청 → 검토 → 승인 → 완료 워크플로우
+  - 승인 시 정기 세미나로 전환 가능
 
 ---
 
