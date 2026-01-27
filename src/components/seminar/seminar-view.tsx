@@ -11,7 +11,7 @@ import {
 } from "@/lib/seminar-types";
 import { SeminarCalendar } from "./seminar-calendar";
 import { SeminarCard, SeminarListItem } from "./seminar-card";
-import { SeminarStats, SeminarTypeStats } from "./seminar-stats";
+import { SeminarStats } from "./seminar-stats";
 import { SeminarDetailDialog } from "./seminar-detail-dialog";
 import { SeminarFormDialog } from "./seminar-form-dialog";
 import { SeminarRequestFormDialog, SeminarRequestCard } from "./seminar-request-form-dialog";
@@ -271,7 +271,7 @@ export function SeminarView() {
         ) : (
           <>
             {/* 통계 */}
-            <SeminarStats seminars={filteredSeminars} />
+            <SeminarStats seminars={filteredSeminars} requests={requests} />
 
             {/* 캘린더/리스트 뷰 */}
             {viewMode === "calendar" ? (
@@ -343,8 +343,6 @@ export function SeminarView() {
               </div>
             )}
 
-            {/* 세미나 현황 통계 */}
-            <SeminarTypeStats seminars={filteredSeminars} />
           </>
         )}
       </div>

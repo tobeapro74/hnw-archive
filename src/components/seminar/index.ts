@@ -1,7 +1,7 @@
 export { SeminarView } from "./seminar-view";
 export { SeminarCalendar, MiniCalendar } from "./seminar-calendar";
 export { SeminarCard, SeminarListItem } from "./seminar-card";
-export { SeminarStats, SeminarTypeStats } from "./seminar-stats";
+export { SeminarStats } from "./seminar-stats";
 export { SeminarDetailDialog } from "./seminar-detail-dialog";
 export { SeminarFormDialog } from "./seminar-form-dialog";
 export { SeminarRequestFormDialog, SeminarRequestCard } from "./seminar-request-form-dialog";
