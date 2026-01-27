@@ -219,9 +219,15 @@ export default function Home() {
   }, [yearFilteredArticles]);
 
   // 월별 데이터 (연도 필터 적용)
-  // "전체" 선택 시: 현재 연도(2026) 데이터 표시
+  // "전체" 선택 시: 기사가 있는 가장 최근 연도 데이터 표시
   // 특정 연도 선택 시: 해당 연도 데이터 표시
-  const timelineYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
+  const timelineYear = useMemo(() => {
+    if (selectedYear !== "all") return selectedYear;
+
+    // 기사가 있는 가장 최근 연도 찾기
+    if (articles.length === 0) return new Date().getFullYear();
+    return Math.max(...articles.map(a => new Date(a.publishedAt).getFullYear()));
+  }, [selectedYear, articles]);
 
   const monthlyData = useMemo(() => {
     const data = Array(12).fill(0);
