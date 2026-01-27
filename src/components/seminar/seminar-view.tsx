@@ -330,7 +330,7 @@ export function SeminarView() {
 
             {/* 다가오는 세미나 */}
             {upcomingSeminars.length > 0 && viewMode === "calendar" && (
-              <div ref={upcomingSectionRef}>
+              <div ref={upcomingSectionRef} className="scroll-mt-32">
                 <h3 className="text-sm font-semibold mb-2">다가오는 세미나</h3>
                 <div className="space-y-2">
                   {upcomingSeminars.map((seminar) => (
@@ -347,7 +347,7 @@ export function SeminarView() {
 
             {/* 비정기 세미나 요청 */}
             {filteredRequests.length > 0 && (
-              <div ref={irregularSectionRef}>
+              <div ref={irregularSectionRef} className="scroll-mt-32">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">비정기 세미나 요청</h3>
                   <Badge variant="secondary">{filteredRequests.length}건</Badge>
