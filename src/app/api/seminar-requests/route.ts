@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { requirePermission } from "@/lib/auth";
 import {
   SeminarRequest,
   CreateSeminarRequestInput,
@@ -59,7 +60,13 @@ export async function GET(request: Request) {
 }
 
 // POST /api/seminar-requests - 비정기 세미나 요청 생성
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'create');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body: CreateSeminarRequestInput = await request.json();
 

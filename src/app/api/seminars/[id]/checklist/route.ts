@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requirePermission } from "@/lib/auth";
 import {
   ChecklistItem,
   CreateChecklistItemRequest,
@@ -57,7 +58,13 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 // POST /api/seminars/[id]/checklist - 체크리스트 항목 추가
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'update');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
     const body: CreateChecklistItemRequest = await request.json();

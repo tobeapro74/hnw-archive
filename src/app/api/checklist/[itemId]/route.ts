@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requirePermission } from "@/lib/auth";
 import { UpdateChecklistItemRequest } from "@/lib/seminar-types";
 
 interface RouteParams {
@@ -8,7 +9,13 @@ interface RouteParams {
 }
 
 // PATCH /api/checklist/[itemId] - 체크리스트 항목 수정 (완료 토글 포함)
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'update');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { itemId } = await params;
     const body: UpdateChecklistItemRequest = await request.json();
@@ -76,7 +83,13 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/checklist/[itemId] - 체크리스트 항목 삭제
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'delete');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { itemId } = await params;
 
