@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Star, Trash2, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ChecklistItem as ChecklistItemType, formatDday, getChecklistDueDate } from "@/lib/seminar-types";
+import { ChecklistItem as ChecklistItemType, getChecklistDueDate } from "@/lib/seminar-types";
 import { Button } from "@/components/ui/button";
 
 interface ChecklistItemProps {
@@ -129,7 +129,7 @@ export function ChecklistItemComponent({
               : "bg-muted text-muted-foreground"
           )}
         >
-          {item.dueOffset === 0 ? "D-Day" : item.dueOffset < 0 ? `D${item.dueOffset}` : `D+${item.dueOffset}`}
+          {dueDate ? `목표일: ${dueDate.getMonth() + 1}/${dueDate.getDate()}` : ""}
         </div>
       )}
 
