@@ -6,10 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { BottomNav } from "@/components/bottom-nav";
+import { BottomNav, TabType } from "@/components/bottom-nav";
 import { ArticleCard } from "@/components/article-card";
 import { ArticleGroup } from "@/components/article-group";
 import { CalendarView } from "@/components/calendar-view";
+import { YearTabs } from "@/components/dashboard/year-tabs";
+import { TagSummaryCards } from "@/components/dashboard/tag-summary-cards";
+import { CategoryChart } from "@/components/dashboard/category-chart";
+import { MonthlyTimeline } from "@/components/dashboard/monthly-timeline";
+import { HighlightSection } from "@/components/dashboard/highlight-section";
+import { SeminarView } from "@/components/seminar";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import {
@@ -19,7 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type ViewType = "home" | "list" | "calendar" | "admin";
+type ViewType = TabType;
 
 interface UserInfo {
   id: string;
@@ -35,6 +41,7 @@ export default function Home() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // 필터 상태
+  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [selectedCategory, setSelectedCategory] = useState<ArticleCategory | "전체">("전체");
   const [selectedTag, setSelectedTag] = useState<ArticleTag | "전체">("전체");
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,9 +102,18 @@ export default function Home() {
     }
   };
 
+  // 연도별 필터링된 기사
+  const yearFilteredArticles = useMemo(() => {
+    if (selectedYear === "all") return articles;
+    return articles.filter((article) => {
+      const year = new Date(article.publishedAt).getFullYear();
+      return year === selectedYear;
+    });
+  }, [articles, selectedYear]);
+
   // 필터링된 기사
   const filteredArticles = useMemo(() => {
-    return articles.filter((article) => {
+    return yearFilteredArticles.filter((article) => {
       if (selectedCategory !== "전체" && article.category !== selectedCategory) {
         return false;
       }
@@ -114,7 +130,7 @@ export default function Home() {
       }
       return true;
     }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  }, [articles, selectedCategory, selectedTag, searchQuery]);
+  }, [yearFilteredArticles, selectedCategory, selectedTag, searchQuery]);
 
   // 최근 기사 (홈 화면용)
   const recentArticles = useMemo(() => {
@@ -172,19 +188,66 @@ export default function Home() {
     return groups;
   }, [recentArticles, articles]);
 
-  // 카테고리별 통계
+  // 사용 가능한 연도 목록
+  const availableYears = useMemo(() => {
+    const years = new Set(articles.map((a) => new Date(a.publishedAt).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [articles]);
+
+  // 카테고리별 통계 (연도 필터 적용)
   const categoryStats = useMemo(() => {
     const stats: Record<string, number> = {};
-    articles.forEach((article) => {
+    yearFilteredArticles.forEach((article) => {
       stats[article.category] = (stats[article.category] || 0) + 1;
     });
     return stats;
-  }, [articles]);
+  }, [yearFilteredArticles]);
+
+  // 태그별 통계 (연도 필터 적용)
+  const tagStats = useMemo(() => {
+    const stats: Record<string, number> = {
+      "보도기사": 0,
+      "특집기사": 0,
+      "단독기사": 0,
+    };
+    yearFilteredArticles.forEach((article) => {
+      if (stats[article.tag] !== undefined) {
+        stats[article.tag] += 1;
+      }
+    });
+    return stats;
+  }, [yearFilteredArticles]);
+
+  // 월별 데이터 (연도 필터 적용, 선택된 연도 또는 현재 연도)
+  const monthlyData = useMemo(() => {
+    const targetYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
+    const data = Array(12).fill(0);
+    articles.forEach((article) => {
+      const date = new Date(article.publishedAt);
+      if (date.getFullYear() === targetYear) {
+        data[date.getMonth()] += 1;
+      }
+    });
+    return data;
+  }, [articles, selectedYear]);
+
+  // 하이라이트 기사 (단독/특집 중 최신 5개)
+  const highlightArticles = useMemo(() => {
+    return yearFilteredArticles
+      .filter((a) => a.tag === "단독기사" || a.tag === "특집기사")
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      .slice(0, 5);
+  }, [yearFilteredArticles]);
 
   // 언론사 수
   const mediaCount = useMemo(() => {
-    const mediaSet = new Set(articles.map((article) => article.mediaName).filter(Boolean));
+    const mediaSet = new Set(yearFilteredArticles.map((article) => article.mediaName).filter(Boolean));
     return mediaSet.size;
+  }, [yearFilteredArticles]);
+
+  // 이벤트 총 개수
+  const totalEventCount = useMemo(() => {
+    return new Set(articles.map(a => a.eventName).filter(Boolean)).size;
   }, [articles]);
 
   // 같은 이벤트의 연관 기사 수 계산
@@ -207,7 +270,7 @@ export default function Home() {
   };
 
   // 탭 변경
-  const handleTabChange = (tab: ViewType) => {
+  const handleTabChange = (tab: TabType) => {
     if (tab === "admin") {
       if (!user?.is_admin) return;
       window.location.href = "/admin";
@@ -224,136 +287,128 @@ export default function Home() {
     setSelectedDateArticles(dateArticles);
   };
 
+  // 태그 클릭 핸들러
+  const handleTagClick = (tag: ArticleTag) => {
+    setSelectedTag(tag);
+    setCurrentView("list");
+  };
+
+  // 카테고리 클릭 핸들러
+  const handleCategoryClick = (category: ArticleCategory) => {
+    setSelectedCategory(category);
+    setCurrentView("list");
+  };
+
+  // 월 클릭 핸들러
+  const handleMonthClick = (_month: number) => {
+    // 해당 월의 기사로 목록 화면 이동
+    setCurrentView("list");
+  };
+
   // 홈 화면 렌더링
   const renderHome = () => {
-    const totalArticles = articles.length || 1;
-    const interviewCount = categoryStats["인터뷰"] || 0;
-    const seminarCount = categoryStats["세미나 안내"] || 0;
-    const solutionCount = categoryStats["소개 및 홍보"] || 0;
+    const displayYear = selectedYear === "all" ? new Date().getFullYear() : selectedYear;
 
     return (
-    <div className="p-4 space-y-4">
-      {/* 통계 대시보드 */}
-      <div className="bg-card rounded-xl p-4 shadow-sm space-y-4">
-        {/* 전체 / 언론사 */}
-        <div className="flex gap-6">
-          <div
-            className="cursor-pointer"
-            onClick={() => setCurrentView("list")}
-          >
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground">{articles.length}</span>
-              <span className="text-xs text-muted-foreground">건</span>
-              <span className="text-xs text-muted-foreground ml-1">전체</span>
-            </div>
+      <div className="p-4 space-y-4">
+        {/* 연도 탭 */}
+        <YearTabs
+          years={availableYears}
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+        />
+
+        {/* 하이라이트 섹션 */}
+        {highlightArticles.length > 0 && (
+          <div className="bg-card rounded-xl p-4 shadow-sm">
+            <HighlightSection articles={highlightArticles} />
           </div>
-          <div className="border-l pl-6">
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground">{mediaCount}</span>
-              <span className="text-xs text-muted-foreground">개</span>
-              <span className="text-xs text-muted-foreground ml-1">언론사</span>
+        )}
+
+        {/* 태그별 요약 카드 */}
+        <TagSummaryCards
+          tagStats={tagStats as Record<ArticleTag, number>}
+          onTagClick={handleTagClick}
+        />
+
+        {/* 카테고리 차트 + 월별 타임라인 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 카테고리 도넛 차트 */}
+          <div className="bg-card rounded-xl p-4 shadow-sm">
+            <CategoryChart
+              stats={categoryStats as Record<ArticleCategory, number>}
+              total={yearFilteredArticles.length}
+              onCategoryClick={handleCategoryClick}
+            />
+          </div>
+
+          {/* 월별 타임라인 */}
+          <div className="bg-card rounded-xl p-4 shadow-sm">
+            <MonthlyTimeline
+              monthlyData={monthlyData}
+              year={displayYear}
+              onMonthClick={handleMonthClick}
+            />
+          </div>
+        </div>
+
+        {/* 요약 통계 */}
+        <div className="bg-card rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <button
+              className="flex-1 text-center"
+              onClick={() => setCurrentView("list")}
+            >
+              <div className="text-2xl font-bold text-primary">{yearFilteredArticles.length}</div>
+              <div className="text-xs text-muted-foreground">전체 기사</div>
+            </button>
+            <div className="w-px h-10 bg-border" />
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-primary">{totalEventCount}</div>
+              <div className="text-xs text-muted-foreground">이벤트</div>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-primary">{mediaCount}</div>
+              <div className="text-xs text-muted-foreground">언론사</div>
             </div>
           </div>
         </div>
 
-        {/* 구분선 */}
-        <div className="border-t" />
-
-        {/* 카테고리별 게이지 */}
-        <div className="space-y-3">
-          <button
-            className="w-full text-left"
-            onClick={() => {
-              setSelectedCategory("인터뷰");
-              setCurrentView("list");
-            }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-muted-foreground">인터뷰</span>
-              <span className="text-sm font-medium">{interviewCount}</span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-purple-500 rounded-full transition-all duration-500"
-                style={{ width: `${(interviewCount / totalArticles) * 100}%` }}
-              />
-            </div>
-          </button>
-
-          <button
-            className="w-full text-left"
-            onClick={() => {
-              setSelectedCategory("세미나 안내");
-              setCurrentView("list");
-            }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-muted-foreground">세미나 안내</span>
-              <span className="text-sm font-medium">{seminarCount}</span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-orange-500 rounded-full transition-all duration-500"
-                style={{ width: `${(seminarCount / totalArticles) * 100}%` }}
-              />
-            </div>
-          </button>
-
-          <button
-            className="w-full text-left"
-            onClick={() => {
-              setSelectedCategory("소개 및 홍보");
-              setCurrentView("list");
-            }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-muted-foreground">소개 및 홍보</span>
-              <span className="text-sm font-medium">{solutionCount}</span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-cyan-500 rounded-full transition-all duration-500"
-                style={{ width: `${(solutionCount / totalArticles) * 100}%` }}
-              />
-            </div>
-          </button>
-        </div>
+        {/* 최근 이벤트별 기사 */}
+        <section className="bg-card rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold">최근 이벤트별 기사</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentView("list")}
+            >
+              더보기
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {loading ? (
+              <div className="py-8 text-center text-muted-foreground">
+                로딩 중...
+              </div>
+            ) : groupedRecentArticles.length > 0 ? (
+              groupedRecentArticles.slice(0, 5).map((group, index) => (
+                <ArticleGroup
+                  key={group.eventName || `single-${index}`}
+                  articles={group.articles}
+                  eventName={group.eventName || ""}
+                  onShowRelated={handleShowRelatedArticles}
+                />
+              ))
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                등록된 기사가 없습니다.
+              </div>
+            )}
+          </div>
+        </section>
       </div>
-
-      {/* 최근 기사 */}
-      <section className="bg-card rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold">최근 홍보</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCurrentView("list")}
-          >
-            더보기
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {loading ? (
-            <div className="py-8 text-center text-muted-foreground">
-              로딩 중...
-            </div>
-          ) : groupedRecentArticles.length > 0 ? (
-            groupedRecentArticles.map((group, index) => (
-              <ArticleGroup
-                key={group.eventName || `single-${index}`}
-                articles={group.articles}
-                eventName={group.eventName || ""}
-                onShowRelated={handleShowRelatedArticles}
-              />
-            ))
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              등록된 기사가 없습니다.
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
     );
   };
 
@@ -535,6 +590,7 @@ export default function Home() {
         {/* 메인 콘텐츠 */}
         {currentView === "home" && renderHome()}
         {currentView === "list" && renderList()}
+        {currentView === "seminar" && <SeminarView />}
         {currentView === "calendar" && renderCalendar()}
         {currentView === "admin" && user?.is_admin && (
           <div className="p-4">

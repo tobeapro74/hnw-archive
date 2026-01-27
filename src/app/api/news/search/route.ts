@@ -8,7 +8,6 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get("dateFrom"); // YYYY-MM-DD
     const dateTo = searchParams.get("dateTo"); // YYYY-MM-DD
     const display = searchParams.get("display") || "100"; // 결과 개수 (최대 100)
-    const start = searchParams.get("start") || "1"; // 시작 위치
     const sort = searchParams.get("sort") || "sim"; // 정렬: sim(정확도순), date(최신순) - 과거 기사 검색을 위해 정확도순 기본
 
     if (!keywords) {
@@ -53,18 +52,27 @@ export async function GET(request: NextRequest) {
 
     console.log("검색 쿼리들:", queries);
 
-    // 모든 쿼리 병렬 실행
-    const fetchPromises = queries.map((query) =>
-      fetch(
-        `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(query)}&display=${display}&start=${start}&sort=${sort}`,
-        {
-          headers: {
-            "X-Naver-Client-Id": clientId,
-            "X-Naver-Client-Secret": clientSecret,
-          },
-        }
-      )
-    );
+    // 페이징을 통해 더 많은 결과 가져오기 (각 쿼리당 최대 300개)
+    const startPositions = [1, 101, 201]; // 3페이지씩 가져옴
+
+    // 모든 쿼리와 페이지 조합으로 병렬 실행
+    const fetchPromises: Promise<Response>[] = [];
+
+    for (const query of queries) {
+      for (const startPos of startPositions) {
+        fetchPromises.push(
+          fetch(
+            `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(query)}&display=${display}&start=${startPos}&sort=${sort}`,
+            {
+              headers: {
+                "X-Naver-Client-Id": clientId,
+                "X-Naver-Client-Secret": clientSecret,
+              },
+            }
+          )
+        );
+      }
+    }
 
     const responses = await Promise.all(fetchPromises);
 

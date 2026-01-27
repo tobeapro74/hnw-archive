@@ -175,6 +175,41 @@ export default function AdminPage() {
   const [batchUpdating, setBatchUpdating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, success: 0 });
 
+  // 필터 상태
+  const [filterCategory, setFilterCategory] = useState<ArticleCategory | "전체">("전체");
+  const [filterTag, setFilterTag] = useState<ArticleTag | "전체">("전체");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 필터링된 기사 목록
+  const filteredArticles = articles.filter((article) => {
+    if (filterCategory !== "전체" && article.category !== filterCategory) return false;
+    if (filterTag !== "전체" && article.tag !== filterTag) return false;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        article.title.toLowerCase().includes(query) ||
+        article.keyword?.toLowerCase().includes(query) ||
+        article.mediaName?.toLowerCase().includes(query) ||
+        article.eventName?.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+  // 카테고리별 통계
+  const categoryStats = {
+    "인터뷰": articles.filter(a => a.category === "인터뷰").length,
+    "세미나 안내": articles.filter(a => a.category === "세미나 안내").length,
+    "소개 및 홍보": articles.filter(a => a.category === "소개 및 홍보").length,
+  };
+
+  // 태그별 통계
+  const tagStatsData = {
+    "보도기사": articles.filter(a => a.tag === "보도기사").length,
+    "특집기사": articles.filter(a => a.tag === "특집기사").length,
+    "단독기사": articles.filter(a => a.tag === "단독기사").length,
+  };
+
   // OG 이미지 가져오기
   const fetchOgImage = async () => {
     if (!editingArticle?.articleUrl) return;
@@ -567,18 +602,62 @@ export default function AdminPage() {
     setSelectedCrawlArticles(newSelected);
   };
 
+  // URL에서 언론사명 추출
+  const extractMediaName = (url: string): string => {
+    try {
+      const hostname = new URL(url).hostname;
+      const sourceMap: Record<string, string> = {
+        "www.hankyung.com": "한국경제",
+        "www.mk.co.kr": "매일경제",
+        "www.edaily.co.kr": "이데일리",
+        "www.mt.co.kr": "머니투데이",
+        "www.sedaily.com": "서울경제",
+        "www.fnnews.com": "파이낸셜뉴스",
+        "www.etnews.com": "전자신문",
+        "www.newsis.com": "뉴시스",
+        "www.yna.co.kr": "연합뉴스",
+        "news.heraldcorp.com": "헤럴드경제",
+        "www.asiae.co.kr": "아시아경제",
+        "www.thebell.co.kr": "더벨",
+        "biz.chosun.com": "조선비즈",
+        "www.donga.com": "동아일보",
+        "www.joongang.co.kr": "중앙일보",
+        "www.hani.co.kr": "한겨레",
+        "www.khan.co.kr": "경향신문",
+        "www.bridgenews.co.kr": "브릿지경제",
+        "www.wowtv.co.kr": "한국경제TV",
+        "www.etoday.co.kr": "이투데이",
+        "www.newspim.com": "뉴스핌",
+        "www.infostock.co.kr": "인포스탁데일리",
+      };
+      return sourceMap[hostname] || hostname.replace("www.", "");
+    } catch {
+      return "";
+    }
+  };
+
   // 선택된 크롤링 기사 저장 (원본 기사 + 선택한 기사 모두 저장)
   const saveCrawledArticles = async () => {
     setSavingCrawledArticles(true);
     let savedCount = 0;
+    let skippedCount = 0;
 
     try {
+      // 원본 기사 URL (중복 체크용)
+      const originalUrl = pendingArticle?.articleUrl || "";
+
       // 1. 원본 기사 저장 (pendingArticle이 있으면)
       if (pendingArticle) {
+        // mediaName이 비어있으면 URL에서 추출
+        const articleToSave = {
+          ...pendingArticle,
+          mediaName: pendingArticle.mediaName || extractMediaName(pendingArticle.articleUrl || ""),
+        };
+
         const res = await fetch("/api/articles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(pendingArticle),
+          body: JSON.stringify(articleToSave),
         });
 
         if (res.ok) {
@@ -586,10 +665,16 @@ export default function AdminPage() {
         }
       }
 
-      // 2. 선택된 크롤링 기사 저장
+      // 2. 선택된 크롤링 기사 저장 (원본과 중복되는 URL은 제외)
       for (const index of selectedCrawlArticles) {
         const result = crawlResults[index];
         if (!result) continue;
+
+        // 원본 기사와 같은 URL이면 건너뛰기
+        if (originalUrl && result.link === originalUrl) {
+          skippedCount++;
+          continue;
+        }
 
         const articleData = {
           title: result.title,
@@ -616,7 +701,8 @@ export default function AdminPage() {
       }
 
       const pendingMsg = pendingArticle ? " (원본 기사 포함)" : "";
-      alert(`${savedCount}개의 기사가 저장되었습니다${pendingMsg}.`);
+      const skippedMsg = skippedCount > 0 ? ` (중복 ${skippedCount}건 제외)` : "";
+      alert(`${savedCount}개의 기사가 저장되었습니다${pendingMsg}${skippedMsg}.`);
       setCrawlDialogOpen(false);
       setPendingArticle(null);
       fetchArticles();
@@ -881,7 +967,7 @@ export default function AdminPage() {
   }
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: "home" | "list" | "calendar" | "admin") => {
+  const handleTabChange = (tab: "home" | "list" | "seminar" | "calendar" | "admin") => {
     if (tab === "admin") return; // 이미 admin 페이지
     router.push("/");
   };
@@ -914,79 +1000,191 @@ export default function AdminPage() {
 
       {/* 콘텐츠 */}
       <div className="p-4 space-y-4">
-        {/* 기사 통계 */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">총 기사 수</p>
-              <p className="text-2xl font-bold">{articles.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                썸네일 없음: {articles.filter(a => !a.thumbnailUrl && a.articleUrl).length}개
-              </p>
+        {/* 상단 액션 버튼 */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            총 <span className="font-bold text-foreground">{articles.length}</span>건
+            {filterCategory !== "전체" || filterTag !== "전체" || searchQuery ? (
+              <span className="ml-1">(필터: {filteredArticles.length}건)</span>
+            ) : null}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={batchUpdateOgImages}
+              disabled={batchUpdating}
+            >
+              {batchUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  {batchProgress.current}/{batchProgress.total}
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                  썸네일
+                </>
+              )}
+            </Button>
+            <Button size="sm" onClick={handleNewArticle}>
+              <Plus className="w-4 h-4 mr-1" />
+              새 기사
+            </Button>
+          </div>
+        </div>
+
+        {batchUpdating && (
+          <div className="bg-blue-50 rounded-lg p-3">
+            <div className="flex justify-between text-xs text-blue-700 mb-1">
+              <span>썸네일 가져오는 중...</span>
+              <span>성공: {batchProgress.success}개</span>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={batchUpdateOgImages}
-                disabled={batchUpdating}
-              >
-                {batchUpdating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {batchProgress.current}/{batchProgress.total}
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    썸네일 일괄 가져오기
-                  </>
-                )}
-              </Button>
-              <Button onClick={handleNewArticle}>
-                <Plus className="w-4 h-4 mr-2" />
-                새 기사 추가
-              </Button>
+            <div className="w-full bg-blue-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all"
+                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+              />
             </div>
           </div>
-          {batchUpdating && (
-            <div className="mt-3">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>진행 중...</span>
-                <span>성공: {batchProgress.success}개</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </Card>
+        )}
+
+        {/* 카테고리별 필터 카드 */}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => setFilterCategory(filterCategory === "인터뷰" ? "전체" : "인터뷰")}
+            className={`p-3 rounded-lg border transition-all ${
+              filterCategory === "인터뷰"
+                ? "bg-purple-500 text-white border-purple-500"
+                : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+            }`}
+          >
+            <div className="text-lg font-bold">{categoryStats["인터뷰"]}</div>
+            <div className="text-xs">인터뷰</div>
+          </button>
+          <button
+            onClick={() => setFilterCategory(filterCategory === "세미나 안내" ? "전체" : "세미나 안내")}
+            className={`p-3 rounded-lg border transition-all ${
+              filterCategory === "세미나 안내"
+                ? "bg-orange-500 text-white border-orange-500"
+                : "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+            }`}
+          >
+            <div className="text-lg font-bold">{categoryStats["세미나 안내"]}</div>
+            <div className="text-xs">세미나</div>
+          </button>
+          <button
+            onClick={() => setFilterCategory(filterCategory === "소개 및 홍보" ? "전체" : "소개 및 홍보")}
+            className={`p-3 rounded-lg border transition-all ${
+              filterCategory === "소개 및 홍보"
+                ? "bg-cyan-500 text-white border-cyan-500"
+                : "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100"
+            }`}
+          >
+            <div className="text-lg font-bold">{categoryStats["소개 및 홍보"]}</div>
+            <div className="text-xs">소개/홍보</div>
+          </button>
+        </div>
+
+        {/* 태그별 필터 */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterTag(filterTag === "보도기사" ? "전체" : "보도기사")}
+            className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-all ${
+              filterTag === "보도기사"
+                ? "bg-green-500 text-white border-green-500"
+                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            }`}
+          >
+            보도 <span className="font-bold">{tagStatsData["보도기사"]}</span>
+          </button>
+          <button
+            onClick={() => setFilterTag(filterTag === "특집기사" ? "전체" : "특집기사")}
+            className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-all ${
+              filterTag === "특집기사"
+                ? "bg-indigo-500 text-white border-indigo-500"
+                : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+            }`}
+          >
+            특집 <span className="font-bold">{tagStatsData["특집기사"]}</span>
+          </button>
+          <button
+            onClick={() => setFilterTag(filterTag === "단독기사" ? "전체" : "단독기사")}
+            className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-all ${
+              filterTag === "단독기사"
+                ? "bg-red-500 text-white border-red-500"
+                : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            }`}
+          >
+            단독 <span className="font-bold">{tagStatsData["단독기사"]}</span>
+          </button>
+        </div>
+
+        {/* 검색 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="제목, 키워드, 언론사, 이벤트명 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* 필터 초기화 */}
+        {(filterCategory !== "전체" || filterTag !== "전체" || searchQuery) && (
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+            <span className="text-sm text-muted-foreground">
+              {filterCategory !== "전체" && <Badge variant="secondary" className="mr-1">{filterCategory}</Badge>}
+              {filterTag !== "전체" && <Badge variant="outline" className="mr-1">{filterTag}</Badge>}
+              {searchQuery && <span className="text-xs">&quot;{searchQuery}&quot;</span>}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterCategory("전체");
+                setFilterTag("전체");
+                setSearchQuery("");
+              }}
+            >
+              <X className="w-4 h-4 mr-1" />
+              필터 초기화
+            </Button>
+          </div>
+        )}
 
         {/* 기사 목록 */}
         <div className="space-y-3">
           {/* 일괄 선택 툴바 */}
-          {articles.length > 0 && (
+          {filteredArticles.length > 0 && (
             <Card className="p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={toggleSelectAll}
+                    onClick={() => {
+                      const filteredIds = new Set(filteredArticles.map(a => a._id!));
+                      const allSelected = filteredArticles.every(a => selectedArticles.has(a._id!));
+                      if (allSelected) {
+                        setSelectedArticles(new Set());
+                      } else {
+                        setSelectedArticles(filteredIds);
+                      }
+                    }}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                      selectedArticles.size === articles.length && articles.length > 0
+                      filteredArticles.length > 0 && filteredArticles.every(a => selectedArticles.has(a._id!))
                         ? "border-blue-500 bg-blue-500"
                         : "border-gray-300"
                     }`}
                   >
-                    {selectedArticles.size === articles.length && articles.length > 0 && (
+                    {filteredArticles.length > 0 && filteredArticles.every(a => selectedArticles.has(a._id!)) && (
                       <Check className="w-3 h-3 text-white" />
                     )}
                   </button>
                   <span className="text-sm text-muted-foreground">
                     {selectedArticles.size > 0
                       ? `${selectedArticles.size}개 선택됨`
-                      : `전체 ${articles.length}개`}
+                      : `${filteredArticles.length}개 기사`}
                   </span>
                 </div>
                 {selectedArticles.size > 0 && (
@@ -1013,8 +1211,8 @@ export default function AdminPage() {
             </Card>
           )}
 
-          {articles.length > 0 ? (
-            articles.map((article) => {
+          {filteredArticles.length > 0 ? (
+            filteredArticles.map((article) => {
               const relatedCount = getRelatedArticleCount(article.eventName);
               const isSelected = selectedArticles.has(article._id!);
               return (
@@ -1100,7 +1298,25 @@ export default function AdminPage() {
             })
           ) : (
             <div className="py-12 text-center text-muted-foreground">
-              등록된 기사가 없습니다.
+              {articles.length === 0 ? (
+                "등록된 기사가 없습니다."
+              ) : (
+                <>
+                  필터 조건에 맞는 기사가 없습니다.
+                  <br />
+                  <Button
+                    variant="link"
+                    className="mt-2"
+                    onClick={() => {
+                      setFilterCategory("전체");
+                      setFilterTag("전체");
+                      setSearchQuery("");
+                    }}
+                  >
+                    필터 초기화
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>

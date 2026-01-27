@@ -1,9 +1,9 @@
 "use client";
 
-import { Home, List, Calendar, Settings } from "lucide-react";
+import { Home, List, Calendar, Settings, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TabType = "home" | "list" | "calendar" | "admin";
+export type TabType = "home" | "list" | "seminar" | "calendar" | "admin";
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -15,8 +15,9 @@ export function BottomNav({ activeTab, onTabChange, isAdmin }: BottomNavProps) {
   const tabs = [
     { id: "home" as TabType, icon: Home, label: "홈" },
     { id: "list" as TabType, icon: List, label: "목록" },
+    { id: "seminar" as TabType, icon: ClipboardList, label: "세미나" },
     { id: "calendar" as TabType, icon: Calendar, label: "캘린더" },
-    ...(isAdmin ? [{ id: "admin" as TabType, icon: Settings, label: "기사등록" }] : []),
+    ...(isAdmin ? [{ id: "admin" as TabType, icon: Settings, label: "기사관리" }] : []),
   ];
 
   return (
