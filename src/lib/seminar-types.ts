@@ -65,6 +65,7 @@ export interface SeminarRequest {
   topics: SeminarRequestTopic[];      // 요청주제 (복수 선택 가능)
   topicDetail?: string;               // 주제 상세 (기타인 경우)
   receiver: string;                   // 접수자
+  centerContact?: string;             // 센터 담당자
   status: SeminarRequestStatus;       // 요청 상태
   // 승인 시 연결되는 세미나 ID
   seminarId?: string;
@@ -146,6 +147,7 @@ export interface CreateSeminarRequestInput {
   topics: SeminarRequestTopic[];
   topicDetail?: string;
   receiver: string;
+  centerContact?: string;
   notes?: string;
 }
 

@@ -57,6 +57,7 @@ export function SeminarRequestFormDialog({
     topics: [] as SeminarRequestTopic[],
     topicDetail: "",
     receiver: "",
+    centerContact: "",
     notes: "",
     status: "요청접수" as SeminarRequestStatus,
   });
@@ -76,6 +77,7 @@ export function SeminarRequestFormDialog({
         topics: request.topics || [],
         topicDetail: request.topicDetail || "",
         receiver: request.receiver,
+        centerContact: request.centerContact || "",
         notes: request.notes || "",
         status: request.status,
       });
@@ -90,6 +92,7 @@ export function SeminarRequestFormDialog({
         topics: [],
         topicDetail: "",
         receiver: "",
+        centerContact: "",
         notes: "",
         status: "요청접수",
       });
@@ -131,6 +134,7 @@ export function SeminarRequestFormDialog({
         topics: formData.topics,
         topicDetail: formData.topics.includes("기타") ? formData.topicDetail : undefined,
         receiver: formData.receiver,
+        centerContact: formData.centerContact || undefined,
         notes: formData.notes || undefined,
       };
 
@@ -311,15 +315,26 @@ export function SeminarRequestFormDialog({
             )}
           </div>
 
-          {/* 접수자 */}
-          <div className="space-y-2">
-            <Label htmlFor="receiver">접수자 *</Label>
-            <Input
-              id="receiver"
-              value={formData.receiver}
-              onChange={(e) => setFormData({ ...formData, receiver: e.target.value })}
-              placeholder="접수자 이름"
-            />
+          {/* 접수자 & 센터 담당자 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="receiver">접수자 *</Label>
+              <Input
+                id="receiver"
+                value={formData.receiver}
+                onChange={(e) => setFormData({ ...formData, receiver: e.target.value })}
+                placeholder="접수자 이름"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="centerContact">센터 담당자</Label>
+              <Input
+                id="centerContact"
+                value={formData.centerContact}
+                onChange={(e) => setFormData({ ...formData, centerContact: e.target.value })}
+                placeholder="센터 담당자 이름"
+              />
+            </div>
           </div>
 
           {/* 상태 (편집 모드) */}
