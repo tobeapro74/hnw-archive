@@ -274,17 +274,20 @@ export default function AdminPage() {
 
   // 기존 기사 일괄 OG 이미지 업데이트
   const batchUpdateOgImages = async () => {
-    // 썸네일이 없고 기사 URL이 있는 기사들만 필터링
-    const articlesToUpdate = articles.filter(
-      (article) => !article.thumbnailUrl && article.articleUrl
-    );
+    // 기사 URL이 있는 기사들
+    const articlesWithUrl = articles.filter((article) => article.articleUrl);
+    // 이미 썸네일이 있는 기사 수
+    const articlesWithThumbnail = articlesWithUrl.filter((article) => article.thumbnailUrl);
+    // 썸네일이 없고 기사 URL이 있는 기사들만 필터링 (이미 썸네일이 있는 기사는 건너뜀)
+    const articlesToUpdate = articlesWithUrl.filter((article) => !article.thumbnailUrl);
 
     if (articlesToUpdate.length === 0) {
-      alert("업데이트할 기사가 없습니다. (모든 기사에 썸네일이 있거나 URL이 없습니다)");
+      alert(`업데이트할 기사가 없습니다.\n\n• 전체 기사: ${articles.length}개\n• 이미 썸네일 있음: ${articlesWithThumbnail.length}개\n• URL 없음: ${articles.length - articlesWithUrl.length}개`);
       return;
     }
 
-    if (!confirm(`썸네일이 없는 ${articlesToUpdate.length}개 기사의 이미지를 가져오시겠습니까?`)) {
+    const confirmMsg = `썸네일 일괄 다운로드\n\n• 전체 기사: ${articles.length}개\n• 이미 썸네일 있음 (건너뜀): ${articlesWithThumbnail.length}개\n• 다운로드 대상: ${articlesToUpdate.length}개\n\n계속하시겠습니까?`;
+    if (!confirm(confirmMsg)) {
       return;
     }
 
