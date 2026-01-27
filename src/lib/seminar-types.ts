@@ -271,7 +271,7 @@ export const defaultChecklistTemplates: Omit<ChecklistTemplate, "_id">[] = [
   { phase: "사전", title: "안내 문자/이메일 발송", priority: 1, dueOffset: -3, order: 6, isDefault: true },
   { phase: "사전", title: "현수막/배너 준비", priority: 2, dueOffset: -2, order: 7, isDefault: true },
   { phase: "사전", title: "기념품 준비", priority: 2, dueOffset: -1, order: 8, isDefault: true },
-  { phase: "사전", title: "참석자 명단 최종 확인", priority: 1, dueOffset: -1, order: 9, isDefault: true },
+  { phase: "사전", title: "참석자 최종 확인", priority: 1, dueOffset: -1, order: 9, isDefault: true },
 
   // 당일 (D-day)
   { phase: "당일", title: "장소 세팅 확인", priority: 1, dueOffset: 0, order: 1, isDefault: true },
