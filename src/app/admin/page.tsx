@@ -38,6 +38,8 @@ import {
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { formatDate, formatDateForInput } from "@/lib/utils";
 import { BottomNav } from "@/components/bottom-nav";
+import { UserManagement } from "@/components/admin/user-management";
+import { Users } from "lucide-react";
 
 interface UserInfo {
   id: string;
@@ -174,6 +176,9 @@ export default function AdminPage() {
   // 일괄 OG 이미지 업데이트 상태
   const [batchUpdating, setBatchUpdating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, success: 0 });
+
+  // 탭 상태
+  const [activeAdminTab, setActiveAdminTab] = useState<"articles" | "users">("articles");
 
   // 필터 상태
   const [filterCategory, setFilterCategory] = useState<ArticleCategory | "전체">("전체");
@@ -986,7 +991,7 @@ export default function AdminPage() {
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-bold text-white">기사 관리</h1>
+          <h1 className="text-lg font-bold text-white">관리자</h1>
           <Button
             variant="ghost"
             size="icon"
@@ -996,9 +1001,40 @@ export default function AdminPage() {
             <LogOut className="w-5 h-5" />
           </Button>
         </div>
+
+        {/* 탭 버튼 */}
+        <div className="flex border-t border-white/20">
+          <button
+            onClick={() => setActiveAdminTab("articles")}
+            className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              activeAdminTab === "articles"
+                ? "text-white border-b-2 border-white"
+                : "text-white/70 hover:text-white active:text-white"
+            }`}
+          >
+            <Newspaper className="w-4 h-4" />
+            기사 관리
+          </button>
+          <button
+            onClick={() => setActiveAdminTab("users")}
+            className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              activeAdminTab === "users"
+                ? "text-white border-b-2 border-white"
+                : "text-white/70 hover:text-white active:text-white"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            사용자 관리
+          </button>
+        </div>
       </header>
 
       {/* 콘텐츠 */}
+      {activeAdminTab === "users" ? (
+        <div className="p-4">
+          <UserManagement />
+        </div>
+      ) : (
       <div className="p-4 space-y-4">
         {/* 상단 액션 버튼 */}
         <div className="flex items-center justify-between">
@@ -1321,6 +1357,7 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* 기사 편집 다이얼로그 */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

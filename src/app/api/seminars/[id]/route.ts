@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requirePermission } from "@/lib/auth";
 import {
   ChecklistItem,
   UpdateSeminarRequest,
@@ -70,7 +71,13 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 // PUT /api/seminars/[id] - 세미나 수정
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'update');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
     const body: UpdateSeminarRequest = await request.json();
@@ -128,7 +135,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/seminars/[id] - 세미나 삭제 (+ 체크리스트 삭제)
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'seminars', 'delete');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
 

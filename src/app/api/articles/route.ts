@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { requirePermission } from "@/lib/auth";
 
 // 기사 목록 조회
 export async function GET(request: NextRequest) {
@@ -62,6 +63,12 @@ export async function GET(request: NextRequest) {
 
 // 기사 생성
 export async function POST(request: NextRequest) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'articles', 'create');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const db = await getDb();
     const body = await request.json();
@@ -79,7 +86,7 @@ export async function POST(request: NextRequest) {
       eventName: body.eventName || "",
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: body.createdBy || "admin",
+      createdBy: authResult.user?.name || body.createdBy || "admin",
     };
 
     const result = await db.collection("articles").insertOne(article);

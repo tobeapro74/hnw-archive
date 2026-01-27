@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/mongodb";
-import { User } from "@/lib/types";
+import { User, DEFAULT_PERMISSIONS, ADMIN_PERMISSIONS } from "@/lib/types";
 
 const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || "";
 
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
       name,
       is_admin: isAdmin,
+      permissions: isAdmin ? ADMIN_PERMISSIONS : DEFAULT_PERMISSIONS,
       created_at: new Date(),
     };
 

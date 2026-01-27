@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { User, LogOut, ChevronDown, Search, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { CategoryChart } from "@/components/dashboard/category-chart";
 import { MonthlyTimeline } from "@/components/dashboard/monthly-timeline";
 import { HighlightSection } from "@/components/dashboard/highlight-section";
 import { SeminarView } from "@/components/seminar";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import {
@@ -34,6 +36,7 @@ interface UserInfo {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState<ViewType>("home");
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,14 @@ export default function Home() {
   // 연관 기사 모달
   const [relatedModalOpen, setRelatedModalOpen] = useState(false);
   const [selectedEventName, setSelectedEventName] = useState<string>("");
+
+  // URL 쿼리 파라미터로 탭 설정 (푸시 알림 클릭 시 사용)
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["home", "list", "seminar", "calendar"].includes(tab)) {
+      setCurrentView(tab as ViewType);
+    }
+  }, [searchParams]);
 
   // 기사 목록 조회
   useEffect(() => {
@@ -582,38 +593,48 @@ export default function Home() {
       <div className="min-h-screen pb-20 bg-background">
         {/* 헤더 */}
         <header className="bg-gradient-to-r from-blue-700 to-blue-600 safe-area-top sticky top-0 z-50">
-          <div className="px-4 py-3 flex items-center justify-between">
-            {/* 좌측: 뒤로가기 버튼 (홈이 아닐 때만) */}
-            {currentView !== "home" ? (
-              <button
-                onClick={() => setCurrentView("home")}
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            ) : (
-              <div className="w-10" />
-            )}
+          <div className="px-4 py-3 flex items-center">
+            {/* 좌측: 뒤로가기 버튼 (홈이 아닐 때만) - 우측과 동일한 너비 */}
+            <div className="w-[80px] flex justify-start">
+              {currentView !== "home" && (
+                <button
+                  onClick={() => setCurrentView("home")}
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+            </div>
 
             {/* 중앙: 타이틀 */}
-            <h1 className="text-xl font-bold text-white text-center">
-              {currentView === "home" && "HNW 홍보 아카이브"}
+            <h1 className="flex-1 font-bold text-white text-center leading-tight">
+              {currentView === "home" && (
+                <span className="flex flex-col">
+                  <span className="text-sm opacity-80">HNW</span>
+                  <span className="text-base">홍보 아카이브</span>
+                </span>
+              )}
               {currentView === "list" && "홍보 목록"}
               {currentView === "seminar" && "세미나 관리"}
               {currentView === "calendar" && "홍보 캘린더"}
               {currentView === "admin" && "기사관리"}
             </h1>
 
-            {/* 우측: 사용자 메뉴 */}
-            {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-                >
-                  <User className="w-5 h-5" />
-                  <ChevronDown className="w-3 h-3 absolute bottom-0 right-0" />
-                </button>
+            {/* 우측: 설정 + 사용자 메뉴 - 고정 너비 */}
+            <div className="w-[80px] flex items-center justify-end gap-1">
+              {/* 설정 버튼 (알림 포함) */}
+              <SettingsDialog />
+
+              {/* 사용자 메뉴 */}
+              {user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                  >
+                    <User className="w-5 h-5" />
+                    <ChevronDown className="w-3 h-3 absolute bottom-0 right-0" />
+                  </button>
                 {userMenuOpen && (
                   <div className="absolute right-0 top-12 bg-white rounded-lg shadow-lg border min-w-[140px] py-1 z-50">
                     <div className="px-3 py-2 border-b">
@@ -634,14 +655,15 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            ) : (
-              <a
-                href="/admin"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-              >
-                <User className="w-5 h-5" />
-              </a>
-            )}
+              ) : (
+                <a
+                  href="/admin"
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <User className="w-5 h-5" />
+                </a>
+              )}
+            </div>
           </div>
         </header>
 

@@ -47,6 +47,12 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   │   ├── logout/
 │   │   │   ├── register/
 │   │   │   └── me/
+│   │   ├── admin/                # 관리자 전용 API (신규)
+│   │   │   └── users/
+│   │   │       ├── route.ts      # 사용자 목록
+│   │   │       └── [id]/
+│   │   │           └── permissions/
+│   │   │               └── route.ts  # 권한 수정
 │   │   ├── articles/             # 기사 CRUD API
 │   │   │   └── [id]/
 │   │   ├── article-scrape/       # 기사 스크래핑 API
@@ -62,7 +68,13 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   ├── checklist/            # 체크리스트 항목 API (신규)
 │   │   │   └── [itemId]/
 │   │   ├── image/                # 이미지 검색 API
-│   │   └── og-image/             # OG 이미지 API
+│   │   ├── og-image/             # OG 이미지 API
+│   │   ├── push/                 # 푸시 알림 API (신규)
+│   │   │   ├── subscribe/        # 구독 등록
+│   │   │   ├── send/             # 알림 발송
+│   │   │   └── debug/            # 디버그
+│   │   └── cron/                 # 크론 작업 (신규)
+│   │       └── notifications/    # D-day 알림
 │   ├── admin/                    # 관리자 페이지
 │   ├── layout.tsx                # 루트 레이아웃
 │   ├── page.tsx                  # 메인 페이지
@@ -81,18 +93,23 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   ├── checklist-item.tsx    # 체크리스트 항목
 │   │   ├── checklist-section.tsx # 체크리스트 섹션
 │   │   └── progress-bar.tsx      # 진행률 바
+│   ├── admin/                    # 관리자 컴포넌트 (신규)
+│   │   └── user-management.tsx   # 사용자 권한 관리
 │   ├── article-card.tsx          # 기사 카드 컴포넌트
 │   ├── article-group.tsx         # 이벤트별 기사 그룹 컴포넌트
 │   ├── bottom-nav.tsx            # 하단 네비게이션
-│   └── calendar-view.tsx         # 홍보 캘린더 뷰
+│   ├── calendar-view.tsx         # 홍보 캘린더 뷰
+│   └── settings-dialog.tsx       # 설정 다이얼로그 (신규)
 └── lib/
     ├── mongodb.ts                # MongoDB 연결
-    ├── types.ts                  # 공통 타입 정의
-    ├── seminar-types.ts          # 세미나 타입 정의 (신규)
+    ├── types.ts                  # 공통 타입 정의 (UserPermissions 포함)
+    ├── seminar-types.ts          # 세미나 타입 정의
+    ├── auth.ts                   # 권한 체크 유틸리티 (신규)
     └── utils.ts                  # 유틸리티 함수
 
 public/                           # 정적 파일
 ├── manifest.json                 # PWA 매니페스트
+├── sw.js                         # Service Worker (푸시 알림) - 신규
 ├── icon.svg                      # 앱 아이콘 (SVG)
 ├── icon-192.png                  # 앱 아이콘 (192x192)
 ├── icon-512.png                  # 앱 아이콘 (512x512)
@@ -155,6 +172,23 @@ docs/                             # 프로젝트 문서
 - **자동 크롤링**: 기사 저장 후 관련 기사 자동 검색
 - **일괄 등록**: 검색된 기사 선택하여 일괄 저장
 
+### 6. 사용자 관리 (신규 - 관리자 전용)
+
+- **사용자 목록**: 관리자/일반 사용자 분리 표시
+- **권한 관리**: 사용자별 세부 권한 설정
+  - 기사: 등록/수정/삭제 권한
+  - 세미나: 등록/수정/삭제 권한
+- **관리자 승격/해제**: 일반 사용자 ↔ 관리자 전환
+- **보호된 계정**: admin@hnw.co.kr 해제 버튼 숨김
+
+### 7. 웹 푸시 알림 (신규)
+
+- **Service Worker**: 백그라운드 푸시 수신
+- **VAPID 인증**: Web Push Protocol 기반 보안 푸시
+- **D-day 알림**: 매일 오전 9시(KST) 크론 작업
+  - D-7, D-3, D-1, D-day 세미나 알림
+- **설정**: 설정 화면에서 알림 구독/해제
+
 ## 하단 네비게이션
 
 | 탭       | 아이콘        | 설명                    |
@@ -199,6 +233,33 @@ docs/                             # 프로젝트 문서
   password: String,        // bcrypt 해시
   name: String,            // 이름
   is_admin: Boolean,       // 관리자 여부
+  permissions: {           // 세부 권한 (신규)
+    articles: {
+      create: Boolean,
+      update: Boolean,
+      delete: Boolean
+    },
+    seminars: {
+      create: Boolean,
+      update: Boolean,
+      delete: Boolean
+    }
+  },
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+#### push_subscriptions (푸시 구독) - 신규
+
+```javascript
+{
+  _id: ObjectId,
+  endpoint: String,        // 푸시 엔드포인트 (unique)
+  keys: {
+    p256dh: String,        // 암호화 키
+    auth: String           // 인증 키
+  },
   createdAt: Date
 }
 ```
@@ -278,6 +339,13 @@ docs/                             # 프로젝트 문서
 | POST   | /api/auth/logout   | 로그아웃         |
 | GET    | /api/auth/me       | 현재 사용자 정보 |
 
+### 사용자 관리 API (신규 - 관리자 전용)
+
+| 메서드 | 경로                                | 설명                           |
+| ------ | ----------------------------------- | ------------------------------ |
+| GET    | /api/admin/users                    | 사용자 목록 조회               |
+| PATCH  | /api/admin/users/[id]/permissions   | 사용자 권한 수정 (is_admin 포함) |
+
 ### 기사 API
 
 | 메서드 | 경로               | 설명           |
@@ -320,6 +388,15 @@ docs/                             # 프로젝트 문서
 | POST   | /api/seminars/[id]/checklist | 체크리스트 항목 추가 |
 | PATCH  | /api/checklist/[itemId]      | 항목 완료 토글       |
 | DELETE | /api/checklist/[itemId]      | 항목 삭제            |
+
+### 푸시 알림 API (신규)
+
+| 메서드 | 경로                  | 설명                                    |
+| ------ | --------------------- | --------------------------------------- |
+| POST   | /api/push/subscribe   | 푸시 구독 등록                          |
+| POST   | /api/push/send        | 푸시 알림 발송                          |
+| GET    | /api/push/debug       | 구독자 수 확인 (디버그)                 |
+| GET    | /api/cron/notifications | D-day 알림 크론 (Vercel Cron에서 호출) |
 
 ## UI 컴포넌트
 
@@ -390,6 +467,45 @@ docs/                             # 프로젝트 문서
 | 3    | 설문조사 결과 정리    | D+3    |
 | 4    | 후속 미팅 스케줄링    | D+7    |
 
+## 권한 시스템 (신규)
+
+### 권한 모델
+
+```typescript
+interface UserPermissions {
+  articles: {
+    create: boolean;  // 기사 등록
+    update: boolean;  // 기사 수정
+    delete: boolean;  // 기사 삭제
+  };
+  seminars: {
+    create: boolean;  // 세미나 등록
+    update: boolean;  // 세미나 수정
+    delete: boolean;  // 세미나 삭제
+  };
+}
+```
+
+### 권한 체크 흐름
+
+1. **API 요청** → `requirePermission(request, resource, action)`
+2. **JWT 토큰 검증** → 현재 사용자 조회
+3. **권한 확인**:
+   - `is_admin === true` → 모든 권한 허용
+   - `permissions[resource][action] === true` → 해당 권한 허용
+   - 그 외 → 403 Forbidden
+
+### 기본 권한
+
+| 사용자 유형 | articles | seminars |
+|------------|----------|----------|
+| 관리자 (is_admin=true) | 모든 권한 | 모든 권한 |
+| 일반 사용자 (신규) | 모두 false | 모두 false |
+
+### 보호된 계정
+
+- `admin@hnw.co.kr`: 관리자 해제 버튼 숨김 (UI에서 보호)
+
 ## 색상 코드
 
 ### 세미나 카테고리
@@ -423,6 +539,19 @@ MONGODB_URI=mongodb+srv://...
 # Auth
 JWT_SECRET=your-jwt-secret
 ADMIN_SECRET_KEY=hnw-admin-2025  # 관리자 회원가입 시 필요
+
+# Web Push (VAPID Keys) - 신규
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...   # 공개 키 (클라이언트에서 사용)
+VAPID_PRIVATE_KEY=...              # 비공개 키 (서버에서만 사용)
+
+# Cron 보안
+CRON_SECRET=...                    # Vercel Cron 인증용
+```
+
+### VAPID 키 생성 방법
+
+```bash
+npx web-push generate-vapid-keys
 ```
 
 ## 관리자 계정
@@ -485,8 +614,22 @@ vercel env add ADMIN_SECRET_KEY
 ## 향후 개선 사항
 
 1. **이미지 업로드**: Cloudinary 연동으로 썸네일 이미지 업로드
-2. **알림 기능**: 새 기사 등록 시 슬랙/이메일 알림, D-day 알림
+2. ~~**알림 기능**: 새 기사 등록 시 슬랙/이메일 알림, D-day 알림~~ ✅ 웹 푸시 구현 완료
 3. **통계 대시보드**: 기간별, 언론사별 통계 차트
 4. **PDF 내보내기**: 월간 홍보 리포트 PDF 생성
 5. **참석자 관리**: 세미나 참석자 명단 DB 연동
 6. **세미나 리포트**: 월별/분기별 세미나 리포트 생성
+7. **슬랙/이메일 알림**: D-day 알림 채널 확장
+
+## 최근 업데이트 내역
+
+### 2026-01-28
+- **사용자 권한 관리**: 관리자가 일반 사용자에게 세부 권한 부여 가능
+- **관리자 승격/해제**: UI에서 관리자 권한 토글 가능
+- **API 권한 체크**: 기사/세미나 CRUD API에 권한 검증 추가
+- **헤더 UI 개선**: 제목 두 줄 분리 (HNW / 홍보 아카이브), 아이콘 단순화 (Bell + User)
+
+### 2026-01-27
+- **웹 푸시 알림**: Service Worker 기반 백그라운드 푸시
+- **D-day 알림 크론**: 매일 오전 9시 세미나 알림 (D-7, D-3, D-1, D-day)
+- **설정 화면**: 알림 구독/해제 UI 추가

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { requirePermission } from "@/lib/auth";
 
 // 단일 기사 조회
 export async function GET(
@@ -40,6 +41,12 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'articles', 'update');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
     const db = await getDb();
@@ -85,6 +92,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'articles', 'update');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
     const db = await getDb();
@@ -123,9 +136,15 @@ export async function PATCH(
 
 // 기사 삭제
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 권한 확인
+  const authResult = await requirePermission(request, 'articles', 'delete');
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const { id } = await params;
     const db = await getDb();

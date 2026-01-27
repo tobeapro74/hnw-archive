@@ -37,6 +37,32 @@ export interface Article {
   createdBy: string;
 }
 
+// 사용자 권한 타입
+export interface UserPermissions {
+  articles: {
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+  };
+  seminars: {
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+  };
+}
+
+// 기본 권한 (일반 사용자)
+export const DEFAULT_PERMISSIONS: UserPermissions = {
+  articles: { create: false, update: false, delete: false },
+  seminars: { create: false, update: false, delete: false },
+};
+
+// 관리자 권한
+export const ADMIN_PERMISSIONS: UserPermissions = {
+  articles: { create: true, update: true, delete: true },
+  seminars: { create: true, update: true, delete: true },
+};
+
 // 사용자 타입
 export interface User {
   _id?: string;
@@ -44,7 +70,9 @@ export interface User {
   password?: string;
   name: string;
   is_admin: boolean;
+  permissions?: UserPermissions;
   created_at: Date;
+  updated_at?: Date;
 }
 
 // API 응답 타입
