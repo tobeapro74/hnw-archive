@@ -40,6 +40,25 @@ export function SeminarDetailDialog({
   const [activePhase, setActivePhase] = useState<ChecklistPhase>("사전");
   const [activeTab, setActiveTab] = useState<DetailTab>("checklist");
 
+  // 모달 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
+
   // 세미나 상세 정보 로드
   useEffect(() => {
     if (!seminarId || !open) {
