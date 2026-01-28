@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { sendPushToMultiple, PushSubscription, NotificationPayload } from '@/lib/web-push';
 
-// D-day 알림을 보낼 날짜들 (세미나 날짜 기준)
-const NOTIFICATION_DAYS = [7, 3, 1, 0]; // D-7, D-3, D-1, D-day
+// D-day 계산
+function calculateDday(seminarDate: Date): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(seminarDate);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 // GET - Vercel Cron에서 호출 (매일 오전 9시 실행)
 export async function GET(request: NextRequest) {
@@ -19,35 +25,39 @@ export async function GET(request: NextRequest) {
 
     const db = await getDb();
 
-    // 오늘 날짜 (한국 시간 기준)
+    // 오늘 날짜
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 알림 대상 세미나 찾기
+    // 카테고리별 가장 가까운 세미나 찾기
     const seminarsToNotify: { seminar: any; dday: number }[] = [];
 
-    for (const days of NOTIFICATION_DAYS) {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() + days);
+    // 패밀리오피스 - 가장 가까운 예정 세미나
+    const nearestFO = await db.collection('seminars').findOne({
+      category: '패밀리오피스',
+      date: { $gte: today },
+      status: '준비중',
+    }, { sort: { date: 1 } });
 
-      // 해당 날짜의 세미나 찾기
-      const seminars = await db.collection('seminars').find({
-        date: {
-          $gte: targetDate,
-          $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000),
-        },
-        status: '준비중',
-      }).toArray();
+    if (nearestFO) {
+      seminarsToNotify.push({ seminar: nearestFO, dday: calculateDday(nearestFO.date) });
+    }
 
-      seminars.forEach(seminar => {
-        seminarsToNotify.push({ seminar, dday: days });
-      });
+    // 법인 - 가장 가까운 예정 세미나
+    const nearestCorp = await db.collection('seminars').findOne({
+      category: '법인',
+      date: { $gte: today },
+      status: '준비중',
+    }, { sort: { date: 1 } });
+
+    if (nearestCorp) {
+      seminarsToNotify.push({ seminar: nearestCorp, dday: calculateDday(nearestCorp.date) });
     }
 
     if (seminarsToNotify.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No seminars to notify',
+        message: 'No upcoming seminars',
         notified: 0,
       });
     }
@@ -69,14 +79,15 @@ export async function GET(request: NextRequest) {
     const expiredEndpoints: string[] = [];
 
     for (const { seminar, dday } of seminarsToNotify) {
-      const ddayText = dday === 0 ? '오늘' : `D-${dday}`;
+      const ddayText = dday === 0 ? 'D-Day' : `D-${dday}`;
+      const categoryEmoji = seminar.category === '패밀리오피스' ? '💼' : '🏢';
       const payload: NotificationPayload = {
-        title: `세미나 ${ddayText}`,
-        body: `${seminar.title} - ${seminar.location}`,
+        title: `${categoryEmoji} ${seminar.category} 세미나 ${ddayText}`,
+        body: `${seminar.title}\n📍 ${seminar.location}`,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-        tag: `seminar-dday-${seminar._id}`,
-        url: '/?view=seminar',
+        tag: `seminar-daily-${seminar.category}`,
+        url: '/?tab=seminar',
       };
 
       const result = await sendPushToMultiple(pushSubscriptions, payload);
