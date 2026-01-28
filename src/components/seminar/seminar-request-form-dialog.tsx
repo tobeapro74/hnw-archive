@@ -220,7 +220,7 @@ export function SeminarRequestFormDialog({
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4 space-y-4 min-h-0">
           {/* 요청센터 & 장소 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
