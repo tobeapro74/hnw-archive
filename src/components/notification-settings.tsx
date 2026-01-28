@@ -175,8 +175,8 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
           <div className="font-medium">푸시 알림</div>
           <div className="text-sm text-muted-foreground">
             {isSubscribed
-              ? "세미나 D-day, 새 기사 알림을 받습니다"
-              : "알림을 켜면 중요한 소식을 받을 수 있습니다"}
+              ? "매일 오전 10시 세미나 D-day 알림을 받습니다"
+              : "알림을 켜면 매일 세미나 일정을 받을 수 있습니다"}
           </div>
         </div>
       </div>
