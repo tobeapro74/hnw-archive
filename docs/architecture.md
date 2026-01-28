@@ -124,7 +124,8 @@ docs/                             # 프로젝트 문서
 └── prd-execution.md              # 실행 계획 및 체크리스트
 
 .claude/                          # Claude Code 설정
-└── settings.json                 # 프로젝트 설정
+├── settings.json                 # 프로젝트 설정
+└── project-overview.md           # 프로젝트 개요 (Claude용)
 ```
 
 ## 주요 기능
