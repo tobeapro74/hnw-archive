@@ -121,7 +121,8 @@ docs/                             # 프로젝트 문서
 ├── architecture.md               # 아키텍처 문서
 ├── troubleshooting.md            # 트러블슈팅 가이드
 ├── prd-instruction.md            # 프로젝트 요구사항 정의 (PRD)
-└── prd-execution.md              # 실행 계획 및 체크리스트
+├── prd-execution.md              # 실행 계획 및 체크리스트
+└── API.md                        # API 명세서
 
 .claude/                          # Claude Code 설정
 ├── settings.json                 # 프로젝트 설정
