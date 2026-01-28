@@ -391,7 +391,7 @@ export function SeminarRequestFormDialog({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="추가 메모..."
-              rows={3}
+              className="min-h-[120px] max-h-[300px] resize-y"
             />
           </div>
         </div>
@@ -430,48 +430,99 @@ interface SeminarRequestCardProps {
 }
 
 export function SeminarRequestCard({ request, onClick }: SeminarRequestCardProps) {
+  const [showNotesPopup, setShowNotesPopup] = useState(false);
   const requestDate = new Date(request.requestedDate);
   const topicsDisplay = request.topics?.join(", ") || "";
+  const hasNotes = request.notes && request.notes.trim().length > 0;
+  const notesPreview = request.notes && request.notes.length > 30
+    ? request.notes.substring(0, 30) + "..."
+    : request.notes;
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left p-4 rounded-xl border bg-card hover:shadow-md transition-all"
-    >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Badge
-              className={cn("text-xs text-white", seminarRequestStatusColors[request.status])}
-            >
-              {request.status}
-            </Badge>
-            <span className="text-xs text-muted-foreground">{request.requestingCenter}</span>
+    <>
+      <button
+        onClick={onClick}
+        className="w-full text-left p-4 rounded-xl border bg-card hover:shadow-md transition-all"
+      >
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge
+                className={cn("text-xs text-white", seminarRequestStatusColors[request.status])}
+              >
+                {request.status}
+              </Badge>
+              <span className="text-xs text-muted-foreground">{request.requestingCenter}</span>
+            </div>
+            <h3 className="font-medium truncate">{request.targetCorporation}</h3>
           </div>
-          <h3 className="font-medium truncate">{request.targetCorporation}</h3>
+          <div className="text-right text-xs text-muted-foreground">
+            {requestDate.toLocaleDateString("ko-KR", {
+              month: "short",
+              day: "numeric",
+            })}
+          </div>
         </div>
-        <div className="text-right text-xs text-muted-foreground">
-          {requestDate.toLocaleDateString("ko-KR", {
-            month: "short",
-            day: "numeric",
-          })}
-        </div>
-      </div>
 
-      <div className="space-y-1 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span>📍 {request.requestLocation}</span>
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span>📍 {request.requestLocation}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>👥 {request.minAttendees}~{request.maxAttendees}명</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>📋 {topicsDisplay || "-"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>👤 접수: {request.receiver}</span>
+          </div>
+          {hasNotes && (
+            <div className="flex items-center gap-2 pt-1">
+              <span
+                className="text-xs bg-muted px-2 py-1 rounded cursor-pointer hover:bg-muted/80"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNotesPopup(true);
+                }}
+              >
+                📝 {notesPreview}
+              </span>
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span>👥 {request.minAttendees}~{request.maxAttendees}명</span>
+      </button>
+
+      {/* 비고 팝업 */}
+      {showNotesPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowNotesPopup(false)}
+        >
+          <div
+            className="w-full max-w-md bg-background rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-amber-500 px-4 py-3 flex items-center justify-between">
+              <h3 className="font-semibold text-white">비고</h3>
+              <button
+                onClick={() => setShowNotesPopup(false)}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[60vh] overflow-y-auto">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{request.notes}</p>
+            </div>
+            <div className="border-t px-4 py-3 flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowNotesPopup(false)}>
+                닫기
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span>📋 {topicsDisplay || "-"}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>👤 접수: {request.receiver}</span>
-        </div>
-      </div>
-    </button>
+      )}
+    </>
   );
 }
