@@ -647,7 +647,106 @@ vercel env add ADMIN_SECRET_KEY
 6. **세미나 리포트**: 월별/분기별 세미나 리포트 생성
 7. **슬랙/이메일 알림**: D-day 알림 채널 확장
 
+## 성능 최적화
+
+### MongoDB 인덱스
+
+다음 인덱스가 생성되어 쿼리 성능을 향상시킵니다:
+
+```javascript
+// seminars 컬렉션
+{ date: -1 }
+{ category: 1, status: 1 }
+{ seminarType: 1 }
+
+// checklist_items 컬렉션
+{ seminarId: 1 }  // N+1 쿼리 해결의 핵심
+
+// articles 컬렉션
+{ publishedAt: -1 }
+{ category: 1 }
+{ tag: 1 }
+{ eventId: 1 }
+
+// seminar_requests 컬렉션
+{ requestedDate: -1 }
+{ status: 1 }
+
+// events 컬렉션
+{ date: -1 }
+```
+
+**인덱스 생성 방법**: `GET /api/admin/migrate` 호출
+
+### 쿼리 최적화
+
+#### 세미나 API N+1 쿼리 제거
+
+기존 방식 (N+1 문제):
+```javascript
+// 세미나 100개 = 101번 DB 쿼리
+const seminars = await collection.find().toArray();
+for (const seminar of seminars) {
+  const checklist = await checklistCollection.find({ seminarId: seminar._id }).toArray();
+}
+```
+
+개선 방식 ($lookup 집계):
+```javascript
+// 1번의 쿼리로 모든 데이터 조회
+const result = await collection.aggregate([
+  { $match: filter },
+  { $lookup: { from: "checklist_items", ... } },
+  { $addFields: { progress: { ... } } }
+]).toArray();
+```
+
+### API 병렬화
+
+홈화면 초기 로딩 시 병렬 처리:
+```javascript
+// 기존: 순차 호출
+await fetch("/api/articles");
+await fetch("/api/auth/me");
+
+// 개선: 병렬 호출
+await Promise.all([
+  fetch("/api/articles"),
+  fetch("/api/auth/me"),
+]);
+```
+
+### HTTP 캐싱
+
+```typescript
+// articles, seminars API에 적용
+return NextResponse.json(data, {
+  headers: {
+    "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+  },
+});
+```
+
+- `s-maxage=30`: CDN에서 30초간 캐시
+- `stale-while-revalidate=60`: 60초간 캐시 응답 제공하면서 백그라운드 갱신
+
 ## 최근 업데이트 내역
+
+### 2026-01-28 (밤)
+- **성능 최적화**:
+  - MongoDB 인덱스 생성 API 추가 (`GET /api/admin/migrate`)
+  - 세미나 API N+1 쿼리 제거 ($lookup 집계 파이프라인)
+  - 홈화면 API 병렬화 (articles + auth 동시 호출)
+  - HTTP 응답 캐싱 적용 (30초 캐시 + stale-while-revalidate)
+- **비정기 세미나 요청 개선**:
+  - 비고란 크기 확대 (min-h 120px, max-h 300px) 및 리사이즈 가능
+  - 카드에 비고 미리보기 표시 (30자 이상시 말줄임)
+  - 비고 클릭 시 팝업으로 전체 내용 보기
+  - 카드에 D-day 표시 추가 (7일 이내 빨간색, 이후 주황색)
+- **모달 스크롤 문제 해결**:
+  - 모달 좌우 스크롤 방지 (overflow-x-hidden)
+  - 세미나 상세 모달 열릴 때 body 스크롤 완전 차단 (position: fixed)
+  - 터치 이벤트 전파 방지
 
 ### 2026-01-28 (저녁)
 - **푸시 알림 방식 개선**:
