@@ -9,6 +9,8 @@ import {
   seminarRequestTopics,
   seminarRequestStatusColors,
   CreateSeminarRequestInput,
+  calculateDday,
+  formatDday,
 } from "@/lib/seminar-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -432,6 +434,7 @@ interface SeminarRequestCardProps {
 export function SeminarRequestCard({ request, onClick }: SeminarRequestCardProps) {
   const [showNotesPopup, setShowNotesPopup] = useState(false);
   const requestDate = new Date(request.requestedDate);
+  const dday = calculateDday(request.requestedDate);
   const topicsDisplay = request.topics?.join(", ") || "";
   const hasNotes = request.notes && request.notes.trim().length > 0;
   const notesPreview = request.notes && request.notes.length > 30
@@ -456,11 +459,19 @@ export function SeminarRequestCard({ request, onClick }: SeminarRequestCardProps
             </div>
             <h3 className="font-medium truncate">{request.targetCorporation}</h3>
           </div>
-          <div className="text-right text-xs text-muted-foreground">
-            {requestDate.toLocaleDateString("ko-KR", {
-              month: "short",
-              day: "numeric",
-            })}
+          <div className="text-right text-xs">
+            <div className="text-muted-foreground">
+              {requestDate.toLocaleDateString("ko-KR", {
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+            <div className={cn(
+              "font-medium",
+              dday < 0 ? "text-muted-foreground" : dday <= 7 ? "text-red-500" : "text-amber-500"
+            )}>
+              {formatDday(dday)}
+            </div>
           </div>
         </div>
 
