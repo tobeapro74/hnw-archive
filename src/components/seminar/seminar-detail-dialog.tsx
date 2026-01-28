@@ -356,7 +356,10 @@ export function SeminarDetailDialog({
             </div>
 
             {/* 스크롤 가능한 콘텐츠 */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div
+              className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+              onTouchMove={(e) => e.stopPropagation()}
+            >
               {activeTab === "checklist" ? (
                 <>
                   {/* 진행률 */}
