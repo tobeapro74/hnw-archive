@@ -1,6 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 
+// GET - 인덱스 생성 (성능 최적화)
+export async function GET() {
+  try {
+    const db = await getDb();
+    const results: Record<string, string> = {};
+
+    // seminars 컬렉션 인덱스
+    const seminars = db.collection('seminars');
+    await seminars.createIndex({ date: -1 }, { background: true });
+    await seminars.createIndex({ category: 1, status: 1 }, { background: true });
+    await seminars.createIndex({ seminarType: 1 }, { background: true });
+    results.seminars = 'date, category+status, seminarType 인덱스 생성 완료';
+
+    // checklist_items 컬렉션 인덱스
+    const checklist = db.collection('checklist_items');
+    await checklist.createIndex({ seminarId: 1 }, { background: true });
+    results.checklist_items = 'seminarId 인덱스 생성 완료';
+
+    // articles 컬렉션 인덱스
+    const articles = db.collection('articles');
+    await articles.createIndex({ publishedAt: -1 }, { background: true });
+    await articles.createIndex({ category: 1 }, { background: true });
+    await articles.createIndex({ tag: 1 }, { background: true });
+    await articles.createIndex({ eventId: 1 }, { background: true });
+    results.articles = 'publishedAt, category, tag, eventId 인덱스 생성 완료';
+
+    // seminar_requests 컬렉션 인덱스
+    const requests = db.collection('seminar_requests');
+    await requests.createIndex({ requestedDate: -1 }, { background: true });
+    await requests.createIndex({ status: 1 }, { background: true });
+    results.seminar_requests = 'requestedDate, status 인덱스 생성 완료';
+
+    // events 컬렉션 인덱스
+    const events = db.collection('events');
+    await events.createIndex({ date: -1 }, { background: true });
+    results.events = 'date 인덱스 생성 완료';
+
+    return NextResponse.json({
+      success: true,
+      message: '모든 인덱스 생성 완료',
+      indexes: results,
+    });
+  } catch (error) {
+    console.error('Index creation error:', error);
+    return NextResponse.json(
+      { error: 'Index creation failed', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
 // POST - 데이터 마이그레이션 (일회성 작업)
 export async function POST(request: NextRequest) {
   try {

@@ -51,7 +51,15 @@ export async function GET(request: NextRequest) {
       _id: doc._id?.toString(),
     }));
 
-    return NextResponse.json({ success: true, data: result });
+    // 캐싱 헤더 추가 (30초간 캐시, 백그라운드에서 갱신)
+    return NextResponse.json(
+      { success: true, data: result },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to fetch articles:", error);
     return NextResponse.json(

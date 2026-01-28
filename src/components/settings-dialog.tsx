@@ -44,7 +44,7 @@ export function SettingsDialog() {
               <h3 className="text-sm font-medium text-muted-foreground">알림</h3>
               <NotificationSettings />
               <p className="text-xs text-muted-foreground">
-                매일 오전 9시(KST) 세미나 D-7, D-3, D-1, D-day 알림
+                매일 오전 10시(KST) 패밀리오피스/법인 세미나 D-day 알림
               </p>
             </div>
 

@@ -65,38 +65,33 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  // 기사 목록 조회
+  // 기사 목록 + 로그인 상태 병렬 조회 (성능 최적화)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await fetch("/api/articles");
-        const data = await res.json();
-        if (data.success) {
-          setArticles(data.data);
+        const [articlesRes, authRes] = await Promise.all([
+          fetch("/api/articles"),
+          fetch("/api/auth/me"),
+        ]);
+
+        const [articlesData, authData] = await Promise.all([
+          articlesRes.json(),
+          authRes.json(),
+        ]);
+
+        if (articlesData.success) {
+          setArticles(articlesData.data);
+        }
+        if (authData.success) {
+          setUser(authData.data);
         }
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch initial data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
-
-  // 로그인 상태 확인
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.success) {
-          setUser(data.data);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    checkAuth();
+    fetchInitialData();
   }, []);
 
   // 로그아웃

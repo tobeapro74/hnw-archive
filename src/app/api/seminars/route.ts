@@ -51,32 +51,89 @@ export async function GET(request: Request) {
       filter.seminarType = seminarType;
     }
 
-    const seminars = await collection
-      .find(filter)
-      .sort({ date: -1 })
-      .toArray();
+    // $lookup으로 한 번에 세미나 + 체크리스트 조회 (N+1 제거)
+    const seminarsWithProgress = await collection.aggregate([
+      { $match: filter },
+      { $sort: { date: -1 } },
+      {
+        $addFields: {
+          _idStr: { $toString: "$_id" }
+        }
+      },
+      {
+        $lookup: {
+          from: "checklist_items",
+          localField: "_idStr",
+          foreignField: "seminarId",
+          as: "checklistItems"
+        }
+      },
+      {
+        $addFields: {
+          progress: {
+            total: { $size: "$checklistItems" },
+            completed: {
+              $size: {
+                $filter: {
+                  input: "$checklistItems",
+                  as: "item",
+                  cond: { $eq: ["$$item.isCompleted", true] }
+                }
+              }
+            },
+            percentage: {
+              $cond: {
+                if: { $eq: [{ $size: "$checklistItems" }, 0] },
+                then: 0,
+                else: {
+                  $round: [
+                    {
+                      $multiply: [
+                        {
+                          $divide: [
+                            {
+                              $size: {
+                                $filter: {
+                                  input: "$checklistItems",
+                                  as: "item",
+                                  cond: { $eq: ["$$item.isCompleted", true] }
+                                }
+                              }
+                            },
+                            { $size: "$checklistItems" }
+                          ]
+                        },
+                        100
+                      ]
+                    },
+                    0
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          checklistItems: 0,
+          _idStr: 0
+        }
+      }
+    ]).toArray();
 
-    // 각 세미나의 체크리스트 진행률 계산
-    const checklistCollection = db.collection<ChecklistItem>("checklist_items");
-    const seminarsWithProgress = await Promise.all(
-      seminars.map(async (seminar) => {
-        const checklistItems = await checklistCollection
-          .find({ seminarId: seminar._id!.toString() })
-          .toArray();
+    // _id를 문자열로 변환
+    const result = seminarsWithProgress.map(seminar => ({
+      ...seminar,
+      _id: seminar._id!.toString(),
+    }));
 
-        const total = checklistItems.length;
-        const completed = checklistItems.filter((item) => item.isCompleted).length;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-        return {
-          ...seminar,
-          _id: seminar._id!.toString(),
-          progress: { total, completed, percentage },
-        };
-      })
-    );
-
-    return NextResponse.json(seminarsWithProgress);
+    // 캐싱 헤더 추가 (30초간 캐시, 백그라운드에서 갱신)
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     console.error("GET /api/seminars error:", error);
     return NextResponse.json(
