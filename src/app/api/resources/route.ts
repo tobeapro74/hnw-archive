@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
-import { Resource, CreateResourceRequest } from "@/lib/resource-types";
 
 // GET /api/resources - 자료 목록 조회
 export async function GET(request: Request) {
@@ -11,7 +10,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
 
     const db = await getDb();
-    const collection = db.collection<Resource>("resources");
+    const collection = db.collection("resources");
 
     // 필터 조건 구성
     const filter: Record<string, unknown> = {};
@@ -39,7 +38,7 @@ export async function GET(request: Request) {
 
     const result = resources.map((resource) => ({
       ...resource,
-      _id: resource._id!.toString(),
+      _id: resource._id.toString(),
     }));
 
     return NextResponse.json({ success: true, data: result });
@@ -55,7 +54,7 @@ export async function GET(request: Request) {
 // POST /api/resources - 자료 생성
 export async function POST(request: NextRequest) {
   try {
-    const body: CreateResourceRequest = await request.json();
+    const body = await request.json();
 
     // 필수 필드 검증
     if (!body.title || !body.category || !body.fileName || !body.fileUrl || !body.fileType) {
@@ -74,10 +73,10 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb();
-    const collection = db.collection<Resource>("resources");
+    const collection = db.collection("resources");
 
     const now = new Date();
-    const newResource: Omit<Resource, "_id"> = {
+    const newResource = {
       title: body.title,
       category: body.category,
       subCategory: body.subCategory,
@@ -87,12 +86,12 @@ export async function POST(request: NextRequest) {
       fileSize: body.fileSize || 0,
       description: body.description,
       uploadedAt: now,
-      uploadedBy: "system", // TODO: 로그인 사용자로 변경
+      uploadedBy: "system",
       createdAt: now,
       updatedAt: now,
     };
 
-    const result = await collection.insertOne(newResource as Resource);
+    const result = await collection.insertOne(newResource);
 
     return NextResponse.json({
       success: true,

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
-import { Resource } from "@/lib/resource-types";
 
 // GET /api/resources/[id] - 자료 상세 조회
 export async function GET(
@@ -19,7 +18,7 @@ export async function GET(
     }
 
     const db = await getDb();
-    const collection = db.collection<Resource>("resources");
+    const collection = db.collection("resources");
 
     const resource = await collection.findOne({ _id: new ObjectId(id) });
 
@@ -63,7 +62,7 @@ export async function PUT(
 
     const body = await request.json();
     const db = await getDb();
-    const collection = db.collection<Resource>("resources");
+    const collection = db.collection("resources");
 
     const updateData = {
       ...body,
@@ -116,7 +115,7 @@ export async function DELETE(
     }
 
     const db = await getDb();
-    const collection = db.collection<Resource>("resources");
+    const collection = db.collection("resources");
 
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
