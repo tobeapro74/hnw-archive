@@ -20,7 +20,12 @@ export async function GET(request: Request) {
     }
 
     if (subCategory) {
-      filter.subCategory = subCategory;
+      // 보고서 "전문"은 "요약"이 아닌 모든 것
+      if (category === "보고서" && subCategory === "전문") {
+        filter.subCategory = { $ne: "요약" };
+      } else {
+        filter.subCategory = subCategory;
+      }
     }
 
     if (search) {
