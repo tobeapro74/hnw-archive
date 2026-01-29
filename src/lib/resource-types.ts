@@ -5,7 +5,7 @@ export type ResourceCategory = "회의록" | "보고서" | "기획안";
 export type MeetingSubCategory = "내부회의록" | "외부회의록" | "핵심요약";
 
 // 보고서 서브카테고리
-export type ReportSubCategory = "초안" | "완료" | "요약";
+export type ReportSubCategory = "전문" | "요약";
 
 // 지원 파일 형식
 export type FileType = "pdf" | "ppt" | "pptx" | "doc" | "docx" | "xls" | "xlsx";
@@ -55,8 +55,7 @@ export const meetingSubCategories: { id: MeetingSubCategory; name: string }[] = 
 
 // 보고서 서브카테고리 옵션
 export const reportSubCategories: { id: ReportSubCategory; name: string }[] = [
-  { id: "초안", name: "초안" },
-  { id: "완료", name: "완료" },
+  { id: "전문", name: "전문" },
   { id: "요약", name: "요약" },
 ];
 
