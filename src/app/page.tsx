@@ -17,6 +17,7 @@ import { CategoryChart } from "@/components/dashboard/category-chart";
 import { MonthlyTimeline } from "@/components/dashboard/monthly-timeline";
 import { HighlightSection } from "@/components/dashboard/highlight-section";
 import { SeminarView } from "@/components/seminar";
+import { ResourceView } from "@/components/resources";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -60,7 +61,7 @@ function HomeContent() {
   // URL 쿼리 파라미터로 탭 설정 (푸시 알림 클릭 시 사용)
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["home", "list", "seminar", "calendar"].includes(tab)) {
+    if (tab && ["home", "list", "seminar", "resources", "calendar"].includes(tab)) {
       setCurrentView(tab as ViewType);
     }
   }, [searchParams]);
@@ -651,6 +652,7 @@ function HomeContent() {
               )}
               {currentView === "list" && "홍보 목록"}
               {currentView === "seminar" && "세미나 관리"}
+              {currentView === "resources" && "자료실"}
               {currentView === "calendar" && "홍보 캘린더"}
               {currentView === "admin" && "기사관리"}
             </h1>
@@ -706,6 +708,7 @@ function HomeContent() {
         {currentView === "home" && renderHome()}
         {currentView === "list" && renderList()}
         {currentView === "seminar" && <SeminarView />}
+        {currentView === "resources" && <ResourceView />}
         {currentView === "calendar" && renderCalendar()}
         {currentView === "admin" && user?.is_admin && (
           <div className="p-4">

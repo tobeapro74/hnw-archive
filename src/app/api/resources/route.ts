@@ -1,0 +1,111 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/mongodb";
+import { Resource, CreateResourceRequest } from "@/lib/resource-types";
+
+// GET /api/resources - 자료 목록 조회
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+    const subCategory = searchParams.get("subCategory");
+    const search = searchParams.get("search");
+
+    const db = await getDb();
+    const collection = db.collection<Resource>("resources");
+
+    // 필터 조건 구성
+    const filter: Record<string, unknown> = {};
+
+    if (category) {
+      filter.category = category;
+    }
+
+    if (subCategory) {
+      filter.subCategory = subCategory;
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { fileName: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const resources = await collection
+      .find(filter)
+      .sort({ uploadedAt: -1 })
+      .toArray();
+
+    const result = resources.map((resource) => ({
+      ...resource,
+      _id: resource._id!.toString(),
+    }));
+
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    console.error("GET /api/resources error:", error);
+    return NextResponse.json(
+      { success: false, error: "자료 목록을 불러오는데 실패했습니다." },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/resources - 자료 생성
+export async function POST(request: NextRequest) {
+  try {
+    const body: CreateResourceRequest = await request.json();
+
+    // 필수 필드 검증
+    if (!body.title || !body.category || !body.fileName || !body.fileUrl || !body.fileType) {
+      return NextResponse.json(
+        { success: false, error: "필수 필드가 누락되었습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 회의록일 경우 서브카테고리 필수
+    if (body.category === "회의록" && !body.subCategory) {
+      return NextResponse.json(
+        { success: false, error: "회의록은 서브카테고리(내부/외부)가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const db = await getDb();
+    const collection = db.collection<Resource>("resources");
+
+    const now = new Date();
+    const newResource: Omit<Resource, "_id"> = {
+      title: body.title,
+      category: body.category,
+      subCategory: body.subCategory,
+      fileName: body.fileName,
+      fileUrl: body.fileUrl,
+      fileType: body.fileType,
+      fileSize: body.fileSize || 0,
+      description: body.description,
+      uploadedAt: now,
+      uploadedBy: "system", // TODO: 로그인 사용자로 변경
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await collection.insertOne(newResource as Resource);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...newResource,
+        _id: result.insertedId.toString(),
+      },
+    });
+  } catch (error) {
+    console.error("POST /api/resources error:", error);
+    return NextResponse.json(
+      { success: false, error: "자료 생성에 실패했습니다." },
+      { status: 500 }
+    );
+  }
+}
