@@ -37,10 +37,11 @@ export function ResourceCard({ resource, fileTypes, onView, onDelete }: Resource
   const uniqueFileTypes = [...new Set(displayFileTypes)];
   const hasMultipleTypes = uniqueFileTypes.length > 1;
 
-  // title과 fileName이 같으면 파일명 숨김
-  const fileNameWithoutExt = resource.fileName.replace(/\.[^.]+$/, "").normalize("NFC");
-  const titleNormalized = resource.title.normalize("NFC");
-  const showFileName = fileNameWithoutExt !== titleNormalized;
+  // title과 fileName이 같으면 파일명 숨김 (언더바, 하이픈, 공백 무시)
+  const normalizeForCompare = (str: string) =>
+    str.normalize("NFC").replace(/[-_\s]/g, "").toLowerCase();
+  const fileNameWithoutExt = resource.fileName.replace(/\.[^.]+$/, "");
+  const showFileName = normalizeForCompare(fileNameWithoutExt) !== normalizeForCompare(resource.title);
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
