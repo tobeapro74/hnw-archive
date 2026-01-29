@@ -2,7 +2,7 @@
 export type ResourceCategory = "회의록" | "보고서" | "기획안";
 
 // 회의록 서브카테고리
-export type MeetingSubCategory = "내부회의록" | "외부회의록" | "핵심요약";
+export type MeetingSubCategory = "내부회의록" | "외부회의록" | "한장요약";
 
 // 보고서 서브카테고리
 export type ReportSubCategory = "전문" | "요약";
@@ -50,7 +50,7 @@ export const resourceCategories: { id: ResourceCategory; name: string; icon: str
 export const meetingSubCategories: { id: MeetingSubCategory; name: string }[] = [
   { id: "내부회의록", name: "내부회의록" },
   { id: "외부회의록", name: "외부회의록" },
-  { id: "핵심요약", name: "핵심요약" },
+  { id: "한장요약", name: "한장요약" },
 ];
 
 // 보고서 서브카테고리 옵션
