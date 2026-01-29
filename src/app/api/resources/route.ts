@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { requireResourceAccess } from "@/lib/auth";
 
 // GET /api/resources - 자료 목록 조회
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const subCategory = searchParams.get("subCategory");
@@ -67,6 +74,12 @@ export async function GET(request: Request) {
 // POST /api/resources - 자료 생성
 export async function POST(request: NextRequest) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const body = await request.json();
 
     // 필수 필드 검증

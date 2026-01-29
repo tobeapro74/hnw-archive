@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireResourceAccess } from "@/lib/auth";
 
 // GET /api/resources/[id]/download - 파일 다운로드
 export async function GET(
@@ -8,6 +9,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const { id } = await params;
 
     const db = await getDb();

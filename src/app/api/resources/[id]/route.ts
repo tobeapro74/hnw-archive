@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { requireResourceAccess } from "@/lib/auth";
 
 // GET /api/resources/[id] - 자료 상세 조회
 export async function GET(
@@ -8,6 +9,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const { id } = await params;
 
     if (!ObjectId.isValid(id)) {
@@ -51,6 +58,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const { id } = await params;
 
     if (!ObjectId.isValid(id)) {
@@ -105,6 +118,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 권한 체크
+    const authResult = await requireResourceAccess(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+
     const { id } = await params;
 
     if (!ObjectId.isValid(id)) {

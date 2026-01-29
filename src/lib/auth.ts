@@ -104,6 +104,44 @@ export async function requireAdmin(
   return { authorized: true, user };
 }
 
+// 자료실 접근 권한이 있는 이메일 목록
+const RESOURCE_ALLOWED_EMAILS = [
+  'tobeapro@gmail.com',
+  'sweetas11@nhsec.com',
+];
+
+// 자료실 권한 체크 (관리자 또는 허용된 이메일만 접근 가능)
+export async function requireResourceAccess(
+  request: NextRequest
+): Promise<{ authorized: boolean; user: User | null; response?: NextResponse }> {
+  const user = await getCurrentUser(request);
+
+  if (!user) {
+    return {
+      authorized: false,
+      user: null,
+      response: NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // 관리자이거나 허용된 이메일인 경우 접근 허용
+  if (user.is_admin || RESOURCE_ALLOWED_EMAILS.includes(user.email)) {
+    return { authorized: true, user };
+  }
+
+  return {
+    authorized: false,
+    user,
+    response: NextResponse.json(
+      { error: '자료실 접근 권한이 없습니다.' },
+      { status: 403 }
+    ),
+  };
+}
+
 // 사용자 권한 업데이트
 export async function updateUserPermissions(
   userId: string,
