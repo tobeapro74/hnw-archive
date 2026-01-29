@@ -13,11 +13,14 @@ interface ResourceListProps {
   onRefresh: () => void;
 }
 
-// 파일명에서 확장자 제거
+// 파일명에서 확장자 제거 + 유니코드 정규화 (NFC)
+// macOS에서 생성된 파일은 NFD(분해형), Windows/Linux는 NFC(조합형) 사용
+// 한글 비교를 위해 NFC로 통일
 function getBaseName(fileName: string): string {
   const lastDotIndex = fileName.lastIndexOf(".");
-  if (lastDotIndex === -1) return fileName;
-  return fileName.substring(0, lastDotIndex);
+  const baseName = lastDotIndex === -1 ? fileName : fileName.substring(0, lastDotIndex);
+  // NFC 정규화로 한글 조합형 통일
+  return baseName.normalize("NFC");
 }
 
 // 그룹화된 리소스 타입
