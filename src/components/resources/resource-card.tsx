@@ -37,6 +37,11 @@ export function ResourceCard({ resource, fileTypes, onView, onDelete }: Resource
   const uniqueFileTypes = [...new Set(displayFileTypes)];
   const hasMultipleTypes = uniqueFileTypes.length > 1;
 
+  // title과 fileName이 같으면 파일명 숨김
+  const fileNameWithoutExt = resource.fileName.replace(/\.[^.]+$/, "").normalize("NFC");
+  const titleNormalized = resource.title.normalize("NFC");
+  const showFileName = fileNameWithoutExt !== titleNormalized;
+
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(`/api/resources/${resource._id}/download`, "_blank");
@@ -58,12 +63,14 @@ export function ResourceCard({ resource, fileTypes, onView, onDelete }: Resource
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h3 className="font-medium text-sm line-clamp-1">{resource.title}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                {resource.fileName.replace(/\.[^.]+$/, "")}
-                {hasMultipleTypes && (
-                  <span className="text-primary ml-1">({uniqueFileTypes.length}개 형식)</span>
-                )}
-              </p>
+              {(showFileName || hasMultipleTypes) && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                  {showFileName && fileNameWithoutExt}
+                  {hasMultipleTypes && (
+                    <span className="text-primary ml-1">({uniqueFileTypes.length}개 형식)</span>
+                  )}
+                </p>
+              )}
             </div>
 
             {/* 파일 타입 배지들 */}
