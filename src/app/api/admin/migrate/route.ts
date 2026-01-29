@@ -38,6 +38,12 @@ export async function GET() {
     await events.createIndex({ date: -1 }, { background: true });
     results.events = 'date 인덱스 생성 완료';
 
+    // resources 컬렉션 인덱스
+    const resources = db.collection('resources');
+    await resources.createIndex({ category: 1, subCategory: 1 }, { background: true });
+    await resources.createIndex({ uploadedAt: -1 }, { background: true });
+    results.resources = 'category+subCategory, uploadedAt 인덱스 생성 완료';
+
     return NextResponse.json({
       success: true,
       message: '모든 인덱스 생성 완료',
