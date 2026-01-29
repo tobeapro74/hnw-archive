@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +28,8 @@ interface ExtendedResource extends Resource {
 
 export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerProps) {
   const [downloading, setDownloading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [pdfError, setPdfError] = useState(false);
   const extResource = resource as ExtendedResource;
 
   if (!resource) return null;
@@ -37,6 +39,10 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
     color: "bg-gray-100 text-gray-700",
     label: resource.fileType.toUpperCase(),
   };
+
+  // 파일 타입별 뷰어 지원 확인
+  const isPdf = resource.fileType === "pdf";
+  const isOfficeFile = ["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(resource.fileType);
 
   // 다운로드 핸들러
   const handleDownload = async () => {
@@ -74,8 +80,24 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   // content가 있는지 확인
   const hasContent = extResource.content && extResource.content.trim().length > 0;
 
+  // 파일 뷰어 URL
+  const fileDownloadUrl = resource._id ? `/api/resources/${resource._id}/download` : "";
+
+  // Google Docs Viewer URL (Office 파일용)
+  const getGoogleViewerUrl = () => {
+    if (typeof window === "undefined") return "";
+    const fullUrl = `${window.location.origin}/api/resources/${resource._id}/download`;
+    return `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!open) {
+        setPdfLoading(true);
+        setPdfError(false);
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
         {/* 헤더 */}
         <DialogHeader className="p-4 pb-2 border-b">
@@ -114,8 +136,47 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
         </DialogHeader>
 
         {/* 내용 영역 */}
-        <div className="flex-1 overflow-hidden">
-          {hasContent ? (
+        <div className="flex-1 overflow-hidden relative">
+          {isPdf || isOfficeFile ? (
+            // PDF 또는 Office 파일 뷰어
+            <>
+              {pdfLoading && !pdfError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {isPdf ? "PDF" : resource.fileType.toUpperCase()} 로딩 중...
+                    </span>
+                  </div>
+                </div>
+              )}
+              {pdfError ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <div className="text-6xl mb-4">{typeConfig.icon}</div>
+                  <p className="text-lg font-medium mb-2">{resource.fileName}</p>
+                  <p className="text-muted-foreground mb-4">
+                    문서를 표시할 수 없습니다. 다운로드해서 확인해주세요.
+                  </p>
+                  <Button onClick={handleDownload} disabled={downloading}>
+                    <Download className="w-4 h-4 mr-1" />
+                    {downloading ? "다운로드 중..." : "파일 다운로드"}
+                  </Button>
+                </div>
+              ) : (
+                <iframe
+                  src={isPdf ? fileDownloadUrl : getGoogleViewerUrl()}
+                  className="w-full h-full border-0"
+                  onLoad={() => setPdfLoading(false)}
+                  onError={() => {
+                    setPdfLoading(false);
+                    setPdfError(true);
+                  }}
+                  title={resource.title}
+                />
+              )}
+            </>
+          ) : hasContent ? (
+            // 텍스트 내용 표시
             <ScrollArea className="h-full">
               <div className="p-4">
                 <div className="bg-muted/30 rounded-lg p-4">
@@ -130,6 +191,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
               </div>
             </ScrollArea>
           ) : (
+            // 미리보기 불가
             <div className="h-full flex flex-col items-center justify-center text-center p-4">
               <div className="text-6xl mb-4">{typeConfig.icon}</div>
               <p className="text-lg font-medium mb-2">{resource.fileName}</p>

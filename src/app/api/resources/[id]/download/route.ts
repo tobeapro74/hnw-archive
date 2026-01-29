@@ -59,11 +59,14 @@ export async function GET(
 
     const contentType = contentTypeMap[resource.fileType] || "application/octet-stream";
 
+    // PDF는 inline으로 표시, 나머지는 attachment
+    const disposition = resource.fileType === "pdf" ? "inline" : "attachment";
+
     // 파일 반환
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+        "Content-Disposition": `${disposition}; filename*=UTF-8''${encodeURIComponent(fileName)}`,
         "Content-Length": fileBuffer.length.toString(),
       },
     });
