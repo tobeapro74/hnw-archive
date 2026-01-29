@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -54,6 +48,25 @@ export function ResourceFormDialog({
   const [fileType, setFileType] = useState<FileType | "">("");
   const [fileSize, setFileSize] = useState<number>(0);
   const [description, setDescription] = useState("");
+
+  // 모달 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
 
   // 기본값 설정
   useEffect(() => {
@@ -144,177 +157,211 @@ export function ResourceFormDialog({
     onOpenChange(false);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>자료 등록</DialogTitle>
-        </DialogHeader>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      onClick={handleClose}
+    >
+      <div
+        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="shrink-0 px-4 py-2 bg-primary">
+          {/* 핸들 + 닫기 버튼 */}
+          <div className="flex items-center justify-between">
+            <div className="w-8" />
+            <div className="w-8 h-1 bg-white/30 rounded-full" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20 w-7 h-7"
+              onClick={handleClose}
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
 
-        <div className="space-y-4">
           {/* 제목 */}
-          <div className="space-y-2">
-            <Label htmlFor="title">제목 *</Label>
-            <Input
-              id="title"
-              placeholder="자료 제목"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          {/* 카테고리 */}
-          <div className="space-y-2">
-            <Label>카테고리 *</Label>
-            <Select
-              value={category}
-              onValueChange={(v) => {
-                setCategory(v as ResourceCategory);
-                if (v !== "회의록" && v !== "보고서") setSubCategory("");
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {resourceCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 회의록 서브카테고리 */}
-          {category === "회의록" && (
-            <div className="space-y-2">
-              <Label>회의록 유형 *</Label>
-              <Select
-                value={subCategory}
-                onValueChange={(v) => setSubCategory(v as MeetingSubCategory)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {meetingSubCategories.map((sub) => (
-                    <SelectItem key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* 보고서 서브카테고리 */}
-          {category === "보고서" && (
-            <div className="space-y-2">
-              <Label>보고서 유형 *</Label>
-              <Select
-                value={subCategory}
-                onValueChange={(v) => setSubCategory(v as ReportSubCategory)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reportSubCategories.map((sub) => (
-                    <SelectItem key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* 파일 URL */}
-          <div className="space-y-2">
-            <Label htmlFor="fileUrl">파일 URL *</Label>
-            <Input
-              id="fileUrl"
-              placeholder="https://..."
-              value={fileUrl}
-              onChange={(e) => setFileUrl(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Google Drive, Dropbox 등의 공유 링크 또는 직접 파일 URL
-            </p>
-          </div>
-
-          {/* 파일명 */}
-          <div className="space-y-2">
-            <Label htmlFor="fileName">파일명 *</Label>
-            <Input
-              id="fileName"
-              placeholder="파일명.pdf"
-              value={fileName}
-              onChange={(e) => {
-                setFileName(e.target.value);
-                const type = getFileType(e.target.value);
-                if (type) setFileType(type);
-              }}
-            />
-          </div>
-
-          {/* 파일 타입 */}
-          <div className="space-y-2">
-            <Label>파일 형식 *</Label>
-            <Select
-              value={fileType}
-              onValueChange={(v) => setFileType(v as FileType)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="ppt">PPT</SelectItem>
-                <SelectItem value="pptx">PPTX</SelectItem>
-                <SelectItem value="doc">DOC</SelectItem>
-                <SelectItem value="docx">DOCX</SelectItem>
-                <SelectItem value="xls">XLS</SelectItem>
-                <SelectItem value="xlsx">XLSX</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 파일 크기 */}
-          <div className="space-y-2">
-            <Label htmlFor="fileSize">파일 크기 (KB)</Label>
-            <Input
-              id="fileSize"
-              type="number"
-              placeholder="0"
-              value={fileSize ? Math.round(fileSize / 1024) : ""}
-              onChange={(e) => setFileSize(parseInt(e.target.value || "0") * 1024)}
-            />
-          </div>
-
-          {/* 설명 */}
-          <div className="space-y-2">
-            <Label htmlFor="description">설명</Label>
-            <Textarea
-              id="description"
-              placeholder="자료에 대한 설명"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
+          <div className="flex items-center gap-2 mt-1">
+            <Plus className="w-5 h-5 text-white" />
+            <h2 className="text-white text-base font-semibold">새 자료 등록</h2>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        {/* 폼 영역 */}
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-4"
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-4">
+            {/* 제목 */}
+            <div className="space-y-2">
+              <Label htmlFor="title">제목 *</Label>
+              <Input
+                id="title"
+                placeholder="자료 제목"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            {/* 카테고리 */}
+            <div className="space-y-2">
+              <Label>카테고리 *</Label>
+              <Select
+                value={category}
+                onValueChange={(v) => {
+                  setCategory(v as ResourceCategory);
+                  if (v !== "회의록" && v !== "보고서") setSubCategory("");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {resourceCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 회의록 서브카테고리 */}
+            {category === "회의록" && (
+              <div className="space-y-2">
+                <Label>회의록 유형 *</Label>
+                <Select
+                  value={subCategory}
+                  onValueChange={(v) => setSubCategory(v as MeetingSubCategory)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {meetingSubCategories.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* 보고서 서브카테고리 */}
+            {category === "보고서" && (
+              <div className="space-y-2">
+                <Label>보고서 유형 *</Label>
+                <Select
+                  value={subCategory}
+                  onValueChange={(v) => setSubCategory(v as ReportSubCategory)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportSubCategories.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* 파일 URL */}
+            <div className="space-y-2">
+              <Label htmlFor="fileUrl">파일 URL *</Label>
+              <Input
+                id="fileUrl"
+                placeholder="https://..."
+                value={fileUrl}
+                onChange={(e) => setFileUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Google Drive, Dropbox 등의 공유 링크 또는 직접 파일 URL
+              </p>
+            </div>
+
+            {/* 파일명 */}
+            <div className="space-y-2">
+              <Label htmlFor="fileName">파일명 *</Label>
+              <Input
+                id="fileName"
+                placeholder="파일명.pdf"
+                value={fileName}
+                onChange={(e) => {
+                  setFileName(e.target.value);
+                  const type = getFileType(e.target.value);
+                  if (type) setFileType(type);
+                }}
+              />
+            </div>
+
+            {/* 파일 타입 */}
+            <div className="space-y-2">
+              <Label>파일 형식 *</Label>
+              <Select
+                value={fileType}
+                onValueChange={(v) => setFileType(v as FileType)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="ppt">PPT</SelectItem>
+                  <SelectItem value="pptx">PPTX</SelectItem>
+                  <SelectItem value="doc">DOC</SelectItem>
+                  <SelectItem value="docx">DOCX</SelectItem>
+                  <SelectItem value="xls">XLS</SelectItem>
+                  <SelectItem value="xlsx">XLSX</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 파일 크기 */}
+            <div className="space-y-2">
+              <Label htmlFor="fileSize">파일 크기 (KB)</Label>
+              <Input
+                id="fileSize"
+                type="number"
+                placeholder="0"
+                value={fileSize ? Math.round(fileSize / 1024) : ""}
+                onChange={(e) => setFileSize(parseInt(e.target.value || "0") * 1024)}
+              />
+            </div>
+
+            {/* 설명 */}
+            <div className="space-y-2">
+              <Label htmlFor="description">설명</Label>
+              <Textarea
+                id="description"
+                placeholder="자료에 대한 설명"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 하단 버튼 영역 */}
+        <div className="shrink-0 flex gap-2 p-4 border-t bg-muted/30">
+          <Button variant="outline" onClick={handleClose} className="flex-1">
             취소
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button onClick={handleSubmit} disabled={loading} className="flex-1">
             {loading ? "등록 중..." : "등록"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -6,7 +6,6 @@ globs:
   - "src/lib/*.ts"
 alwaysApply: true
 ---
-
 # HNW 홍보 아카이브 프로젝트 개요
 
 ## 프로젝트 정보
@@ -18,9 +17,11 @@ alwaysApply: true
 ## 핵심 파일 구조
 
 ### 메인 페이지
-- `src/app/page.tsx` - 메인 SPA 페이지 (홈, 목록, 캘린더, 세미나, 기사관리 뷰 관리)
+
+- `src/app/page.tsx` - 메인 SPA 페이지  홈, 목록, 캘린더, 세미나, 기사관리 뷰 관리)
 
 ### 데이터베이스
+
 - `src/lib/mongodb.ts` - MongoDB Atlas 연결
 - `src/lib/types.ts` - 공통 타입 정의
 - `src/lib/seminar-types.ts` - 세미나 관련 타입 정의
@@ -29,11 +30,13 @@ alwaysApply: true
 ### 주요 컴포넌트
 
 #### 홍보 기사 관련
+
 - `src/components/article-card.tsx` - 기사 카드
 - `src/components/article-group.tsx` - 이벤트별 기사 그룹
 - `src/components/calendar-view.tsx` - 홍보 캘린더
 
 #### 세미나 관련 (`src/components/seminar/`)
+
 - `seminar-view.tsx` - 세미나 메인 뷰 (캘린더/리스트 토글)
 - `seminar-calendar.tsx` - 세미나 월별 캘린더
 - `seminar-card.tsx` - 세미나 카드/리스트 항목
@@ -45,53 +48,64 @@ alwaysApply: true
 - `progress-bar.tsx` - 진행률 바
 
 #### 공통
+
 - `src/components/bottom-nav.tsx` - 하단 네비게이션
 - `src/components/settings-dialog.tsx` - 설정 다이얼로그 (푸시 알림)
 
 ### API 라우트
 
 #### 인증 (`src/app/api/auth/`)
+
 - `login/route.ts` - 로그인
 - `logout/route.ts` - 로그아웃
 - `register/route.ts` - 회원가입
 - `me/route.ts` - 현재 사용자 조회
 
 #### 기사 (`src/app/api/articles/`)
+
 - `route.ts` - 기사 목록/등록 (GET/POST, 캐싱 적용)
 - `[id]/route.ts` - 기사 상세/수정/삭제
 
 #### 세미나 (`src/app/api/seminars/`)
+
 - `route.ts` - 세미나 목록/등록 (GET/POST, $lookup 최적화)
 - `[id]/route.ts` - 세미나 상세/수정/삭제
 - `[id]/checklist/route.ts` - 체크리스트 항목 추가
 
 #### 비정기 요청 (`src/app/api/seminar-requests/`)
+
 - `route.ts` - 요청 목록/등록
 - `[id]/route.ts` - 요청 상세/수정/삭제
 
 #### 체크리스트 (`src/app/api/checklist/`)
+
 - `[itemId]/route.ts` - 항목 완료 토글/삭제
 
 #### 관리자 (`src/app/api/admin/`)
+
 - `users/route.ts` - 사용자 목록
 - `users/[id]/permissions/route.ts` - 권한 수정
 - `migrate/route.ts` - 인덱스 생성 (GET)
 
 #### 푸시 알림 (`src/app/api/push/`)
+
 - `subscribe/route.ts` - 푸시 구독 등록
 - `send/route.ts` - 푸시 발송
 - `debug/route.ts` - 구독자 수 확인
 
 #### 크론 (`src/app/api/cron/`)
+
 - `notifications/route.ts` - D-day 알림 (매일 오전 10시)
 
 ### PWA
+
 - `public/manifest.json` - PWA 매니페스트
 - `public/sw.js` - Service Worker (푸시 알림)
 
 ## 주요 함수
 
 ### 세미나 타입 (`src/lib/seminar-types.ts`)
+
 ```typescript
 calculateDday(date)          // D-day 계산
 formatDday(dday)             // D-day 포맷 ("D-7", "D-day", "D+3")
@@ -102,6 +116,7 @@ defaultChecklistTemplates    // 기본 체크리스트 템플릿
 ```
 
 ### 권한 체크 (`src/lib/auth.ts`)
+
 ```typescript
 requirePermission(request, resource, action)  // API 권한 확인
 // resource: 'articles' | 'seminars'
@@ -119,6 +134,7 @@ requirePermission(request, resource, action)  // API 권한 확인
 ## 성능 최적화
 
 ### MongoDB 인덱스 (`GET /api/admin/migrate`)
+
 ```javascript
 seminars: { date: -1 }, { category: 1, status: 1 }, { seminarType: 1 }
 checklist_items: { seminarId: 1 }
@@ -127,6 +143,7 @@ seminar_requests: { requestedDate: -1 }, { status: 1 }
 ```
 
 ### HTTP 캐싱
+
 ```typescript
 // articles, seminars API
 headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" }
@@ -135,6 +152,7 @@ headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" }
 ## 코딩 가이드라인
 
 ### 기사 추가 (MongoDB)
+
 ```typescript
 {
   title: "기사 제목",
@@ -150,6 +168,7 @@ headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" }
 ```
 
 ### 세미나 추가
+
 ```typescript
 {
   title: "세미나명",
@@ -163,6 +182,7 @@ headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" }
 ```
 
 ### 배포
+
 ```bash
 # 일반 배포
 git add -A && git commit -m "feat: 내용" && vercel --prod
