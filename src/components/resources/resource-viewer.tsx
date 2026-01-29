@@ -1,18 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Resource, fileTypeConfig, formatFileSize } from "@/lib/resource-types";
 import { formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface ResourceViewerProps {
   resource: Resource | null;
@@ -26,19 +20,59 @@ interface ExtendedResource extends Resource {
   filePath?: string;
 }
 
+// 파일 타입별 헤더 배경색
+const fileTypeBgColors: Record<string, string> = {
+  pdf: "bg-red-500",
+  doc: "bg-blue-500",
+  docx: "bg-blue-500",
+  ppt: "bg-orange-500",
+  pptx: "bg-orange-500",
+  xls: "bg-green-500",
+  xlsx: "bg-green-500",
+};
+
 export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerProps) {
   const [downloading, setDownloading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const extResource = resource as ExtendedResource;
 
-  if (!resource) return null;
+  // 모달 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
+
+  // 모달 닫힐 때 상태 초기화
+  useEffect(() => {
+    if (!open) {
+      setPdfLoading(true);
+      setPdfError(false);
+    }
+  }, [open]);
+
+  if (!open || !resource) return null;
 
   const typeConfig = fileTypeConfig[resource.fileType] || {
     icon: "📄",
     color: "bg-gray-100 text-gray-700",
     label: resource.fileType.toUpperCase(),
   };
+
+  const headerBgColor = fileTypeBgColors[resource.fileType] || "bg-gray-500";
 
   // 파일 타입별 뷰어 지원 확인
   const isPdf = resource.fileType === "pdf";
@@ -91,55 +125,79 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) {
-        setPdfLoading(true);
-        setPdfError(false);
-      }
-      onOpenChange(open);
-    }}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        {/* 헤더 */}
-        <DialogHeader className="p-4 pb-2 border-b">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-lg line-clamp-2">{resource.title}</DialogTitle>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
-                <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
-                  {typeConfig.icon} {typeConfig.label}
-                </Badge>
-                {resource.subCategory && (
-                  <Badge variant="secondary" className="text-xs">
-                    {resource.subCategory}
-                  </Badge>
-                )}
-                <span>{formatDate(resource.uploadedAt)}</span>
-                <span>·</span>
-                <span>{formatFileSize(resource.fileSize)}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleDownload}
-                disabled={downloading}
-              >
-                <Download className="w-4 h-4 mr-1" />
-                {downloading ? "다운로드 중..." : "다운로드"}
-              </Button>
-            </div>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="w-full max-w-lg bg-background rounded-t-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 컴팩트 헤더 */}
+        <div className={cn("shrink-0 px-4 py-2", headerBgColor)}>
+          {/* 핸들 + 닫기 버튼 */}
+          <div className="flex items-center justify-between">
+            <div className="w-8" />
+            <div className="w-8 h-1 bg-white/30 rounded-full" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20 w-7 h-7"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
           </div>
+
+          {/* 제목 + 배지 */}
+          <div className="flex items-start justify-between gap-2 mt-1">
+            <h2 className="text-white text-base font-semibold leading-tight flex-1 line-clamp-2">
+              {resource.title}
+            </h2>
+            <Badge className="bg-white/20 text-white text-xs shrink-0">
+              {typeConfig.icon} {typeConfig.label}
+            </Badge>
+          </div>
+
+          {/* 메타 정보 한 줄 */}
+          <div className="flex items-center gap-3 mt-1.5 text-white/80 text-xs flex-wrap">
+            {resource.subCategory && (
+              <Badge className="bg-white/20 text-white text-[10px] px-1.5 py-0">
+                {resource.subCategory}
+              </Badge>
+            )}
+            <span>{formatDate(resource.uploadedAt)}</span>
+            <span>·</span>
+            <span>{formatFileSize(resource.fileSize)}</span>
+          </div>
+
           {resource.description && (
-            <p className="text-sm text-muted-foreground mt-2">{resource.description}</p>
+            <p className="text-white/70 text-xs mt-2 line-clamp-2">{resource.description}</p>
           )}
-        </DialogHeader>
+        </div>
+
+        {/* 액션 버튼 영역 */}
+        <div className="shrink-0 flex border-b bg-muted/30 p-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="w-full"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {downloading ? "다운로드 중..." : "파일 다운로드"}
+          </Button>
+        </div>
 
         {/* 내용 영역 */}
-        <div className="flex-1 overflow-hidden relative">
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {isPdf || isOfficeFile ? (
             // PDF 또는 Office 파일 뷰어
-            <>
+            <div className="h-[50vh] relative">
               {pdfLoading && !pdfError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                   <div className="flex flex-col items-center gap-2">
@@ -154,13 +212,9 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 <div className="h-full flex flex-col items-center justify-center text-center p-4">
                   <div className="text-6xl mb-4">{typeConfig.icon}</div>
                   <p className="text-lg font-medium mb-2">{resource.fileName}</p>
-                  <p className="text-muted-foreground mb-4">
-                    문서를 표시할 수 없습니다. 다운로드해서 확인해주세요.
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    문서를 표시할 수 없습니다.<br />다운로드해서 확인해주세요.
                   </p>
-                  <Button onClick={handleDownload} disabled={downloading}>
-                    <Download className="w-4 h-4 mr-1" />
-                    {downloading ? "다운로드 중..." : "파일 다운로드"}
-                  </Button>
                 </div>
               ) : (
                 <iframe
@@ -174,43 +228,37 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                   title={resource.title}
                 />
               )}
-            </>
+            </div>
           ) : hasContent ? (
             // 텍스트 내용 표시
-            <ScrollArea className="h-full">
-              <div className="p-4">
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                    <span className="font-medium">문서 내용</span>
-                  </div>
-                  <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                    {extResource.content}
-                  </pre>
+            <div className="p-4 pb-8">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-medium">문서 내용</span>
                 </div>
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
+                  {extResource.content}
+                </pre>
               </div>
-            </ScrollArea>
+            </div>
           ) : (
             // 미리보기 불가
-            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+            <div className="h-[40vh] flex flex-col items-center justify-center text-center p-4">
               <div className="text-6xl mb-4">{typeConfig.icon}</div>
               <p className="text-lg font-medium mb-2">{resource.fileName}</p>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-4 text-sm">
                 미리보기를 지원하지 않는 파일입니다.
               </p>
-              <Button onClick={handleDownload} disabled={downloading}>
-                <Download className="w-4 h-4 mr-1" />
-                {downloading ? "다운로드 중..." : "파일 다운로드"}
-              </Button>
             </div>
           )}
         </div>
 
         {/* 파일명 푸터 */}
-        <div className="p-3 border-t bg-muted/30 text-xs text-muted-foreground">
+        <div className="shrink-0 p-3 border-t bg-muted/30 text-xs text-muted-foreground text-center">
           📁 {resource.fileName}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
