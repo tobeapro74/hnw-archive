@@ -79,6 +79,34 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 부분 문자열 교체 (fileName 등에서 사용)
+    if (action === 'replace_substring') {
+      if (!oldValue || !newValue || !collection || !field) {
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      }
+
+      // 해당 필드에 oldValue를 포함하는 문서들 찾기
+      const docs = await db.collection(collection)
+        .find({ [field]: { $regex: oldValue } })
+        .toArray();
+
+      let modifiedCount = 0;
+      for (const doc of docs) {
+        const newFieldValue = (doc[field] as string).replace(new RegExp(oldValue, 'g'), newValue);
+        await db.collection(collection).updateOne(
+          { _id: doc._id },
+          { $set: { [field]: newFieldValue } }
+        );
+        modifiedCount++;
+      }
+
+      return NextResponse.json({
+        success: true,
+        matched: docs.length,
+        modified: modifiedCount,
+      });
+    }
+
     // 기존 필드 업데이트 로직
     if (action !== 'update_field') {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
