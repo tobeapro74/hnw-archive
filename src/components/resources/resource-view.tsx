@@ -123,8 +123,8 @@ export function ResourceView() {
 
         {/* 회의록 서브탭 */}
         <TabsContent value="회의록" className="mt-4">
-          <div className="flex gap-2 mb-4">
-            {(["전체", "내부회의록", "외부회의록"] as const).map((sub) => (
+          <div className="flex gap-2 mb-4 flex-wrap">
+            {(["전체", "내부회의록", "외부회의록", "핵심요약"] as const).map((sub) => (
               <Button
                 key={sub}
                 variant={meetingSubTab === sub ? "default" : "outline"}

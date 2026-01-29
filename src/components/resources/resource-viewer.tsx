@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, ExternalLink, X } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Resource, fileTypeConfig, formatFileSize } from "@/lib/resource-types";
 import { formatDate } from "@/lib/utils";
 
@@ -19,8 +20,15 @@ interface ResourceViewerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Resource 타입 확장 (content, filePath 포함)
+interface ExtendedResource extends Resource {
+  content?: string;
+  filePath?: string;
+}
+
 export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerProps) {
-  const [iframeError, setIframeError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const extResource = resource as ExtendedResource;
 
   if (!resource) return null;
 
@@ -30,28 +38,41 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
     label: resource.fileType.toUpperCase(),
   };
 
-  // 파일 뷰어 URL 생성
-  const getViewerUrl = () => {
-    const fileUrl = resource.fileUrl;
+  // 다운로드 핸들러
+  const handleDownload = async () => {
+    if (!resource._id) return;
 
-    // PDF는 직접 표시
-    if (resource.fileType === "pdf") {
-      return fileUrl;
+    try {
+      setDownloading(true);
+
+      const response = await fetch(`/api/resources/${resource._id}/download`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || "다운로드에 실패했습니다.");
+        return;
+      }
+
+      // Blob으로 변환 후 다운로드
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = resource.fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("다운로드 중 오류가 발생했습니다.");
+    } finally {
+      setDownloading(false);
     }
-
-    // Office 파일은 Google Docs Viewer 사용
-    // 참고: 공개 URL이어야 동작함
-    const encodedUrl = encodeURIComponent(fileUrl);
-    return `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
   };
 
-  const handleDownload = () => {
-    window.open(resource.fileUrl, "_blank");
-  };
-
-  const handleOpenExternal = () => {
-    window.open(resource.fileUrl, "_blank");
-  };
+  // content가 있는지 확인
+  const hasContent = extResource.content && extResource.content.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,24 +81,30 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
         <DialogHeader className="p-4 pb-2 border-b">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-lg line-clamp-1">{resource.title}</DialogTitle>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              <DialogTitle className="text-lg line-clamp-2">{resource.title}</DialogTitle>
+              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
                 <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
-                  {typeConfig.label}
+                  {typeConfig.icon} {typeConfig.label}
                 </Badge>
+                {resource.subCategory && (
+                  <Badge variant="secondary" className="text-xs">
+                    {resource.subCategory}
+                  </Badge>
+                )}
                 <span>{formatDate(resource.uploadedAt)}</span>
                 <span>·</span>
                 <span>{formatFileSize(resource.fileSize)}</span>
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleDownload}
+                disabled={downloading}
+              >
                 <Download className="w-4 h-4 mr-1" />
-                다운로드
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleOpenExternal}>
-                <ExternalLink className="w-4 h-4 mr-1" />
-                새 창
+                {downloading ? "다운로드 중..." : "다운로드"}
               </Button>
             </div>
           </div>
@@ -86,32 +113,40 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
           )}
         </DialogHeader>
 
-        {/* 파일 뷰어 */}
-        <div className="flex-1 bg-muted/30 relative">
-          {iframeError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-              <p className="text-muted-foreground mb-4">
-                파일을 직접 표시할 수 없습니다.
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={handleDownload}>
-                  <Download className="w-4 h-4 mr-1" />
-                  다운로드
-                </Button>
-                <Button variant="outline" onClick={handleOpenExternal}>
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  새 창에서 열기
-                </Button>
+        {/* 내용 영역 */}
+        <div className="flex-1 overflow-hidden">
+          {hasContent ? (
+            <ScrollArea className="h-full">
+              <div className="p-4">
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                    <FileText className="w-5 h-5 text-muted-foreground" />
+                    <span className="font-medium">문서 내용</span>
+                  </div>
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
+                    {extResource.content}
+                  </pre>
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           ) : (
-            <iframe
-              src={getViewerUrl()}
-              className="w-full h-full border-0"
-              onError={() => setIframeError(true)}
-              title={resource.title}
-            />
+            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+              <div className="text-6xl mb-4">{typeConfig.icon}</div>
+              <p className="text-lg font-medium mb-2">{resource.fileName}</p>
+              <p className="text-muted-foreground mb-4">
+                미리보기를 지원하지 않는 파일입니다.
+              </p>
+              <Button onClick={handleDownload} disabled={downloading}>
+                <Download className="w-4 h-4 mr-1" />
+                {downloading ? "다운로드 중..." : "파일 다운로드"}
+              </Button>
+            </div>
           )}
+        </div>
+
+        {/* 파일명 푸터 */}
+        <div className="p-3 border-t bg-muted/30 text-xs text-muted-foreground">
+          📁 {resource.fileName}
         </div>
       </DialogContent>
     </Dialog>
