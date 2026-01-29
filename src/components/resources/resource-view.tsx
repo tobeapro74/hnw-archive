@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Plus, FileText, Users, Briefcase, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,10 @@ import {
   ReportSubCategory,
 } from "@/lib/resource-types";
 
+// 캐시 키 생성
+const getCacheKey = (category: string, subCategory?: string, search?: string) =>
+  `${category}|${subCategory || ""}|${search || ""}`;
+
 export function ResourceView() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,20 +27,50 @@ export function ResourceView() {
   const [reportSubTab, setReportSubTab] = useState<ReportSubCategory | "전체">("전체");
   const [formOpen, setFormOpen] = useState(false);
 
+  // 프론트엔드 캐시 (메모리)
+  const cacheRef = useRef<Map<string, { data: Resource[]; timestamp: number }>>(new Map());
+  const CACHE_TTL = 30000; // 30초
+
+  // 현재 서브카테고리
+  const getCurrentSubCategory = useCallback(() => {
+    if (activeCategory === "회의록" && meetingSubTab !== "전체") {
+      return meetingSubTab;
+    }
+    if (activeCategory === "보고서" && reportSubTab !== "전체") {
+      return reportSubTab;
+    }
+    return undefined;
+  }, [activeCategory, meetingSubTab, reportSubTab]);
+
   // 자료 목록 조회
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async (skipCache = false) => {
+    const subCategory = getCurrentSubCategory();
+    const cacheKey = getCacheKey(activeCategory, subCategory, searchQuery);
+    const cached = cacheRef.current.get(cacheKey);
+    const now = Date.now();
+
+    // 캐시 히트: 즉시 표시 (검색어가 있으면 캐시 무시)
+    if (!skipCache && !searchQuery && cached && (now - cached.timestamp) < CACHE_TTL) {
+      setResources(cached.data);
+      setLoading(false);
+      return;
+    }
+
+    // 캐시 미스 or 만료: API 호출
     try {
-      setLoading(true);
+      // 캐시된 데이터가 있으면 먼저 표시 (stale-while-revalidate)
+      if (cached && !searchQuery) {
+        setResources(cached.data);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       const params = new URLSearchParams();
       params.set("category", activeCategory);
 
-      // 회의록 서브카테고리
-      if (activeCategory === "회의록" && meetingSubTab !== "전체") {
-        params.set("subCategory", meetingSubTab);
-      }
-      // 보고서 서브카테고리
-      if (activeCategory === "보고서" && reportSubTab !== "전체") {
-        params.set("subCategory", reportSubTab);
+      if (subCategory) {
+        params.set("subCategory", subCategory);
       }
 
       if (searchQuery) {
@@ -48,13 +82,17 @@ export function ResourceView() {
 
       if (data.success) {
         setResources(data.data);
+        // 검색어가 없을 때만 캐시 저장
+        if (!searchQuery) {
+          cacheRef.current.set(cacheKey, { data: data.data, timestamp: now });
+        }
       }
     } catch (error) {
       console.error("Failed to fetch resources:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeCategory, getCurrentSubCategory, searchQuery]);
 
   useEffect(() => {
     fetchResources();
@@ -62,13 +100,15 @@ export function ResourceView() {
 
   // 검색
   const handleSearch = () => {
-    fetchResources();
+    fetchResources(true); // 캐시 무시
   };
 
   // 자료 등록 완료
   const handleResourceCreated = () => {
     setFormOpen(false);
-    fetchResources();
+    // 캐시 무효화 후 새로고침
+    cacheRef.current.clear();
+    fetchResources(true);
   };
 
   // 자료 삭제 (confirm은 resource-list의 handleDeleteGroup에서 처리)
@@ -77,7 +117,9 @@ export function ResourceView() {
       const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
-        fetchResources();
+        // 캐시 무효화 후 새로고침
+        cacheRef.current.clear();
+        fetchResources(true);
       } else {
         console.error("Failed to delete resource:", data.error);
         alert("삭제에 실패했습니다: " + (data.error || "알 수 없는 오류"));
@@ -92,17 +134,6 @@ export function ResourceView() {
     "회의록": { icon: Users, label: "회의록" },
     "보고서": { icon: Briefcase, label: "보고서" },
     "기획안": { icon: ClipboardList, label: "기획안" },
-  };
-
-  // 현재 선택된 서브카테고리 반환
-  const getCurrentSubCategory = () => {
-    if (activeCategory === "회의록" && meetingSubTab !== "전체") {
-      return meetingSubTab;
-    }
-    if (activeCategory === "보고서" && reportSubTab !== "전체") {
-      return reportSubTab;
-    }
-    return undefined;
   };
 
   return (
@@ -164,7 +195,7 @@ export function ResourceView() {
             resources={resources}
             loading={loading}
             onDelete={handleDelete}
-            onRefresh={fetchResources}
+            onRefresh={() => { cacheRef.current.clear(); fetchResources(true); }}
           />
         </TabsContent>
 
@@ -186,7 +217,7 @@ export function ResourceView() {
             resources={resources}
             loading={loading}
             onDelete={handleDelete}
-            onRefresh={fetchResources}
+            onRefresh={() => { cacheRef.current.clear(); fetchResources(true); }}
           />
         </TabsContent>
 
@@ -196,7 +227,7 @@ export function ResourceView() {
             resources={resources}
             loading={loading}
             onDelete={handleDelete}
-            onRefresh={fetchResources}
+            onRefresh={() => { cacheRef.current.clear(); fetchResources(true); }}
           />
         </TabsContent>
       </Tabs>
