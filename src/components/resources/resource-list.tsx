@@ -63,12 +63,17 @@ export function ResourceList({ resources, loading, onDelete, onRefresh }: Resour
       });
     });
 
-    // 업로드 날짜 기준 정렬
-    return result.sort(
-      (a, b) =>
-        new Date(b.primaryResource.uploadedAt).getTime() -
-        new Date(a.primaryResource.uploadedAt).getTime()
-    );
+    // 최신 파일이 위로 오도록 정렬 (uploadedAt 내림차순)
+    return result.sort((a, b) => {
+      const dateA = new Date(a.primaryResource.uploadedAt).getTime();
+      const dateB = new Date(b.primaryResource.uploadedAt).getTime();
+
+      // 날짜가 같으면 파일명으로 정렬 (내림차순 - 0128이 0127보다 위에)
+      if (dateB === dateA) {
+        return b.baseName.localeCompare(a.baseName);
+      }
+      return dateB - dateA;
+    });
   }, [resources]);
 
   const handleGroupClick = (group: ResourceGroup) => {
