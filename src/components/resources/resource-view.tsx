@@ -71,18 +71,20 @@ export function ResourceView() {
     fetchResources();
   };
 
-  // 자료 삭제
+  // 자료 삭제 (confirm은 resource-list의 handleDeleteGroup에서 처리)
   const handleDelete = async (id: string) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
-
     try {
       const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         fetchResources();
+      } else {
+        console.error("Failed to delete resource:", data.error);
+        alert("삭제에 실패했습니다: " + (data.error || "알 수 없는 오류"));
       }
     } catch (error) {
       console.error("Failed to delete resource:", error);
+      alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
