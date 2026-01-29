@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import fs from "fs";
-import path from "path";
 
 // GET /api/resources/[id]/download - 파일 다운로드
 export async function GET(
@@ -24,27 +22,17 @@ export async function GET(
       );
     }
 
-    // filePath가 있으면 로컬 파일 읽기
-    const filePath = resource.filePath;
-
-    if (!filePath) {
+    // MongoDB에 저장된 fileData (base64) 확인
+    if (!resource.fileData) {
       return NextResponse.json(
-        { success: false, error: "파일 경로가 없습니다." },
+        { success: false, error: "파일 데이터가 없습니다." },
         { status: 404 }
       );
     }
 
-    // 파일 존재 여부 확인
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json(
-        { success: false, error: "파일이 존재하지 않습니다." },
-        { status: 404 }
-      );
-    }
-
-    // 파일 읽기
-    const fileBuffer = fs.readFileSync(filePath);
-    const fileName = resource.fileName || path.basename(filePath);
+    // base64 디코딩
+    const fileBuffer = Buffer.from(resource.fileData, "base64");
+    const fileName = resource.fileName || "download";
 
     // Content-Type 설정
     const contentTypeMap: Record<string, string> = {
