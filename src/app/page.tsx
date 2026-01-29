@@ -32,9 +32,16 @@ type ViewType = TabType;
 
 interface UserInfo {
   id: string;
+  email: string;
   name: string;
   is_admin: boolean;
 }
+
+// 자료실 접근 권한이 있는 이메일 목록
+const RESOURCE_ALLOWED_EMAILS = [
+  'tobeapro@gmail.com',
+  'sweetas11@nhsec.com',
+];
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -728,6 +735,7 @@ function HomeContent() {
         activeTab={currentView}
         onTabChange={handleTabChange}
         isAdmin={user?.is_admin}
+        hasResourceAccess={user?.is_admin || (user?.email ? RESOURCE_ALLOWED_EMAILS.includes(user.email) : false)}
       />
 
       {/* 연관 기사 모달 */}
