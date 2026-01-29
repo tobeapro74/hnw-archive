@@ -67,6 +67,9 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   │   └── [id]/
 │   │   ├── checklist/            # 체크리스트 항목 API (신규)
 │   │   │   └── [itemId]/
+│   │   ├── resources/            # 자료실 API (신규)
+│   │   │   └── [id]/
+│   │   │       └── download/     # 파일 다운로드
 │   │   ├── image/                # 이미지 검색 API
 │   │   ├── og-image/             # OG 이미지 API
 │   │   ├── push/                 # 푸시 알림 API (신규)
@@ -81,6 +84,12 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   └── globals.css               # 전역 스타일
 ├── components/
 │   ├── ui/                       # shadcn/ui 기본 컴포넌트
+│   ├── resource/                 # 자료실 관련 컴포넌트 (신규)
+│   │   ├── resource-view.tsx     # 자료실 메인 뷰
+│   │   ├── resource-card.tsx     # 자료 카드 (파일 그룹화 지원)
+│   │   ├── resource-viewer.tsx   # 파일 뷰어 (PDF, Office)
+│   │   ├── resource-form-dialog.tsx  # 자료 등록 폼
+│   │   └── file-type-selector.tsx    # 파일 타입 선택 모달
 │   ├── seminar/                  # 세미나 관련 컴포넌트 (신규)
 │   │   ├── index.ts              # 컴포넌트 exports
 │   │   ├── seminar-view.tsx      # 세미나 메인 뷰
@@ -171,13 +180,36 @@ docs/                             # 프로젝트 문서
   - 항목별 목표일 표시 (목표일: 2/15 형식)
   - 항목 추가/삭제/완료 토글
 
-### 5. 기사관리 (관리자)
+### 5. 자료실 (신규)
+
+- **카테고리별 문서 관리**
+  - 회의록: 내부회의록, 외부회의록, 한장요약
+  - 보고서: 전문, 요약
+  - 기획안
+- **파일 그룹화**: 동일 파일명 다른 확장자 파일을 하나의 카드로 그룹화
+- **파일 뷰어**
+  - PDF: iframe으로 직접 표시
+  - Office 파일(doc, docx, ppt, pptx, xls, xlsx): Google Docs Viewer 사용
+  - 뷰어 실패 시 다운로드 폴백
+- **파일 저장**: MongoDB에 base64로 저장 (Vercel 배포 호환)
+- **프론트엔드 캐싱**: 30초 TTL, stale-while-revalidate 패턴
+- **검색 기능**: 파일명, 제목 검색
+- **정렬**: 최신 파일이 위로 (uploadedAt 내림차순)
+- **한글 파일명 지원**: 유니코드 정규화 (NFC) 적용
+
+### 6. 기사관리 (관리자)
 
 - **기사 CRUD**: 추가, 수정, 삭제
 - **자동 크롤링**: 기사 저장 후 관련 기사 자동 검색
 - **일괄 등록**: 검색된 기사 선택하여 일괄 저장
 
-### 6. 사용자 관리 (신규 - 관리자 전용)
+### 6. 자료실 관리
+
+- **자료 CRUD**: 추가, 삭제
+- **슬라이드업 모달**: 등록/상세 모두 하단에서 올라오는 팝업
+- **파일 타입 선택**: 그룹화된 파일에서 원하는 타입 선택
+
+### 7. 사용자 관리 (신규 - 관리자 전용)
 
 - **사용자 목록**: 관리자/일반 사용자 분리 표시
 - **권한 관리**: 사용자별 세부 권한 설정
@@ -204,6 +236,7 @@ docs/                             # 프로젝트 문서
 | 목록     | List          | 홍보 기사 목록          |
 | 캘린더   | Calendar      | 홍보 캘린더             |
 | 세미나   | ClipboardList | 세미나 관리             |
+| 자료실   | FolderOpen    | 문서 자료 관리          |
 | 기사관리 | Settings      | 관리자 전용 (로그인 시) |
 
 ## 데이터베이스 스키마
@@ -346,6 +379,27 @@ docs/                             # 프로젝트 문서
 }
 ```
 
+#### resources (자료실) - 신규
+
+```javascript
+{
+  _id: ObjectId,
+  title: String,                    // 자료 제목
+  fileName: String,                 // 파일명
+  fileType: String,                 // 파일 확장자 (pdf, docx, pptx 등)
+  fileSize: Number,                 // 파일 크기 (bytes)
+  fileData: String,                 // base64 인코딩된 파일 데이터
+  category: String,                 // "회의록" | "보고서" | "기획안"
+  subCategory: String,              // 회의록: "내부회의록" | "외부회의록" | "한장요약"
+                                    // 보고서: "전문" | "요약"
+  content: String,                  // 문서 내용 (텍스트 추출, 미리보기용)
+  uploadedAt: Date,
+  uploadedBy: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
 ## API 엔드포인트
 
 ### 인증 API
@@ -407,6 +461,16 @@ docs/                             # 프로젝트 문서
 | PATCH  | /api/checklist/[itemId]      | 항목 완료 토글       | 관리자   |
 | DELETE | /api/checklist/[itemId]      | 항목 삭제            | 관리자   |
 
+### 자료실 API (신규)
+
+| 메서드 | 경로                      | 설명                      | 권한     |
+| ------ | ------------------------- | ------------------------- | -------- |
+| GET    | /api/resources            | 자료 목록 (캐싱 30초)     | 공개     |
+| POST   | /api/resources            | 자료 등록                 | 관리자   |
+| GET    | /api/resources/[id]       | 자료 상세                 | 공개     |
+| DELETE | /api/resources/[id]       | 자료 삭제                 | 관리자   |
+| GET    | /api/resources/[id]/download | 파일 다운로드          | 공개     |
+
 ### 푸시 알림 API (신규)
 
 | 메서드 | 경로                  | 설명                                    |
@@ -438,6 +502,16 @@ docs/                             # 프로젝트 문서
 - **ChecklistSection/ChecklistTabs**: 체크리스트 섹션 및 탭
 - **ChecklistItemComponent**: 개별 체크리스트 항목
 - **ProgressBar/PhaseProgress**: 진행률 바
+
+### 자료실 관련 (신규)
+
+- **ResourceView**: 자료실 메인 뷰 (카테고리/서브카테고리 탭)
+- **ResourceCard**: 자료 카드 (파일 그룹화, 타입 배지 표시)
+- **ResourceViewer**: 파일 뷰어 (하단 슬라이드 팝업)
+  - PDF: iframe 직접 표시
+  - Office: Google Docs Viewer
+- **ResourceFormDialog**: 자료 등록 폼 (하단 슬라이드 팝업)
+- **FileTypeSelector**: 파일 타입 선택 모달 (그룹화된 파일용)
 
 ### UI 패턴
 
@@ -676,6 +750,10 @@ vercel env add ADMIN_SECRET_KEY
 { requestedDate: -1 }
 { status: 1 }
 
+// resources 컬렉션 (신규)
+{ category: 1, subCategory: 1 }
+{ uploadedAt: -1 }
+
 // events 컬렉션
 { date: -1 }
 ```
@@ -735,6 +813,25 @@ return NextResponse.json(data, {
 - `stale-while-revalidate=60`: 60초간 캐시 응답 제공하면서 백그라운드 갱신
 
 ## 최근 업데이트 내역
+
+### 2026-01-29
+- **자료실 기능 추가**:
+  - 네비게이션에 자료실 탭 추가 (세미나와 기사관리 사이)
+  - 카테고리: 회의록(내부/외부/한장요약), 보고서(전문/요약), 기획안
+  - 파일 뷰어: PDF(iframe), Office(Google Docs Viewer)
+  - 파일 그룹화: 동일 파일명 다른 확장자 파일 하나의 카드로 표시
+  - MongoDB에 base64로 파일 저장 (Vercel 배포 호환)
+  - 하단 슬라이드업 모달 (등록/상세)
+- **자료실 성능 최적화**:
+  - resources 컬렉션 인덱스 추가 (category+subCategory, uploadedAt)
+  - 프론트엔드 캐싱: 30초 TTL, stale-while-revalidate 패턴
+  - 탭 전환 시 캐시된 데이터 즉시 표시
+- **세미나 프론트엔드 캐싱 추가**:
+  - 연도별 캐시 30초 TTL
+  - stale-while-revalidate 패턴 적용
+  - 등록/수정/삭제 시 캐시 무효화
+- **명칭 변경**: 핵심요약 → 한장요약
+- **migrate API 개선**: 부분 문자열 교체 기능 추가
 
 ### 2026-01-28 (밤)
 - **성능 최적화**:

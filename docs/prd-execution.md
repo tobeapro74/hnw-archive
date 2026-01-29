@@ -18,7 +18,8 @@
 - [x] 비정기 요청 컬렉션 (seminar_requests)
 - [x] 체크리스트 컬렉션 (checklist_items)
 - [x] 푸시 구독 컬렉션 (push_subscriptions)
-- [x] 인덱스 최적화 (2026.01.28)
+- [x] 자료실 컬렉션 (resources) (2026.01.29)
+- [x] 인덱스 최적화 (2026.01.28, 2026.01.29)
 
 ### API 개발
 - [x] `/api/auth/login` - 로그인
@@ -39,6 +40,9 @@
 - [x] `/api/push/subscribe` - 푸시 구독
 - [x] `/api/push/send` - 푸시 발송
 - [x] `/api/cron/notifications` - D-day 알림
+- [x] `/api/resources` - 자료실 CRUD (2026.01.29)
+- [x] `/api/resources/[id]` - 자료 상세
+- [x] `/api/resources/[id]/download` - 파일 다운로드
 
 ### UI 컴포넌트
 - [x] 메인 페이지 레이아웃
@@ -58,6 +62,11 @@
 - [x] 진행률 바 (ProgressBar)
 - [x] 설정 다이얼로그 (SettingsDialog)
 - [x] 사용자 관리 (UserManagement)
+- [x] 자료실 뷰 (ResourceView) (2026.01.29)
+- [x] 자료 카드 (ResourceCard)
+- [x] 자료 뷰어 (ResourceViewer)
+- [x] 자료 등록 폼 (ResourceFormDialog)
+- [x] 파일 타입 선택 (FileTypeSelector)
 
 ### PWA
 - [x] manifest.json
@@ -75,6 +84,11 @@
 - [x] 홈화면 API 병렬화 (Promise.all)
 - [x] HTTP 응답 캐싱 (30초 + stale-while-revalidate)
 
+### 성능 최적화 (2026.01.29)
+- [x] 자료실 인덱스 추가 (category+subCategory, uploadedAt)
+- [x] 자료실 프론트엔드 캐싱 (30초 TTL, stale-while-revalidate)
+- [x] 세미나 프론트엔드 캐싱 (연도별 30초 TTL, stale-while-revalidate)
+
 ### UX 개선 (2026.01.28)
 - [x] 모달 좌우 스크롤 방지 (overflow-x-hidden)
 - [x] 모달 열릴 때 body 스크롤 차단
@@ -82,6 +96,13 @@
 - [x] 비정기 요청 비고란 크기 확대 (리사이즈 가능)
 - [x] 비정기 요청 카드에 비고 미리보기 + 팝업
 - [x] 비정기 요청 카드에 D-day 표시
+
+### UX 개선 (2026.01.29)
+- [x] 자료실 슬라이드업 모달 (등록/상세)
+- [x] 파일 그룹화 (동일 파일명 다른 확장자)
+- [x] 한글 파일명 유니코드 정규화 (NFC)
+- [x] 파일 정렬 개선 (최신 파일이 위로)
+- [x] 명칭 변경: 핵심요약 → 한장요약
 
 ### 버그 수정
 - [x] 세미나 상세 모달 스크롤 문제

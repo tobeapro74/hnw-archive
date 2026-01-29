@@ -654,6 +654,122 @@ D-day 알림 크론 (Vercel Cron에서 호출)
 
 ---
 
+## 자료실 API
+
+### GET /api/resources
+자료 목록 조회 (30초 캐싱)
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| category | X | 카테고리 (회의록, 보고서, 기획안) |
+| subCategory | X | 서브카테고리 (내부회의록, 외부회의록, 한장요약, 전문, 요약) |
+| keyword | X | 검색어 (제목, 파일명) |
+
+**Response**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "title": "2026년 1월 내부회의록",
+      "fileName": "내부회의록_0129.pdf",
+      "fileType": "pdf",
+      "fileSize": 1024000,
+      "category": "회의록",
+      "subCategory": "내부회의록",
+      "uploadedAt": "2026-01-29T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Cache-Control**: `public, s-maxage=30, stale-while-revalidate=60`
+
+---
+
+### POST /api/resources
+자료 등록 (권한 필요: 관리자)
+
+**Request Body**
+```json
+{
+  "title": "자료 제목",
+  "fileName": "파일명.pdf",
+  "fileType": "pdf",
+  "fileSize": 1024000,
+  "fileData": "base64 인코딩된 파일 데이터",
+  "category": "회의록",
+  "subCategory": "내부회의록",
+  "content": "문서 내용 (선택)"
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "title": "자료 제목",
+    ...
+  }
+}
+```
+
+---
+
+### GET /api/resources/[id]
+자료 상세 조회
+
+**Response**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "title": "자료 제목",
+    "fileName": "파일명.pdf",
+    "fileType": "pdf",
+    "fileSize": 1024000,
+    "fileData": "base64 인코딩된 파일 데이터",
+    "category": "회의록",
+    "subCategory": "내부회의록",
+    "content": "문서 내용",
+    "uploadedAt": "2026-01-29T00:00:00.000Z"
+  }
+}
+```
+
+---
+
+### DELETE /api/resources/[id]
+자료 삭제 (권한 필요: 관리자)
+
+**Response**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### GET /api/resources/[id]/download
+파일 다운로드
+
+**Response**
+- Content-Type: 파일 MIME 타입
+- Content-Disposition: attachment; filename="파일명"
+- Body: 바이너리 파일 데이터
+
+또는 inline 모드 (query: ?inline=true):
+- Content-Disposition: inline
+- PDF 뷰어에서 직접 표시용
+
+---
+
 ## 이벤트 API
 
 ### GET /api/events
@@ -742,6 +858,8 @@ D-day 알림 크론 (Vercel Cron에서 호출)
 | PUT /api/seminar-requests/[id] | seminars.update |
 | DELETE /api/seminar-requests/[id] | seminars.delete |
 | 체크리스트 CRUD | seminars.* |
+| POST /api/resources | 관리자 |
+| DELETE /api/resources/[id] | 관리자 |
 
 ---
 
@@ -758,6 +876,7 @@ seminars: { date: -1 }, { category: 1, status: 1 }, { seminarType: 1 }
 checklist_items: { seminarId: 1 }
 articles: { publishedAt: -1 }, { category: 1 }, { tag: 1 }, { eventId: 1 }
 seminar_requests: { requestedDate: -1 }, { status: 1 }
+resources: { category: 1, subCategory: 1 }, { uploadedAt: -1 }
 ```
 
 ### N+1 쿼리 해결
@@ -775,5 +894,5 @@ seminar_requests: { requestedDate: -1 }, { status: 1 }
 
 ---
 
-**작성일**: 2026-01-28
+**작성일**: 2026-01-29
 **프로젝트**: HNW 홍보 아카이브
