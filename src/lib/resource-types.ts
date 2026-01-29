@@ -4,6 +4,9 @@ export type ResourceCategory = "회의록" | "보고서" | "기획안";
 // 회의록 서브카테고리
 export type MeetingSubCategory = "내부회의록" | "외부회의록" | "핵심요약";
 
+// 보고서 서브카테고리
+export type ReportSubCategory = "초안" | "완료" | "요약";
+
 // 지원 파일 형식
 export type FileType = "pdf" | "ppt" | "pptx" | "doc" | "docx" | "xls" | "xlsx";
 
@@ -12,7 +15,7 @@ export interface Resource {
   _id?: string;
   title: string;
   category: ResourceCategory;
-  subCategory?: MeetingSubCategory; // 회의록일 때만 사용
+  subCategory?: MeetingSubCategory | ReportSubCategory; // 회의록/보고서일 때 사용
   fileName: string;
   fileUrl: string;
   fileType: FileType;
@@ -48,6 +51,13 @@ export const meetingSubCategories: { id: MeetingSubCategory; name: string }[] = 
   { id: "내부회의록", name: "내부회의록" },
   { id: "외부회의록", name: "외부회의록" },
   { id: "핵심요약", name: "핵심요약" },
+];
+
+// 보고서 서브카테고리 옵션
+export const reportSubCategories: { id: ReportSubCategory; name: string }[] = [
+  { id: "초안", name: "초안" },
+  { id: "완료", name: "완료" },
+  { id: "요약", name: "요약" },
 ];
 
 // 파일 타입별 아이콘/색상

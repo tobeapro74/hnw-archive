@@ -22,9 +22,11 @@ import {
 import {
   ResourceCategory,
   MeetingSubCategory,
+  ReportSubCategory,
   FileType,
   resourceCategories,
   meetingSubCategories,
+  reportSubCategories,
   getFileType,
 } from "@/lib/resource-types";
 
@@ -32,7 +34,7 @@ interface ResourceFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultCategory?: ResourceCategory;
-  defaultSubCategory?: MeetingSubCategory;
+  defaultSubCategory?: MeetingSubCategory | ReportSubCategory;
   onSuccess: () => void;
 }
 
@@ -46,7 +48,7 @@ export function ResourceFormDialog({
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<ResourceCategory>(defaultCategory);
-  const [subCategory, setSubCategory] = useState<MeetingSubCategory | "">(defaultSubCategory || "");
+  const [subCategory, setSubCategory] = useState<MeetingSubCategory | ReportSubCategory | "">(defaultSubCategory || "");
   const [fileUrl, setFileUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState<FileType | "">("");
@@ -91,6 +93,11 @@ export function ResourceFormDialog({
       return;
     }
 
+    if (category === "보고서" && !subCategory) {
+      alert("보고서 유형(초안/완료/요약)을 선택해주세요.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/resources", {
@@ -99,7 +106,7 @@ export function ResourceFormDialog({
         body: JSON.stringify({
           title,
           category,
-          subCategory: category === "회의록" ? subCategory : undefined,
+          subCategory: (category === "회의록" || category === "보고서") ? subCategory : undefined,
           fileName,
           fileUrl,
           fileType,
@@ -163,7 +170,7 @@ export function ResourceFormDialog({
               value={category}
               onValueChange={(v) => {
                 setCategory(v as ResourceCategory);
-                if (v !== "회의록") setSubCategory("");
+                if (v !== "회의록" && v !== "보고서") setSubCategory("");
               }}
             >
               <SelectTrigger>
@@ -192,6 +199,28 @@ export function ResourceFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {meetingSubCategories.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* 보고서 서브카테고리 */}
+          {category === "보고서" && (
+            <div className="space-y-2">
+              <Label>보고서 유형 *</Label>
+              <Select
+                value={subCategory}
+                onValueChange={(v) => setSubCategory(v as ReportSubCategory)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reportSubCategories.map((sub) => (
                     <SelectItem key={sub.id} value={sub.id}>
                       {sub.name}
                     </SelectItem>

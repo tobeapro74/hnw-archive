@@ -11,6 +11,7 @@ import {
   Resource,
   ResourceCategory,
   MeetingSubCategory,
+  ReportSubCategory,
 } from "@/lib/resource-types";
 
 export function ResourceView() {
@@ -19,6 +20,7 @@ export function ResourceView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<ResourceCategory>("회의록");
   const [meetingSubTab, setMeetingSubTab] = useState<MeetingSubCategory | "전체">("전체");
+  const [reportSubTab, setReportSubTab] = useState<ReportSubCategory | "전체">("전체");
   const [formOpen, setFormOpen] = useState(false);
 
   // 자료 목록 조회
@@ -27,9 +29,16 @@ export function ResourceView() {
       setLoading(true);
       const params = new URLSearchParams();
       params.set("category", activeCategory);
+
+      // 회의록 서브카테고리
       if (activeCategory === "회의록" && meetingSubTab !== "전체") {
         params.set("subCategory", meetingSubTab);
       }
+      // 보고서 서브카테고리
+      if (activeCategory === "보고서" && reportSubTab !== "전체") {
+        params.set("subCategory", reportSubTab);
+      }
+
       if (searchQuery) {
         params.set("search", searchQuery);
       }
@@ -49,7 +58,7 @@ export function ResourceView() {
 
   useEffect(() => {
     fetchResources();
-  }, [activeCategory, meetingSubTab]);
+  }, [activeCategory, meetingSubTab, reportSubTab]);
 
   // 검색
   const handleSearch = () => {
@@ -81,6 +90,17 @@ export function ResourceView() {
     "회의록": { icon: Users, label: "회의록" },
     "보고서": { icon: Briefcase, label: "보고서" },
     "기획안": { icon: ClipboardList, label: "기획안" },
+  };
+
+  // 현재 선택된 서브카테고리 반환
+  const getCurrentSubCategory = () => {
+    if (activeCategory === "회의록" && meetingSubTab !== "전체") {
+      return meetingSubTab;
+    }
+    if (activeCategory === "보고서" && reportSubTab !== "전체") {
+      return reportSubTab;
+    }
+    return undefined;
   };
 
   return (
@@ -143,8 +163,20 @@ export function ResourceView() {
           />
         </TabsContent>
 
-        {/* 보고서 */}
+        {/* 보고서 서브탭 */}
         <TabsContent value="보고서" className="mt-4">
+          <div className="flex gap-2 mb-4 flex-wrap">
+            {(["전체", "초안", "완료", "요약"] as const).map((sub) => (
+              <Button
+                key={sub}
+                variant={reportSubTab === sub ? "default" : "outline"}
+                size="sm"
+                onClick={() => setReportSubTab(sub)}
+              >
+                {sub}
+              </Button>
+            ))}
+          </div>
           <ResourceList
             resources={resources}
             loading={loading}
@@ -169,7 +201,7 @@ export function ResourceView() {
         open={formOpen}
         onOpenChange={setFormOpen}
         defaultCategory={activeCategory}
-        defaultSubCategory={activeCategory === "회의록" && meetingSubTab !== "전체" ? meetingSubTab : undefined}
+        defaultSubCategory={getCurrentSubCategory()}
         onSuccess={handleResourceCreated}
       />
     </div>
