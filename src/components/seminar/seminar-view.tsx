@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Calendar as CalendarIcon, List, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +27,13 @@ import {
 
 type ViewMode = "calendar" | "list";
 type FilterType = "all" | "정기" | "비정기";
+
+// 캐시 타입
+interface CacheEntry {
+  seminars: Seminar[];
+  requests: SeminarRequest[];
+  timestamp: number;
+}
 
 export function SeminarView() {
   const [seminars, setSeminars] = useState<(Seminar & { progress?: { total: number; completed: number; percentage: number } })[]>([]);
@@ -57,34 +64,73 @@ export function SeminarView() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
+  // 프론트엔드 캐시 (연도별)
+  const cacheRef = useRef<Map<number, CacheEntry>>(new Map());
+  const CACHE_TTL = 30000; // 30초
+
   // 데이터 로드
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async (skipCache = false) => {
+    const cached = cacheRef.current.get(selectedYear);
+    const now = Date.now();
+
+    // 캐시 히트
+    if (!skipCache && cached && (now - cached.timestamp) < CACHE_TTL) {
+      setSeminars(cached.seminars);
+      setRequests(cached.requests);
+      setLoading(false);
+      return;
+    }
+
+    // 캐시된 데이터가 있으면 먼저 표시 (stale-while-revalidate)
+    if (cached) {
+      setSeminars(cached.seminars);
+      setRequests(cached.requests);
+      setLoading(false);
+    } else {
       setLoading(true);
-      try {
-        const [seminarsRes, requestsRes] = await Promise.all([
-          fetch(`/api/seminars?year=${selectedYear}`),
-          fetch(`/api/seminar-requests?year=${selectedYear}`),
-        ]);
+    }
 
-        if (seminarsRes.ok) {
-          const data = await seminarsRes.json();
-          setSeminars(data);
-        }
+    try {
+      const [seminarsRes, requestsRes] = await Promise.all([
+        fetch(`/api/seminars?year=${selectedYear}`),
+        fetch(`/api/seminar-requests?year=${selectedYear}`),
+      ]);
 
-        if (requestsRes.ok) {
-          const data = await requestsRes.json();
-          setRequests(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setLoading(false);
+      let newSeminars = seminars;
+      let newRequests = requests;
+
+      if (seminarsRes.ok) {
+        newSeminars = await seminarsRes.json();
+        setSeminars(newSeminars);
       }
-    };
 
+      if (requestsRes.ok) {
+        newRequests = await requestsRes.json();
+        setRequests(newRequests);
+      }
+
+      // 캐시 저장
+      cacheRef.current.set(selectedYear, {
+        seminars: newSeminars,
+        requests: newRequests,
+        timestamp: now,
+      });
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
     fetchData();
   }, [selectedYear]);
+
+  // 캐시 무효화 후 새로고침
+  const invalidateAndRefresh = useCallback(() => {
+    cacheRef.current.delete(selectedYear);
+    fetchData(true);
+  }, [selectedYear, fetchData]);
 
   // 필터링된 세미나
   const filteredSeminars = useMemo(() => {
@@ -140,11 +186,15 @@ export function SeminarView() {
     } else {
       setSeminars((prev) => [savedSeminar as typeof prev[0], ...prev]);
     }
+    // 캐시 무효화
+    cacheRef.current.delete(selectedYear);
   };
 
   // 세미나 삭제
   const handleDeleteSeminar = (seminarId: string) => {
     setSeminars((prev) => prev.filter((s) => s._id !== seminarId));
+    // 캐시 무효화
+    cacheRef.current.delete(selectedYear);
   };
 
   // 새 비정기 세미나 요청
@@ -162,11 +212,15 @@ export function SeminarView() {
     } else {
       setRequests((prev) => [savedRequest, ...prev]);
     }
+    // 캐시 무효화
+    cacheRef.current.delete(selectedYear);
   };
 
   // 요청 삭제
   const handleDeleteRequest = (requestId: string) => {
     setRequests((prev) => prev.filter((r) => r._id !== requestId));
+    // 캐시 무효화
+    cacheRef.current.delete(selectedYear);
   };
 
   // 요청 클릭
