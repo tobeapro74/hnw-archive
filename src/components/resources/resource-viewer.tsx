@@ -112,9 +112,9 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   const headerBgColor = fileTypeBgColors[resource.fileType] || "bg-gray-500";
 
   // 파일 타입별 뷰어 지원 확인
-  const isPdf = resource.fileType === "pdf";
   const isDocx = resource.fileType === "docx";
-  const isOfficeFile = ["doc", "ppt", "pptx", "xls", "xlsx"].includes(resource.fileType);
+  // Google Docs Viewer를 사용할 파일 (PDF, Office 파일)
+  const useGoogleViewer = ["pdf", "doc", "ppt", "pptx", "xls", "xlsx"].includes(resource.fileType);
 
   // 다운로드 핸들러
   const handleDownload = async () => {
@@ -152,10 +152,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   // content가 있는지 확인
   const hasContent = extResource.content && extResource.content.trim().length > 0;
 
-  // 파일 뷰어 URL (공개 - PDF 뷰어용)
-  const fileViewUrl = resource._id ? `/api/resources/${resource._id}/view` : "";
-
-  // Google Docs Viewer URL (Office 파일용)
+  // Google Docs Viewer URL (PDF/Office 파일용)
   const getGoogleViewerUrl = () => {
     if (typeof window === "undefined") return "";
     const fullUrl = `${window.location.origin}/api/resources/${resource._id}/view`;
@@ -233,15 +230,15 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
           onTouchMove={(e) => e.stopPropagation()}
         >
-          {isPdf ? (
-            // PDF 뷰어
-            <div className="h-[50vh] relative overflow-hidden overflow-x-hidden">
+          {useGoogleViewer ? (
+            // PDF/Office 파일 뷰어 (Google Docs Viewer)
+            <div className="h-[50vh] relative overflow-hidden">
               {pdfLoading && !pdfError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     <span className="text-sm text-muted-foreground">
-                      PDF 로딩 중...
+                      {resource.fileType.toUpperCase()} 로딩 중...
                     </span>
                   </div>
                 </div>
@@ -256,9 +253,8 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 </div>
               ) : (
                 <iframe
-                  src={`${fileViewUrl}#view=FitH`}
-                  className="w-full h-full border-0 max-w-full"
-                  style={{ overflow: "hidden" }}
+                  src={getGoogleViewerUrl()}
+                  className="w-full h-full border-0"
                   onLoad={() => setPdfLoading(false)}
                   onError={() => {
                     setPdfLoading(false);
@@ -295,40 +291,6 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                   dangerouslySetInnerHTML={{ __html: docxHtml }}
                 />
               ) : null}
-            </div>
-          ) : isOfficeFile ? (
-            // Office 파일 뷰어 (Google Docs Viewer)
-            <div className="h-[50vh] relative overflow-hidden">
-              {pdfLoading && !pdfError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">
-                      {resource.fileType.toUpperCase()} 로딩 중...
-                    </span>
-                  </div>
-                </div>
-              )}
-              {pdfError ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                  <div className="text-6xl mb-4">{typeConfig.icon}</div>
-                  <p className="text-lg font-medium mb-2">{resource.fileName}</p>
-                  <p className="text-muted-foreground mb-4 text-sm">
-                    문서를 표시할 수 없습니다.<br />다운로드해서 확인해주세요.
-                  </p>
-                </div>
-              ) : (
-                <iframe
-                  src={getGoogleViewerUrl()}
-                  className="w-full h-full border-0"
-                  onLoad={() => setPdfLoading(false)}
-                  onError={() => {
-                    setPdfLoading(false);
-                    setPdfError(true);
-                  }}
-                  title={resource.title}
-                />
-              )}
             </div>
           ) : hasContent ? (
             // 텍스트 내용 표시
