@@ -5,7 +5,8 @@
 2. [인증 관련](#인증-관련)
 3. [데이터베이스 관련](#데이터베이스-관련)
 4. [세미나 관리 관련](#세미나-관리-관련)
-5. [배포 관련](#배포-관련)
+5. [파일 뷰어 관련](#파일-뷰어-관련)
+6. [배포 관련](#배포-관련)
 
 ---
 
@@ -248,6 +249,153 @@ export function calculateDday(seminarDate: Date | string): number {
   </div>
 </div>
 ```
+
+---
+
+## 파일 뷰어 관련
+
+### 문제: DOCX 파일 클릭 시 "미리보기가 없음" 메시지 표시
+
+**증상**: DOCX 파일을 클릭해도 뷰어가 열리지 않고 미리보기 없음 메시지가 나옴
+
+**원인**: 기존에 Google Docs Viewer를 사용했으나, Google 서버가 로컬 환경(localhost)에 접근할 수 없어서 작동하지 않음
+
+**해결책**: mammoth.js 라이브러리를 사용하여 클라이언트에서 직접 DOCX를 HTML로 변환
+
+```bash
+# mammoth 설치
+npm install mammoth
+```
+
+```typescript
+// resource-viewer.tsx
+import mammoth from "mammoth";
+
+// DOCX 파일 로드 및 변환
+const loadDocx = useCallback(async () => {
+  const response = await fetch(`/api/resources/${resource._id}/download`);
+  const arrayBuffer = await response.arrayBuffer();
+  const result = await mammoth.convertToHtml({ arrayBuffer });
+  setDocxHtml(result.value);
+}, [resource?._id]);
+```
+
+**장점**:
+- 로컬/배포 환경 모두에서 작동
+- 외부 서비스(Google) 의존 없음
+- 빠른 로딩
+
+---
+
+### 문제: DOCX 내용이 다닥다닥 붙어서 표시됨
+
+**증상**: DOCX 파일 내용이 줄바꿈 없이 붙어서 표시됨
+
+**원인**: Tailwind의 `prose` 클래스가 제대로 작동하지 않음 (Typography 플러그인 미설치)
+
+**해결책**: CSS 선택자를 사용하여 직접 스타일 적용
+
+```tsx
+<div
+  className="p-4 overflow-y-auto h-full max-w-none text-sm leading-relaxed
+    [&_p]:mb-4
+    [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-4
+    [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mb-3
+    [&_h3]:font-semibold [&_h3]:mb-2
+    [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc
+    [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal
+    [&_li]:mb-1
+    [&_table]:w-full [&_table]:border-collapse
+    [&_td]:border [&_td]:border-gray-300 [&_td]:p-2"
+  dangerouslySetInnerHTML={{ __html: docxHtml }}
+/>
+```
+
+---
+
+### 문제: PDF 뷰어에서 좌우 스크롤 발생
+
+**증상**: 모바일에서 PDF 내용이 화면보다 넓어서 좌우로 스크롤해야 함
+
+**원인**: 브라우저 내장 PDF 뷰어가 모바일에서 반응형으로 작동하지 않음
+
+**해결책**: Google Docs Viewer 사용
+
+```typescript
+// Google Docs Viewer URL 생성
+const getGoogleViewerUrl = () => {
+  const fullUrl = `${window.location.origin}/api/resources/${resource._id}/view`;
+  return `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+};
+```
+
+**주의사항**: Google Docs Viewer는 외부에서 접근 가능한 URL이 필요하므로 배포 환경에서만 작동
+
+---
+
+### 문제: PDF/Office 파일 로딩이 오래 걸림
+
+**증상**: PDF 뷰어가 계속 "로딩 중..." 상태로 유지됨
+
+**원인**: Google Docs Viewer의 처리 과정:
+1. Google 서버가 우리 서버에서 파일 다운로드
+2. Google에서 PDF를 처리/렌더링
+3. iframe으로 결과 표시
+
+큰 파일(500KB 이상)은 이 과정에 시간이 걸릴 수 있음
+
+**해결책**: 로딩 메시지에 안내 추가
+
+```tsx
+{pdfLoading && (
+  <div className="flex flex-col items-center gap-3">
+    <Loader2 className="w-8 h-8 animate-spin" />
+    <span>PDF 로딩 중...</span>
+    <span className="text-xs text-muted-foreground/70">
+      큰 파일은 로딩에 시간이 걸릴 수 있습니다
+    </span>
+  </div>
+)}
+```
+
+---
+
+### 문제: 파일 뷰어 API가 404 오류 반환
+
+**증상**: `/api/resources/[id]/view` 호출 시 404 오류
+
+**원인**: view API 엔드포인트가 없거나 라우트 설정 오류
+
+**해결책**: view API 엔드포인트 생성
+
+```typescript
+// /api/resources/[id]/view/route.ts
+export async function GET(request, { params }) {
+  const { id } = await params;
+  const resource = await collection.findOne({ _id: new ObjectId(id) });
+
+  // base64 디코딩
+  const fileBuffer = Buffer.from(resource.fileData, "base64");
+
+  return new NextResponse(fileBuffer, {
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    },
+  });
+}
+```
+
+---
+
+### 현재 파일 뷰어 지원 현황
+
+| 파일 타입 | 뷰어 방식 | 비고 |
+|----------|----------|------|
+| PDF | Google Docs Viewer | 배포 환경에서만 작동 |
+| DOCX | mammoth.js | 클라이언트에서 HTML 변환 |
+| DOC, PPT, PPTX, XLS, XLSX | Google Docs Viewer | 배포 환경에서만 작동 |
+| 기타 | 미리보기 불가 | 다운로드만 지원 |
 
 ---
 
