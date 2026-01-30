@@ -235,10 +235,13 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
             <div className="h-[50vh] relative overflow-hidden">
               {pdfLoading && !pdfError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     <span className="text-sm text-muted-foreground">
                       {resource.fileType.toUpperCase()} 로딩 중...
+                    </span>
+                    <span className="text-xs text-muted-foreground/70">
+                      큰 파일은 로딩에 시간이 걸릴 수 있습니다
                     </span>
                   </div>
                 </div>
