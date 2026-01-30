@@ -35,18 +35,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   const [downloading, setDownloading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const extResource = resource as ExtendedResource;
-
-  // 모바일 감지
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // 모달 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -199,34 +188,9 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
           onTouchMove={(e) => e.stopPropagation()}
         >
-          {isPdf && isMobile && hasContent ? (
-            // 모바일 PDF - content 표시
-            <div className="p-4 pb-8">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                  <FileText className="w-5 h-5 text-muted-foreground" />
-                  <span className="font-medium">문서 내용</span>
-                </div>
-                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                  {extResource.content}
-                </pre>
-              </div>
-            </div>
-          ) : isPdf && isMobile ? (
-            // 모바일 PDF - content 없음
-            <div className="h-[40vh] flex flex-col items-center justify-center text-center p-4">
-              <div className="text-6xl mb-4">{typeConfig.icon}</div>
-              <p className="text-lg font-medium mb-2">{resource.fileName}</p>
-              <p className="text-muted-foreground mb-4 text-sm">
-                다운로드해서 확인해주세요.
-              </p>
-            </div>
-          ) : isPdf ? (
-            // 데스크탑 PDF 뷰어
-            <div
-              className="h-[50vh] relative overflow-hidden"
-              style={{ touchAction: "pan-y" }}
-            >
+          {isPdf ? (
+            // PDF 뷰어
+            <div className="h-[50vh] relative overflow-hidden">
               {pdfLoading && !pdfError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                   <div className="flex flex-col items-center gap-2">
@@ -247,14 +211,8 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 </div>
               ) : (
                 <iframe
-                  src={`${fileDownloadUrl}#view=FitH&scrollbar=0`}
+                  src={`${fileDownloadUrl}#view=FitH`}
                   className="w-full h-full border-0"
-                  style={{
-                    overflow: "hidden",
-                    pointerEvents: "auto",
-                    touchAction: "pan-y"
-                  }}
-                  scrolling="no"
                   onLoad={() => setPdfLoading(false)}
                   onError={() => {
                     setPdfLoading(false);
