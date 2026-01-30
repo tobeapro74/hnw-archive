@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Download, FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Resource, fileTypeConfig, formatFileSize } from "@/lib/resource-types";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import mammoth from "mammoth";
 
 interface ResourceViewerProps {
   resource: Resource | null;
@@ -35,6 +36,9 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   const [downloading, setDownloading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
+  const [docxHtml, setDocxHtml] = useState<string>("");
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [docxError, setDocxError] = useState(false);
   const extResource = resource as ExtendedResource;
 
   // 모달 열릴 때 body 스크롤 방지
@@ -61,8 +65,41 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
     if (!open) {
       setPdfLoading(true);
       setPdfError(false);
+      setDocxHtml("");
+      setDocxLoading(false);
+      setDocxError(false);
     }
   }, [open]);
+
+  // DOCX 파일 로드 및 변환
+  const loadDocx = useCallback(async () => {
+    if (!resource?._id || resource.fileType !== "docx") return;
+
+    setDocxLoading(true);
+    setDocxError(false);
+    setDocxHtml("");
+
+    try {
+      const response = await fetch(`/api/resources/${resource._id}/download`);
+      if (!response.ok) throw new Error("파일 로드 실패");
+
+      const arrayBuffer = await response.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      setDocxHtml(result.value);
+    } catch (error) {
+      console.error("DOCX 변환 오류:", error);
+      setDocxError(true);
+    } finally {
+      setDocxLoading(false);
+    }
+  }, [resource?._id, resource?.fileType]);
+
+  // docx 파일일 때 자동 로드
+  useEffect(() => {
+    if (open && resource?.fileType === "docx") {
+      loadDocx();
+    }
+  }, [open, resource?.fileType, loadDocx]);
 
   if (!open || !resource) return null;
 
@@ -76,7 +113,8 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
 
   // 파일 타입별 뷰어 지원 확인
   const isPdf = resource.fileType === "pdf";
-  const isOfficeFile = ["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(resource.fileType);
+  const isDocx = resource.fileType === "docx";
+  const isOfficeFile = ["doc", "ppt", "pptx", "xls", "xlsx"].includes(resource.fileType);
 
   // 다운로드 핸들러
   const handleDownload = async () => {
@@ -114,13 +152,13 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   // content가 있는지 확인
   const hasContent = extResource.content && extResource.content.trim().length > 0;
 
-  // 파일 뷰어 URL
-  const fileDownloadUrl = resource._id ? `/api/resources/${resource._id}/download` : "";
+  // 파일 뷰어 URL (공개 - PDF 뷰어용)
+  const fileViewUrl = resource._id ? `/api/resources/${resource._id}/view` : "";
 
   // Google Docs Viewer URL (Office 파일용)
   const getGoogleViewerUrl = () => {
     if (typeof window === "undefined") return "";
-    const fullUrl = `${window.location.origin}/api/resources/${resource._id}/download`;
+    const fullUrl = `${window.location.origin}/api/resources/${resource._id}/view`;
     return `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
   };
 
@@ -218,7 +256,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 </div>
               ) : (
                 <iframe
-                  src={`${fileDownloadUrl}#view=FitH`}
+                  src={`${fileViewUrl}#zoom=page-width`}
                   className="w-full h-full border-0"
                   onLoad={() => setPdfLoading(false)}
                   onError={() => {
@@ -228,6 +266,34 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                   title={resource.title}
                 />
               )}
+            </div>
+          ) : isDocx ? (
+            // DOCX 뷰어 (mammoth.js)
+            <div className="h-[50vh] relative overflow-hidden">
+              {docxLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      DOCX 로딩 중...
+                    </span>
+                  </div>
+                </div>
+              )}
+              {docxError ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <div className="text-6xl mb-4">{typeConfig.icon}</div>
+                  <p className="text-lg font-medium mb-2">{resource.fileName}</p>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    문서를 표시할 수 없습니다.<br />다운로드해서 확인해주세요.
+                  </p>
+                </div>
+              ) : docxHtml ? (
+                <div
+                  className="p-4 overflow-y-auto h-full prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: docxHtml }}
+                />
+              ) : null}
             </div>
           ) : isOfficeFile ? (
             // Office 파일 뷰어 (Google Docs Viewer)
