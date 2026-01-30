@@ -287,7 +287,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 </div>
               ) : docxHtml ? (
                 <div
-                  className="p-4 overflow-y-auto h-full prose prose-sm max-w-none"
+                  className="p-4 overflow-y-auto h-full max-w-none text-sm leading-relaxed [&_p]:mb-4 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:mb-1 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-gray-300 [&_td]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100"
                   dangerouslySetInnerHTML={{ __html: docxHtml }}
                 />
               ) : null}
