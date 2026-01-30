@@ -117,6 +117,13 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
   // 파일 뷰어 URL
   const fileDownloadUrl = resource._id ? `/api/resources/${resource._id}/download` : "";
 
+  // Google Docs Viewer URL (Office 파일용)
+  const getGoogleViewerUrl = () => {
+    if (typeof window === "undefined") return "";
+    const fullUrl = `${window.location.origin}/api/resources/${resource._id}/download`;
+    return `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
@@ -222,27 +229,39 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 />
               )}
             </div>
-          ) : isOfficeFile && hasContent ? (
-            // Office 파일 - content 표시
-            <div className="p-4 pb-8">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                  <FileText className="w-5 h-5 text-muted-foreground" />
-                  <span className="font-medium">문서 내용</span>
-                </div>
-                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                  {extResource.content}
-                </pre>
-              </div>
-            </div>
           ) : isOfficeFile ? (
-            // Office 파일 - content 없음
-            <div className="h-[40vh] flex flex-col items-center justify-center text-center p-4">
-              <div className="text-6xl mb-4">{typeConfig.icon}</div>
-              <p className="text-lg font-medium mb-2">{resource.fileName}</p>
-              <p className="text-muted-foreground mb-4 text-sm">
-                다운로드해서 확인해주세요.
-              </p>
+            // Office 파일 뷰어 (Google Docs Viewer)
+            <div className="h-[50vh] relative overflow-hidden">
+              {pdfLoading && !pdfError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {resource.fileType.toUpperCase()} 로딩 중...
+                    </span>
+                  </div>
+                </div>
+              )}
+              {pdfError ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <div className="text-6xl mb-4">{typeConfig.icon}</div>
+                  <p className="text-lg font-medium mb-2">{resource.fileName}</p>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    문서를 표시할 수 없습니다.<br />다운로드해서 확인해주세요.
+                  </p>
+                </div>
+              ) : (
+                <iframe
+                  src={getGoogleViewerUrl()}
+                  className="w-full h-full border-0"
+                  onLoad={() => setPdfLoading(false)}
+                  onError={() => {
+                    setPdfLoading(false);
+                    setPdfError(true);
+                  }}
+                  title={resource.title}
+                />
+              )}
             </div>
           ) : hasContent ? (
             // 텍스트 내용 표시
