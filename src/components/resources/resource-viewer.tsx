@@ -235,7 +235,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
         >
           {isPdf ? (
             // PDF 뷰어
-            <div className="h-[50vh] relative overflow-hidden">
+            <div className="h-[50vh] relative overflow-hidden overflow-x-hidden">
               {pdfLoading && !pdfError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                   <div className="flex flex-col items-center gap-2">
@@ -256,8 +256,9 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
                 </div>
               ) : (
                 <iframe
-                  src={`${fileViewUrl}#zoom=page-width`}
-                  className="w-full h-full border-0"
+                  src={`${fileViewUrl}#view=FitH`}
+                  className="w-full h-full border-0 max-w-full"
+                  style={{ overflow: "hidden" }}
                   onLoad={() => setPdfLoading(false)}
                   onError={() => {
                     setPdfLoading(false);
