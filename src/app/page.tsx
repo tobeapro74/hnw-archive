@@ -506,6 +506,13 @@ function HomeContent() {
   // 목록 화면 렌더링
   const renderList = () => (
     <div className="p-4 space-y-4">
+      {/* 연도 탭 */}
+      <YearTabs
+        years={availableYears}
+        selectedYear={selectedYear}
+        onYearChange={setSelectedYear}
+      />
+
       {/* 검색 */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
