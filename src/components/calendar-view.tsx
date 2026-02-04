@@ -229,35 +229,32 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
       </div>
 
       {/* 범례 */}
-      <div className="space-y-2 mt-4 pt-4 border-t">
-        <div className="text-xs text-muted-foreground text-center font-medium">기사</div>
-        <div className="flex justify-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            <span className="text-xs text-muted-foreground">인터뷰</span>
+      <div className="mt-4 pt-3 border-t">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px]">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-purple-500" />
+            <span className="text-muted-foreground">인터뷰</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-            <span className="text-xs text-muted-foreground">세미나</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-orange-500" />
+            <span className="text-muted-foreground">세미나</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-xs text-muted-foreground">솔루션</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="text-muted-foreground">솔루션</span>
           </div>
-        </div>
-        <div className="text-xs text-muted-foreground text-center font-medium pt-2">일정</div>
-        <div className="flex justify-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <span className="text-xs text-muted-foreground">회의</span>
+          <div className="w-px h-3 bg-border" />
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="text-muted-foreground">회의</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-            <span className="text-xs text-muted-foreground">외근</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-yellow-500" />
+            <span className="text-muted-foreground">외근</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
-            <span className="text-xs text-muted-foreground">기타</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-pink-500" />
+            <span className="text-muted-foreground">기타</span>
           </div>
         </div>
       </div>
