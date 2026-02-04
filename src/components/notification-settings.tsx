@@ -339,7 +339,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
             <div>
               <div className="text-sm font-medium">금일 일정 알림</div>
               <div className="text-xs text-muted-foreground">
-                매일 오전 8시(KST)
+                매일 오전 9시(KST)
               </div>
             </div>
             <Switch
