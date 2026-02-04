@@ -119,9 +119,13 @@ export function ScheduleView() {
       });
 
       if (res.ok) {
-        await fetchSchedules();
+        // 즉시 UI에서 제거
+        setSchedules((prev) => prev.filter((s) => s._id !== scheduleId));
         setDetailOpen(false);
         setSelectedSchedule(null);
+
+        // 백그라운드에서 최신 데이터 동기화
+        fetchSchedules();
       } else {
         const error = await res.json();
         if (res.status === 401 || error.error === "로그인이 필요합니다.") {
