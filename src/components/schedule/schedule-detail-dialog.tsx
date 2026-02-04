@@ -57,7 +57,7 @@ export function ScheduleDetailDialog({
           {/* 주제 */}
           <div>
             <h3 className="font-semibold text-lg">
-              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
+              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || schedule.etcDescription || "일정"}
             </h3>
           </div>
 
@@ -120,7 +120,7 @@ export function ScheduleDetailDialog({
             )}
 
           {/* 기타 정보 */}
-          {schedule.category === "기타" && schedule.etcDescription && (
+          {schedule.category === "기타" && schedule.etcDescription && schedule.etcTopic && (
             <div className="mt-3 p-3 bg-muted rounded-lg">
               <div className="text-sm font-medium mb-1">설명</div>
               <div className="text-sm text-muted-foreground whitespace-pre-wrap">
