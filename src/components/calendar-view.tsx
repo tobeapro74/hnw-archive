@@ -231,17 +231,18 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
       {/* 범례 */}
       <div className="mt-4 pt-3 border-t">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px]">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-purple-500" />
-            <span className="text-muted-foreground">인터뷰</span>
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            </div>
+            <span className="text-muted-foreground">기사</span>
           </div>
+          <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-orange-500" />
             <span className="text-muted-foreground">세미나</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-muted-foreground">홍보</span>
           </div>
           <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1">
