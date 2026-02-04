@@ -51,7 +51,7 @@ export function ScheduleView() {
         return false;
       }
       return true;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [schedules, selectedCategory]);
 
   // 월별로 그룹화
@@ -68,8 +68,8 @@ export function ScheduleView() {
       monthMap.get(key)!.push(schedule);
     });
 
-    // 월별로 정렬
-    const sortedKeys = Array.from(monthMap.keys()).sort((a, b) => b.localeCompare(a));
+    // 월별로 정렬 (가까운 월이 위로)
+    const sortedKeys = Array.from(monthMap.keys()).sort((a, b) => a.localeCompare(b));
     sortedKeys.forEach((key) => {
       const [year, month] = key.split("-");
       groups.push({
