@@ -101,7 +101,14 @@ export function ScheduleView() {
         setDetailOpen(false);
         setSelectedSchedule(null);
       } else {
-        alert("삭제에 실패했습니다.");
+        const error = await res.json();
+        if (res.status === 401 || error.error === "로그인이 필요합니다.") {
+          if (confirm("로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?")) {
+            window.location.href = "/admin";
+          }
+        } else {
+          alert(error.error || "삭제에 실패했습니다.");
+        }
       }
     } catch (error) {
       console.error("Failed to delete schedule:", error);

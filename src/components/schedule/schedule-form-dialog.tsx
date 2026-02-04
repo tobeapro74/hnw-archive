@@ -147,7 +147,13 @@ export function ScheduleFormDialog({
         onOpenChange(false);
       } else {
         const error = await res.json();
-        alert(error.error || "저장에 실패했습니다.");
+        if (res.status === 401 || error.error === "로그인이 필요합니다.") {
+          if (confirm("로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?")) {
+            window.location.href = "/admin";
+          }
+        } else {
+          alert(error.error || "저장에 실패했습니다.");
+        }
       }
     } catch (error) {
       console.error("Failed to save schedule:", error);
