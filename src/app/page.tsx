@@ -378,8 +378,22 @@ function HomeContent() {
     setRelatedModalOpen(true);
   };
 
+  // 일정 다시 가져오기
+  const fetchSchedules = async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const res = await fetch(`/api/schedules?year=${currentYear}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setSchedules(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch schedules:", error);
+    }
+  };
+
   // 탭 변경
-  const handleTabChange = (tab: TabType) => {
+  const handleTabChange = async (tab: TabType) => {
     if (tab === "admin") {
       if (!user?.is_admin) return;
       window.location.href = "/admin";
@@ -388,6 +402,11 @@ function HomeContent() {
     setCurrentView(tab);
     setSelectedDateArticles([]);
     setSelectedDate(null);
+
+    // 캘린더 탭으로 돌아올 때 일정 다시 가져오기
+    if (tab === "calendar") {
+      await fetchSchedules();
+    }
   };
 
   // 캘린더 날짜 선택
