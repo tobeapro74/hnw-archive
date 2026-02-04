@@ -77,7 +77,20 @@ export function ScheduleView() {
   }, [filteredSchedules]);
 
   const handleSave = async (schedule: Schedule) => {
-    await fetchSchedules();
+    // 신규 등록인 경우 즉시 목록에 추가, 수정인 경우 기존 항목 업데이트
+    setSchedules((prev) => {
+      const existingIndex = prev.findIndex((s) => s._id === schedule._id);
+      if (existingIndex >= 0) {
+        // 수정
+        const updated = [...prev];
+        updated[existingIndex] = schedule;
+        return updated;
+      } else {
+        // 신규 등록
+        return [schedule, ...prev];
+      }
+    });
+
     setFormOpen(false);
     setEditingSchedule(null);
 
@@ -86,6 +99,9 @@ export function ScheduleView() {
       setSelectedSchedule(schedule);
       setDetailOpen(true);
     }
+
+    // 백그라운드에서 최신 데이터 동기화
+    fetchSchedules();
   };
 
   const handleEdit = (schedule: Schedule) => {

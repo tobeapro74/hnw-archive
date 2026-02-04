@@ -113,6 +113,16 @@ export function ScheduleFormDialog({
       return;
     }
 
+    // 확인 모달
+    const isEditing = !!schedule;
+    const confirmMessage = isEditing
+      ? "일정을 수정하시겠습니까?"
+      : "일정을 등록하시겠습니까?";
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
     setSaving(true);
 
     try {
