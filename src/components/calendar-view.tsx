@@ -236,7 +236,7 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
                         <div
                           key={`article-${i}`}
                           className={cn(
-                            "w-1.5 h-1.5 rounded-full",
+                            "w-2 h-2 rounded-sm",
                             article.category === "인터뷰" && "bg-purple-500",
                             article.category === "세미나 안내" && "bg-orange-500",
                             article.category === "소개 및 홍보" && "bg-blue-500"
@@ -278,9 +278,9 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px]">
           <div className="flex items-center gap-1.5">
             <div className="flex gap-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <div className="w-2.5 h-2.5 rounded-sm bg-purple-500" />
+              <div className="w-2.5 h-2.5 rounded-sm bg-orange-500" />
+              <div className="w-2.5 h-2.5 rounded-sm bg-blue-500" />
             </div>
             <span className="text-muted-foreground">기사</span>
           </div>
