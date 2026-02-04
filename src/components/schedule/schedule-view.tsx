@@ -80,6 +80,12 @@ export function ScheduleView() {
     await fetchSchedules();
     setFormOpen(false);
     setEditingSchedule(null);
+
+    // 수정된 일정을 상세 모달에도 반영
+    if (selectedSchedule && selectedSchedule._id === schedule._id) {
+      setSelectedSchedule(schedule);
+      setDetailOpen(true);
+    }
   };
 
   const handleEdit = (schedule: Schedule) => {
