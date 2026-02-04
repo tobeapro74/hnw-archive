@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { sendPushToMultiple, PushSubscription, NotificationPayload } from '@/lib/web-push';
-import { Schedule } from '@/lib/schedule-types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,7 +93,7 @@ export async function GET(request: NextRequest) {
 }
 
 // 알림 페이로드 생성 헬퍼 함수
-function createNotificationPayload(seminars: any[], schedules: Schedule[]): NotificationPayload {
+function createNotificationPayload(seminars: any[], schedules: any[]): NotificationPayload {
   const totalCount = seminars.length + schedules.length;
 
   // 알림 본문 생성
