@@ -76,18 +76,30 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
 
   // 월 변경 시 첫 번째 일정 자동 선택
   const selectFirstScheduleInMonth = (newYear: number, newMonth: number) => {
-    // 해당 월의 일정들을 날짜순으로 정렬
-    const monthSchedules = schedules
-      .filter(schedule => {
-        const date = new Date(schedule.date);
-        return date.getFullYear() === newYear && date.getMonth() === newMonth;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // 해당 월의 일정과 세미나를 모두 수집하여 날짜순으로 정렬
+    const monthItems: { date: Date; type: 'schedule' | 'seminar' }[] = [];
 
-    if (monthSchedules.length > 0) {
-      const firstScheduleDate = new Date(monthSchedules[0].date);
-      const day = firstScheduleDate.getDate();
-      setSelectedDate(firstScheduleDate);
+    schedules.forEach(schedule => {
+      const date = new Date(schedule.date);
+      if (date.getFullYear() === newYear && date.getMonth() === newMonth) {
+        monthItems.push({ date, type: 'schedule' });
+      }
+    });
+
+    seminars.forEach(seminar => {
+      const date = new Date(seminar.date);
+      if (date.getFullYear() === newYear && date.getMonth() === newMonth) {
+        monthItems.push({ date, type: 'seminar' });
+      }
+    });
+
+    // 날짜순으로 정렬
+    monthItems.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    if (monthItems.length > 0) {
+      const firstDate = monthItems[0].date;
+      const day = firstDate.getDate();
+      setSelectedDate(firstDate);
 
       // 해당 날짜의 모든 데이터 수집
       const dayArticles = articles.filter(article => {
@@ -111,9 +123,10 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
                date.getDate() === day;
       });
 
-      onDateSelect?.(firstScheduleDate, dayArticles, daySchedules, daySeminars);
+      onDateSelect?.(firstDate, dayArticles, daySchedules, daySeminars);
     } else {
       setSelectedDate(null);
+      onDateSelect?.(new Date(), [], [], []);
     }
   };
 
