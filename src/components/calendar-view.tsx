@@ -241,7 +241,7 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-muted-foreground">솔루션</span>
+            <span className="text-muted-foreground">홍보</span>
           </div>
           <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1">
