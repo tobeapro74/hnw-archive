@@ -321,12 +321,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
         <div className="ml-4 space-y-3">
           {/* D-day 알림 */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div>
-              <div className="text-sm font-medium">세미나 D-day 알림</div>
-              <div className="text-xs text-muted-foreground">
-                매일 오전 10시(KST)
-              </div>
-            </div>
+            <div className="text-sm font-medium">세미나 D-day 알림</div>
             <Switch
               checked={ddayEnabled}
               onCheckedChange={toggleDdayNotification}
@@ -336,12 +331,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
 
           {/* 금일 일정 알림 */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div>
-              <div className="text-sm font-medium">금일 일정 알림</div>
-              <div className="text-xs text-muted-foreground">
-                매일 오전 9시(KST)
-              </div>
-            </div>
+            <div className="text-sm font-medium">금일 일정 알림</div>
             <Switch
               checked={dailyEnabled}
               onCheckedChange={toggleDailyNotification}
