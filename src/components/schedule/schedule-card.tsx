@@ -39,7 +39,7 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
               )}
             </div>
             <h3 className="font-semibold text-base">
-              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
+              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || schedule.etcDescription || "일정"}
             </h3>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
           )}
 
           {/* 기타 정보 */}
-          {schedule.category === "기타" && schedule.etcDescription && (
+          {schedule.category === "기타" && schedule.etcDescription && schedule.etcTopic && (
             <div className="mt-2 p-2 bg-muted rounded text-sm">
               {schedule.etcDescription}
             </div>
