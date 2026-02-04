@@ -5,14 +5,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Article } from "@/lib/types";
+import { Schedule } from "@/lib/schedule-types";
 import { cn, getMonthName, getDaysInMonth, getFirstDayOfMonth } from "@/lib/utils";
 
 interface CalendarViewProps {
   articles: Article[];
-  onDateSelect?: (date: Date, articles: Article[]) => void;
+  schedules?: Schedule[];
+  onDateSelect?: (date: Date, articles: Article[], schedules: Schedule[]) => void;
 }
 
-export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
+export function CalendarView({ articles, schedules = [], onDateSelect }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -35,6 +37,22 @@ export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
     return map;
   }, [articles, year, month]);
 
+  // 해당 월의 일정들을 날짜별로 그룹화
+  const schedulesByDate = useMemo(() => {
+    const map = new Map<string, Schedule[]>();
+    schedules.forEach((schedule) => {
+      const date = new Date(schedule.date);
+      if (date.getFullYear() === year && date.getMonth() === month) {
+        const key = date.getDate().toString();
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key)!.push(schedule);
+      }
+    });
+    return map;
+  }, [schedules, year, month]);
+
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
 
@@ -52,7 +70,8 @@ export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
     const date = new Date(year, month, day);
     setSelectedDate(date);
     const dayArticles = articlesByDate.get(day.toString()) || [];
-    onDateSelect?.(date, dayArticles);
+    const daySchedules = schedulesByDate.get(day.toString()) || [];
+    onDateSelect?.(date, dayArticles, daySchedules);
   };
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
@@ -109,12 +128,21 @@ export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
           }
 
           const dayArticles = articlesByDate.get(day.toString()) || [];
+          const daySchedules = schedulesByDate.get(day.toString()) || [];
           const hasArticles = dayArticles.length > 0;
+          const hasSchedules = daySchedules.length > 0;
+          const hasContent = hasArticles || hasSchedules;
           const isSelected = selectedDate?.getDate() === day &&
                            selectedDate?.getMonth() === month &&
                            selectedDate?.getFullYear() === year;
           const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
           const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+          // 표시할 아이템들 (기사 + 일정)
+          const displayItems = [
+            ...dayArticles.map(article => ({ type: 'article' as const, data: article })),
+            ...daySchedules.map(schedule => ({ type: 'schedule' as const, data: schedule }))
+          ];
 
           return (
             <button
@@ -122,29 +150,47 @@ export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
               onClick={() => handleDateClick(day)}
               className={cn(
                 "aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors relative",
-                hasArticles && "font-medium",
+                hasContent && "font-medium",
                 isSelected && "bg-primary text-primary-foreground",
-                !isSelected && hasArticles && "bg-muted hover:bg-muted/80",
-                !isSelected && !hasArticles && "hover:bg-muted/50",
+                !isSelected && hasContent && "bg-muted hover:bg-muted/80",
+                !isSelected && !hasContent && "hover:bg-muted/50",
                 dayOfWeek === 0 && !isSelected && "text-red-500",
                 dayOfWeek === 6 && !isSelected && "text-blue-500",
                 isToday && !isSelected && "ring-2 ring-primary ring-offset-1"
               )}
             >
               <span>{day}</span>
-              {hasArticles && (
-                <div className="flex gap-0.5 mt-0.5">
-                  {dayArticles.slice(0, 3).map((article, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full",
-                        article.category === "인터뷰" && "bg-purple-500",
-                        article.category === "세미나 안내" && "bg-orange-500",
-                        article.category === "소개 및 홍보" && "bg-blue-500"
-                      )}
-                    />
-                  ))}
+              {hasContent && (
+                <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center max-w-full px-0.5">
+                  {displayItems.slice(0, 4).map((item, i) => {
+                    if (item.type === 'article') {
+                      const article = item.data as Article;
+                      return (
+                        <div
+                          key={`article-${i}`}
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            article.category === "인터뷰" && "bg-purple-500",
+                            article.category === "세미나 안내" && "bg-orange-500",
+                            article.category === "소개 및 홍보" && "bg-blue-500"
+                          )}
+                        />
+                      );
+                    } else {
+                      const schedule = item.data as Schedule;
+                      return (
+                        <div
+                          key={`schedule-${i}`}
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            schedule.category === "회의" && "bg-green-500",
+                            schedule.category === "외근" && "bg-yellow-500",
+                            schedule.category === "기타" && "bg-pink-500"
+                          )}
+                        />
+                      );
+                    }
+                  })}
                 </div>
               )}
             </button>
@@ -153,18 +199,36 @@ export function CalendarView({ articles, onDateSelect }: CalendarViewProps) {
       </div>
 
       {/* 범례 */}
-      <div className="flex justify-center gap-4 mt-4 pt-4 border-t">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-          <span className="text-xs text-muted-foreground">인터뷰</span>
+      <div className="space-y-2 mt-4 pt-4 border-t">
+        <div className="text-xs text-muted-foreground text-center font-medium">기사</div>
+        <div className="flex justify-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+            <span className="text-xs text-muted-foreground">인터뷰</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            <span className="text-xs text-muted-foreground">세미나</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-xs text-muted-foreground">솔루션</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-          <span className="text-xs text-muted-foreground">세미나</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-          <span className="text-xs text-muted-foreground">솔루션</span>
+        <div className="text-xs text-muted-foreground text-center font-medium pt-2">일정</div>
+        <div className="flex justify-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+            <span className="text-xs text-muted-foreground">회의</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+            <span className="text-xs text-muted-foreground">외근</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+            <span className="text-xs text-muted-foreground">기타</span>
+          </div>
         </div>
       </div>
     </div>

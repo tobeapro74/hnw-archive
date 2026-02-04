@@ -21,6 +21,7 @@ import { ResourceView } from "@/components/resources";
 import { ScheduleView } from "@/components/schedule";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
+import { Schedule } from "@/lib/schedule-types";
 import { formatDate } from "@/lib/utils";
 import {
   Dialog,
@@ -48,6 +49,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState<ViewType>("home");
   const [articles, setArticles] = useState<Article[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -58,8 +60,9 @@ function HomeContent() {
   const [selectedTag, setSelectedTag] = useState<ArticleTag | "전체">("전체");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 캘린더 선택된 날짜의 기사
+  // 캘린더 선택된 날짜의 기사 및 일정
   const [selectedDateArticles, setSelectedDateArticles] = useState<Article[]>([]);
+  const [selectedDateSchedules, setSelectedDateSchedules] = useState<Schedule[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // 연관 기사 모달
@@ -74,22 +77,28 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  // 기사 목록 + 로그인 상태 병렬 조회 (성능 최적화)
+  // 기사 목록 + 일정 목록 + 로그인 상태 병렬 조회 (성능 최적화)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [articlesRes, authRes] = await Promise.all([
+        const currentYear = new Date().getFullYear();
+        const [articlesRes, schedulesRes, authRes] = await Promise.all([
           fetch("/api/articles"),
+          fetch(`/api/schedules?year=${currentYear}`),
           fetch("/api/auth/me"),
         ]);
 
-        const [articlesData, authData] = await Promise.all([
+        const [articlesData, schedulesData, authData] = await Promise.all([
           articlesRes.json(),
+          schedulesRes.json(),
           authRes.json(),
         ]);
 
         if (articlesData.success) {
           setArticles(articlesData.data);
+        }
+        if (Array.isArray(schedulesData)) {
+          setSchedules(schedulesData);
         }
         if (authData.success) {
           setUser(authData.data);
@@ -374,9 +383,10 @@ function HomeContent() {
   };
 
   // 캘린더 날짜 선택
-  const handleDateSelect = (date: Date, dateArticles: Article[]) => {
+  const handleDateSelect = (date: Date, dateArticles: Article[], dateSchedules: Schedule[]) => {
     setSelectedDate(date);
     setSelectedDateArticles(dateArticles);
+    setSelectedDateSchedules(dateSchedules);
   };
 
   // 태그 클릭 핸들러
@@ -607,30 +617,70 @@ function HomeContent() {
     <div className="p-4 space-y-4">
       <CalendarView
         articles={articles}
+        schedules={schedules}
         onDateSelect={handleDateSelect}
       />
 
       {selectedDate && (
-        <div className="bg-card rounded-xl p-4 shadow-sm">
-          <h3 className="text-base font-semibold mb-3">
-            {formatDate(selectedDate)} 기사
-          </h3>
-          <div className="space-y-3">
-            {selectedDateArticles.length > 0 ? (
-              selectedDateArticles.map((article) => (
-                <ArticleCard
-                  key={article._id}
-                  article={article}
-                  relatedCount={getRelatedArticleCount(article.eventName)}
-                  onShowRelated={handleShowRelatedArticles}
-                />
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-4">
-                해당 날짜에 기사가 없습니다.
-              </p>
-            )}
+        <div className="space-y-4">
+          {/* 기사 목록 */}
+          <div className="bg-card rounded-xl p-4 shadow-sm">
+            <h3 className="text-base font-semibold mb-3">
+              {formatDate(selectedDate)} 기사
+            </h3>
+            <div className="space-y-3">
+              {selectedDateArticles.length > 0 ? (
+                selectedDateArticles.map((article) => (
+                  <ArticleCard
+                    key={article._id}
+                    article={article}
+                    relatedCount={getRelatedArticleCount(article.eventName)}
+                    onShowRelated={handleShowRelatedArticles}
+                  />
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  해당 날짜에 기사가 없습니다.
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* 일정 목록 */}
+          {selectedDateSchedules.length > 0 && (
+            <div className="bg-card rounded-xl p-4 shadow-sm">
+              <h3 className="text-base font-semibold mb-3">
+                {formatDate(selectedDate)} 일정
+              </h3>
+              <div className="space-y-3">
+                {selectedDateSchedules.map((schedule) => (
+                  <div
+                    key={schedule._id}
+                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-2 mb-2">
+                      <Badge variant={schedule.category === "회의" ? "default" : schedule.category === "외근" ? "secondary" : "outline"}>
+                        {schedule.category === "회의" ? "💼" : schedule.category === "외근" ? "🚗" : "📌"} {schedule.category}
+                      </Badge>
+                      {schedule.category === "회의" && schedule.meetingType && (
+                        <span className="text-sm text-muted-foreground">{schedule.meetingType}</span>
+                      )}
+                      {schedule.category === "외근" && schedule.outingType && (
+                        <span className="text-sm text-muted-foreground">{schedule.outingType}</span>
+                      )}
+                    </div>
+                    <h4 className="font-medium mb-1">
+                      {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
+                    </h4>
+                    <div className="text-sm text-muted-foreground">
+                      <p>🕐 {schedule.time}</p>
+                      <p>📍 {schedule.location}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
