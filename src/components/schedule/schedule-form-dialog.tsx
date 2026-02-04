@@ -122,23 +122,23 @@ export function ScheduleFormDialog({
         time: formData.time,
         location: formData.location,
         meetingType: formData.category === "회의" ? formData.meetingType : undefined,
-        meetingTopic: formData.category === "회의" ? formData.meetingTopic : undefined,
+        meetingTopic: formData.category === "회의" ? (formData.meetingTopic || undefined) : undefined,
         outingType: formData.category === "외근" ? formData.outingType : undefined,
-        center: formData.category === "외근" ? formData.center : undefined,
-        rmName: formData.category === "외근" ? formData.rmName : undefined,
-        contact: formData.category === "외근" ? formData.contact : undefined,
+        center: formData.category === "외근" ? (formData.center || undefined) : undefined,
+        rmName: formData.category === "외근" ? (formData.rmName || undefined) : undefined,
+        contact: formData.category === "외근" ? (formData.contact || undefined) : undefined,
         customerName:
           formData.category === "외근" && formData.outingType === "고객미팅"
-            ? formData.customerName
+            ? (formData.customerName || undefined)
             : undefined,
         customerInfo:
           formData.category === "외근" && formData.outingType === "고객미팅"
-            ? formData.customerInfo
+            ? (formData.customerInfo || undefined)
             : undefined,
-        outingTopic: formData.category === "외근" ? formData.outingTopic : undefined,
-        preparationItems: formData.category === "외근" ? formData.preparationItems : undefined,
-        etcTopic: formData.category === "기타" ? formData.etcTopic : undefined,
-        etcDescription: formData.category === "기타" ? formData.etcDescription : undefined,
+        outingTopic: formData.category === "외근" ? (formData.outingTopic || undefined) : undefined,
+        preparationItems: formData.category === "외근" ? (formData.preparationItems || undefined) : undefined,
+        etcTopic: formData.category === "기타" ? (formData.etcTopic || undefined) : undefined,
+        etcDescription: formData.category === "기타" ? (formData.etcDescription || undefined) : undefined,
       };
 
       const url = isEditing ? `/api/schedules/${schedule._id}` : "/api/schedules";
