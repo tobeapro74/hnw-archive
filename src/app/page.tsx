@@ -699,7 +699,7 @@ function HomeContent() {
                       )}
                     </div>
                     <h4 className="font-medium mb-1">
-                      {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
+                      {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || schedule.etcDescription || "일정"}
                     </h4>
                     <div className="text-sm text-muted-foreground">
                       <p>🕐 {schedule.time}</p>
