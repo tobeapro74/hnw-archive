@@ -975,7 +975,7 @@ export default function AdminPage() {
   }
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: "home" | "list" | "seminar" | "resources" | "calendar" | "admin") => {
+  const handleTabChange = (tab: "home" | "list" | "seminar" | "schedule" | "resources" | "calendar" | "admin") => {
     if (tab === "admin") return; // 이미 admin 페이지
     router.push(tab === "home" ? "/" : `/?tab=${tab}`);
   };
