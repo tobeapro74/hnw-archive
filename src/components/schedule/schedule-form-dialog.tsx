@@ -253,6 +253,7 @@ export function ScheduleFormDialog({
               <Input
                 id="time"
                 type="time"
+                step="600"
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 placeholder="입력 안 하면 하루종일"
