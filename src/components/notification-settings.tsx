@@ -15,6 +15,11 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // 알림 타입 설정
+  const [notificationTypes, setNotificationTypes] = useState<string[]>([]);
+  const [ddayEnabled, setDdayEnabled] = useState(false);
+  const [dailyEnabled, setDailyEnabled] = useState(false);
+
   useEffect(() => {
     checkSupport();
     checkLoginStatus();
@@ -47,13 +52,31 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       const registrations = await navigator.serviceWorker.getRegistrations();
       if (registrations.length > 0) {
         const subscription = await registrations[0].pushManager.getSubscription();
-        setIsSubscribed(!!subscription);
+        if (subscription) {
+          setIsSubscribed(true);
+          // 알림 설정 로드
+          await loadNotificationSettings(subscription.endpoint);
+        }
       }
     } catch (error) {
       console.error("Failed to check subscription:", error);
     }
 
     setIsLoading(false);
+  };
+
+  const loadNotificationSettings = async (endpoint: string) => {
+    try {
+      const response = await fetch(`/api/push/settings?endpoint=${encodeURIComponent(endpoint)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationTypes(data.notificationTypes);
+        setDdayEnabled(data.notificationTypes.includes('dday'));
+        setDailyEnabled(data.notificationTypes.includes('daily'));
+      }
+    } catch (error) {
+      console.error('Failed to load notification settings:', error);
+    }
   };
 
   const subscribe = async () => {
@@ -101,6 +124,8 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
 
       if (response.ok) {
         setIsSubscribed(true);
+        // 구독 후 현재 설정 로드
+        await loadNotificationSettings(subscription.endpoint);
       } else {
         throw new Error("Failed to save subscription");
       }
@@ -137,6 +162,9 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       }
 
       setIsSubscribed(false);
+      setNotificationTypes([]);
+      setDdayEnabled(false);
+      setDailyEnabled(false);
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
       alert("알림 해제에 실패했습니다.");
@@ -150,6 +178,64 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       await unsubscribe();
     } else {
       await subscribe();
+    }
+  };
+
+  const toggleDdayNotification = async (enabled: boolean) => {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+
+    const newTypes = enabled
+      ? [...notificationTypes.filter(t => t !== 'dday'), 'dday']
+      : notificationTypes.filter(t => t !== 'dday');
+
+    try {
+      const response = await fetch('/api/push/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          notificationTypes: newTypes,
+        }),
+      });
+
+      if (response.ok) {
+        setNotificationTypes(newTypes);
+        setDdayEnabled(enabled);
+      }
+    } catch (error) {
+      console.error('Failed to update D-day notification:', error);
+      alert('설정 변경에 실패했습니다.');
+    }
+  };
+
+  const toggleDailyNotification = async (enabled: boolean) => {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+
+    const newTypes = enabled
+      ? [...notificationTypes.filter(t => t !== 'daily'), 'daily']
+      : notificationTypes.filter(t => t !== 'daily');
+
+    try {
+      const response = await fetch('/api/push/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          notificationTypes: newTypes,
+        }),
+      });
+
+      if (response.ok) {
+        setNotificationTypes(newTypes);
+        setDailyEnabled(enabled);
+      }
+    } catch (error) {
+      console.error('Failed to update daily notification:', error);
+      alert('설정 변경에 실패했습니다.');
     }
   };
 
@@ -205,27 +291,65 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
 
   // 풀 모드 (설정 페이지용)
   return (
-    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
-      <div className="flex items-center gap-3">
-        {isSubscribed ? (
-          <Bell className="w-5 h-5 text-primary" />
-        ) : (
-          <BellOff className="w-5 h-5 text-muted-foreground" />
-        )}
-        <div>
-          <div className="font-medium">푸시 알림</div>
-          <div className="text-sm text-muted-foreground">
-            {isSubscribed
-              ? "매일 오전 10시 세미나 D-day 알림을 받습니다"
-              : "알림을 켜면 매일 세미나 일정을 받을 수 있습니다"}
+    <div className="space-y-4">
+      {/* 푸시 알림 마스터 토글 */}
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+        <div className="flex items-center gap-3">
+          {isSubscribed ? (
+            <Bell className="w-5 h-5 text-primary" />
+          ) : (
+            <BellOff className="w-5 h-5 text-muted-foreground" />
+          )}
+          <div>
+            <div className="font-medium">푸시 알림</div>
+            <div className="text-sm text-muted-foreground">
+              {isSubscribed
+                ? "알림이 활성화되었습니다"
+                : "알림을 켜면 일정 알림을 받을 수 있습니다"}
+            </div>
           </div>
         </div>
+        <Switch
+          checked={isSubscribed}
+          onCheckedChange={toggleSubscription}
+          disabled={isLoading}
+        />
       </div>
-      <Switch
-        checked={isSubscribed}
-        onCheckedChange={toggleSubscription}
-        disabled={isLoading}
-      />
+
+      {/* 개별 알림 설정 (구독 시에만 표시) */}
+      {isSubscribed && (
+        <div className="ml-4 space-y-3">
+          {/* D-day 알림 */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div>
+              <div className="text-sm font-medium">세미나 D-day 알림</div>
+              <div className="text-xs text-muted-foreground">
+                매일 오전 10시(KST)
+              </div>
+            </div>
+            <Switch
+              checked={ddayEnabled}
+              onCheckedChange={toggleDdayNotification}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* 금일 일정 알림 */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div>
+              <div className="text-sm font-medium">금일 일정 알림</div>
+              <div className="text-xs text-muted-foreground">
+                매일 오전 8시(KST)
+              </div>
+            </div>
+            <Switch
+              checked={dailyEnabled}
+              onCheckedChange={toggleDailyNotification}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

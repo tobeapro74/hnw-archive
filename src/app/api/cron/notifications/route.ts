@@ -62,8 +62,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 구독자 조회
-    const subscriptions = await db.collection('push_subscriptions').find().toArray();
+    // 구독자 조회 ('dday' 알림을 활성화한 구독자만)
+    const subscriptions = await db.collection('push_subscriptions').find({
+      $or: [
+        { notificationTypes: 'dday' },
+        { notificationTypes: { $exists: false } }  // 기존 구독자 포함 (기본값)
+      ]
+    }).toArray();
 
     if (subscriptions.length === 0) {
       return NextResponse.json({

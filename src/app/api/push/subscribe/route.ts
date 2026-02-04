@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
             userId: userId || null,
             updatedAt: new Date(),
           },
+          $setOnInsert: {
+            notificationTypes: ['dday', 'daily'],  // 기존에 없으면 기본값
+          }
         }
       );
     } else {
@@ -49,6 +52,7 @@ export async function POST(request: NextRequest) {
         endpoint: subscription.endpoint,
         subscription,
         userId: userId || null,
+        notificationTypes: ['dday', 'daily'],  // 기본값: 모든 알림 활성화
         createdAt: new Date(),
         updatedAt: new Date(),
       });
