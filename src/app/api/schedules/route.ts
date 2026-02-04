@@ -47,10 +47,10 @@ export async function GET(request: Request) {
       _id: schedule._id!.toString(),
     }));
 
-    // 캐싱 헤더 추가 (30초간 캐시, 백그라운드에서 갱신)
+    // 실시간 데이터를 위해 캐싱 비활성화
     return NextResponse.json(result, {
       headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (error) {
