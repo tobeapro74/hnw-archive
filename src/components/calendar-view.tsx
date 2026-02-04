@@ -74,14 +74,59 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
 
+  // 월 변경 시 첫 번째 일정 자동 선택
+  const selectFirstScheduleInMonth = (newYear: number, newMonth: number) => {
+    // 해당 월의 일정들을 날짜순으로 정렬
+    const monthSchedules = schedules
+      .filter(schedule => {
+        const date = new Date(schedule.date);
+        return date.getFullYear() === newYear && date.getMonth() === newMonth;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    if (monthSchedules.length > 0) {
+      const firstScheduleDate = new Date(monthSchedules[0].date);
+      const day = firstScheduleDate.getDate();
+      setSelectedDate(firstScheduleDate);
+
+      // 해당 날짜의 모든 데이터 수집
+      const dayArticles = articles.filter(article => {
+        const date = new Date(article.publishedAt);
+        return date.getFullYear() === newYear &&
+               date.getMonth() === newMonth &&
+               date.getDate() === day;
+      });
+
+      const daySchedules = schedules.filter(schedule => {
+        const date = new Date(schedule.date);
+        return date.getFullYear() === newYear &&
+               date.getMonth() === newMonth &&
+               date.getDate() === day;
+      });
+
+      const daySeminars = seminars.filter(seminar => {
+        const date = new Date(seminar.date);
+        return date.getFullYear() === newYear &&
+               date.getMonth() === newMonth &&
+               date.getDate() === day;
+      });
+
+      onDateSelect?.(firstScheduleDate, dayArticles, daySchedules, daySeminars);
+    } else {
+      setSelectedDate(null);
+    }
+  };
+
   const handlePrevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-    setSelectedDate(null);
+    const newDate = new Date(year, month - 1, 1);
+    setCurrentDate(newDate);
+    selectFirstScheduleInMonth(newDate.getFullYear(), newDate.getMonth());
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-    setSelectedDate(null);
+    const newDate = new Date(year, month + 1, 1);
+    setCurrentDate(newDate);
+    selectFirstScheduleInMonth(newDate.getFullYear(), newDate.getMonth());
   };
 
   const handleDateClick = (day: number) => {
