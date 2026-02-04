@@ -89,6 +89,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.customerInfo !== undefined) updateFields.customerInfo = body.customerInfo;
     if (body.outingTopic !== undefined) updateFields.outingTopic = body.outingTopic;
     if (body.preparationItems !== undefined) updateFields.preparationItems = body.preparationItems;
+    if (body.etcTopic !== undefined) updateFields.etcTopic = body.etcTopic;
+    if (body.etcDescription !== undefined) updateFields.etcDescription = body.etcDescription;
 
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },

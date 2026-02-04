@@ -103,6 +103,8 @@ export async function POST(request: NextRequest) {
       customerInfo: body.customerInfo,
       outingTopic: body.outingTopic,
       preparationItems: body.preparationItems,
+      etcTopic: body.etcTopic,
+      etcDescription: body.etcDescription,
       createdAt: now,
       updatedAt: now,
       createdBy: user.name,
