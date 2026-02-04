@@ -105,8 +105,8 @@ function HomeContent() {
         if (Array.isArray(schedulesData)) {
           setSchedules(schedulesData);
         }
-        if (seminarsData.success && Array.isArray(seminarsData.data)) {
-          setSeminars(seminarsData.data);
+        if (Array.isArray(seminarsData)) {
+          setSeminars(seminarsData);
         }
         if (authData.success) {
           setUser(authData.data);
