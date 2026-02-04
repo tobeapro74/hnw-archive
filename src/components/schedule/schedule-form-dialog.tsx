@@ -250,14 +250,44 @@ export function ScheduleFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="time">시간</Label>
-              <Input
-                id="time"
-                type="time"
-                step="600"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                placeholder="입력 안 하면 하루종일"
-              />
+              <div className="flex gap-2">
+                <Select
+                  value={formData.time ? formData.time.split(':')[0] : ''}
+                  onValueChange={(hour) => {
+                    const minute = formData.time ? formData.time.split(':')[1] : '00';
+                    setFormData({ ...formData, time: hour ? `${hour}:${minute}` : '' });
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="시" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+                      <SelectItem key={hour} value={String(hour).padStart(2, '0')}>
+                        {String(hour).padStart(2, '0')}시
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={formData.time ? formData.time.split(':')[1] : ''}
+                  onValueChange={(minute) => {
+                    const hour = formData.time ? formData.time.split(':')[0] : '09';
+                    setFormData({ ...formData, time: hour ? `${hour}:${minute}` : '' });
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="분" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['00', '10', '20', '30', '40', '50'].map((minute) => (
+                      <SelectItem key={minute} value={minute}>
+                        {minute}분
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
