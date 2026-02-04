@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Article } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
+import { Seminar } from "@/lib/seminar-types";
 import { cn, getMonthName, getDaysInMonth, getFirstDayOfMonth } from "@/lib/utils";
 
 interface CalendarViewProps {
   articles: Article[];
   schedules?: Schedule[];
-  onDateSelect?: (date: Date, articles: Article[], schedules: Schedule[]) => void;
+  seminars?: Seminar[];
+  onDateSelect?: (date: Date, articles: Article[], schedules: Schedule[], seminars: Seminar[]) => void;
 }
 
-export function CalendarView({ articles, schedules = [], onDateSelect }: CalendarViewProps) {
+export function CalendarView({ articles, schedules = [], seminars = [], onDateSelect }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -53,6 +55,22 @@ export function CalendarView({ articles, schedules = [], onDateSelect }: Calenda
     return map;
   }, [schedules, year, month]);
 
+  // 해당 월의 세미나들을 날짜별로 그룹화
+  const seminarsByDate = useMemo(() => {
+    const map = new Map<string, Seminar[]>();
+    seminars.forEach((seminar) => {
+      const date = new Date(seminar.date);
+      if (date.getFullYear() === year && date.getMonth() === month) {
+        const key = date.getDate().toString();
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key)!.push(seminar);
+      }
+    });
+    return map;
+  }, [seminars, year, month]);
+
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
 
@@ -71,7 +89,8 @@ export function CalendarView({ articles, schedules = [], onDateSelect }: Calenda
     setSelectedDate(date);
     const dayArticles = articlesByDate.get(day.toString()) || [];
     const daySchedules = schedulesByDate.get(day.toString()) || [];
-    onDateSelect?.(date, dayArticles, daySchedules);
+    const daySeminars = seminarsByDate.get(day.toString()) || [];
+    onDateSelect?.(date, dayArticles, daySchedules, daySeminars);
   };
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
@@ -129,19 +148,22 @@ export function CalendarView({ articles, schedules = [], onDateSelect }: Calenda
 
           const dayArticles = articlesByDate.get(day.toString()) || [];
           const daySchedules = schedulesByDate.get(day.toString()) || [];
+          const daySeminars = seminarsByDate.get(day.toString()) || [];
           const hasArticles = dayArticles.length > 0;
           const hasSchedules = daySchedules.length > 0;
-          const hasContent = hasArticles || hasSchedules;
+          const hasSeminars = daySeminars.length > 0;
+          const hasContent = hasArticles || hasSchedules || hasSeminars;
           const isSelected = selectedDate?.getDate() === day &&
                            selectedDate?.getMonth() === month &&
                            selectedDate?.getFullYear() === year;
           const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
           const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
 
-          // 표시할 아이템들 (기사 + 일정)
+          // 표시할 아이템들 (기사 + 일정 + 세미나)
           const displayItems = [
             ...dayArticles.map(article => ({ type: 'article' as const, data: article })),
-            ...daySchedules.map(schedule => ({ type: 'schedule' as const, data: schedule }))
+            ...daySchedules.map(schedule => ({ type: 'schedule' as const, data: schedule })),
+            ...daySeminars.map(seminar => ({ type: 'seminar' as const, data: seminar }))
           ];
 
           return (
@@ -176,7 +198,7 @@ export function CalendarView({ articles, schedules = [], onDateSelect }: Calenda
                           )}
                         />
                       );
-                    } else {
+                    } else if (item.type === 'schedule') {
                       const schedule = item.data as Schedule;
                       return (
                         <div
@@ -187,6 +209,14 @@ export function CalendarView({ articles, schedules = [], onDateSelect }: Calenda
                             schedule.category === "외근" && "bg-yellow-500",
                             schedule.category === "기타" && "bg-pink-500"
                           )}
+                        />
+                      );
+                    } else {
+                      // seminar
+                      return (
+                        <div
+                          key={`seminar-${i}`}
+                          className="w-1.5 h-1.5 rounded-full bg-orange-500"
                         />
                       );
                     }

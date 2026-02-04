@@ -22,6 +22,7 @@ import { ScheduleView } from "@/components/schedule";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
+import { Seminar } from "@/lib/seminar-types";
 import { formatDate } from "@/lib/utils";
 import {
   Dialog,
@@ -50,6 +51,7 @@ function HomeContent() {
   const [currentView, setCurrentView] = useState<ViewType>("home");
   const [articles, setArticles] = useState<Article[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [seminars, setSeminars] = useState<Seminar[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -60,9 +62,10 @@ function HomeContent() {
   const [selectedTag, setSelectedTag] = useState<ArticleTag | "전체">("전체");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 캘린더 선택된 날짜의 기사 및 일정
+  // 캘린더 선택된 날짜의 기사, 일정, 세미나
   const [selectedDateArticles, setSelectedDateArticles] = useState<Article[]>([]);
   const [selectedDateSchedules, setSelectedDateSchedules] = useState<Schedule[]>([]);
+  const [selectedDateSeminars, setSelectedDateSeminars] = useState<Seminar[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // 연관 기사 모달
@@ -77,20 +80,22 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  // 기사 목록 + 일정 목록 + 로그인 상태 병렬 조회 (성능 최적화)
+  // 기사 목록 + 일정 목록 + 세미나 목록 + 로그인 상태 병렬 조회 (성능 최적화)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const currentYear = new Date().getFullYear();
-        const [articlesRes, schedulesRes, authRes] = await Promise.all([
+        const [articlesRes, schedulesRes, seminarsRes, authRes] = await Promise.all([
           fetch("/api/articles"),
           fetch(`/api/schedules?year=${currentYear}`),
+          fetch("/api/seminars"),
           fetch("/api/auth/me"),
         ]);
 
-        const [articlesData, schedulesData, authData] = await Promise.all([
+        const [articlesData, schedulesData, seminarsData, authData] = await Promise.all([
           articlesRes.json(),
           schedulesRes.json(),
+          seminarsRes.json(),
           authRes.json(),
         ]);
 
@@ -99,6 +104,9 @@ function HomeContent() {
         }
         if (Array.isArray(schedulesData)) {
           setSchedules(schedulesData);
+        }
+        if (seminarsData.success && Array.isArray(seminarsData.data)) {
+          setSeminars(seminarsData.data);
         }
         if (authData.success) {
           setUser(authData.data);
@@ -383,10 +391,11 @@ function HomeContent() {
   };
 
   // 캘린더 날짜 선택
-  const handleDateSelect = (date: Date, dateArticles: Article[], dateSchedules: Schedule[]) => {
+  const handleDateSelect = (date: Date, dateArticles: Article[], dateSchedules: Schedule[], dateSeminars: Seminar[]) => {
     setSelectedDate(date);
     setSelectedDateArticles(dateArticles);
     setSelectedDateSchedules(dateSchedules);
+    setSelectedDateSeminars(dateSeminars);
   };
 
   // 태그 클릭 핸들러
@@ -618,6 +627,7 @@ function HomeContent() {
       <CalendarView
         articles={articles}
         schedules={schedules}
+        seminars={seminars}
         onDateSelect={handleDateSelect}
       />
 
@@ -675,6 +685,37 @@ function HomeContent() {
                     <div className="text-sm text-muted-foreground">
                       <p>🕐 {schedule.time}</p>
                       <p>📍 {schedule.location}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 세미나 목록 */}
+          {selectedDateSeminars.length > 0 && (
+            <div className="bg-card rounded-xl p-4 shadow-sm">
+              <h3 className="text-base font-semibold mb-3">
+                {formatDate(selectedDate)} 세미나
+              </h3>
+              <div className="space-y-3">
+                {selectedDateSeminars.map((seminar) => (
+                  <div
+                    key={seminar._id}
+                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-2 mb-2">
+                      <Badge variant={seminar.category === "패밀리오피스" ? "default" : "secondary"}>
+                        {seminar.category === "패밀리오피스" ? "👨‍👩‍👧‍👦" : "🏢"} {seminar.category}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{seminar.seminarType}</span>
+                    </div>
+                    <h4 className="font-medium mb-1">{seminar.title}</h4>
+                    <div className="text-sm text-muted-foreground">
+                      <p>📍 {seminar.location}</p>
+                      {seminar.expectedAttendees && (
+                        <p>👥 예상 참석자: {seminar.expectedAttendees}명</p>
+                      )}
                     </div>
                   </div>
                 ))}
