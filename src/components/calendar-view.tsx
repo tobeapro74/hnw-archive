@@ -76,8 +76,15 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
 
   // 월 변경 시 첫 번째 일정 자동 선택
   const selectFirstScheduleInMonth = (newYear: number, newMonth: number) => {
-    // 해당 월의 일정과 세미나를 모두 수집하여 날짜순으로 정렬
-    const monthItems: { date: Date; type: 'schedule' | 'seminar' }[] = [];
+    // 해당 월의 기사, 일정, 세미나를 모두 수집하여 날짜순으로 정렬
+    const monthItems: { date: Date; type: 'article' | 'schedule' | 'seminar' }[] = [];
+
+    articles.forEach(article => {
+      const date = new Date(article.publishedAt);
+      if (date.getFullYear() === newYear && date.getMonth() === newMonth) {
+        monthItems.push({ date, type: 'article' });
+      }
+    });
 
     schedules.forEach(schedule => {
       const date = new Date(schedule.date);
