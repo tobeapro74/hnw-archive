@@ -13,10 +13,23 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     checkSupport();
+    checkLoginStatus();
   }, []);
+
+  const checkLoginStatus = async () => {
+    try {
+      const response = await fetch("/api/auth/me");
+      const data = await response.json();
+      setIsLoggedIn(data.success && data.data);
+    } catch (error) {
+      console.error("Failed to check login status:", error);
+      setIsLoggedIn(false);
+    }
+  };
 
   const checkSupport = async () => {
     // 브라우저 지원 확인
@@ -44,6 +57,11 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   };
 
   const subscribe = async () => {
+    if (!isLoggedIn) {
+      alert("로그인이 필요한 기능입니다.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -95,6 +113,11 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   };
 
   const unsubscribe = async () => {
+    if (!isLoggedIn) {
+      alert("로그인이 필요한 기능입니다.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -129,6 +152,24 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       await subscribe();
     }
   };
+
+  // 로그인하지 않은 경우
+  if (!isLoggedIn) {
+    if (compact) return null;
+    return (
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+        <div className="flex items-center gap-3">
+          <BellOff className="w-5 h-5 text-muted-foreground" />
+          <div>
+            <div className="font-medium">푸시 알림</div>
+            <div className="text-sm text-muted-foreground">
+              로그인 후 이용 가능합니다
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 지원하지 않는 브라우저
   if (!isSupported) {

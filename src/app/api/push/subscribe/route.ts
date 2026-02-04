@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
+import { getCurrentUser } from '@/lib/auth';
 
 // POST - 푸시 구독 등록
 export async function POST(request: NextRequest) {
+  // 로그인 확인
+  const user = await getCurrentUser(request);
+  if (!user) {
+    return NextResponse.json(
+      { error: '로그인이 필요합니다.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { subscription, userId } = body;
@@ -56,6 +66,15 @@ export async function POST(request: NextRequest) {
 
 // DELETE - 푸시 구독 해제
 export async function DELETE(request: NextRequest) {
+  // 로그인 확인
+  const user = await getCurrentUser(request);
+  if (!user) {
+    return NextResponse.json(
+      { error: '로그인이 필요합니다.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { endpoint } = body;
