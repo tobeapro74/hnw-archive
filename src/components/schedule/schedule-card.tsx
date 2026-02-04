@@ -24,8 +24,8 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant={schedule.category === "회의" ? "default" : "secondary"}>
-                {schedule.category === "회의" ? "💼" : "🚗"} {schedule.category}
+              <Badge variant={schedule.category === "회의" ? "default" : schedule.category === "외근" ? "secondary" : "outline"}>
+                {schedule.category === "회의" ? "💼" : schedule.category === "외근" ? "🚗" : "📌"} {schedule.category}
               </Badge>
               {schedule.category === "회의" && schedule.meetingType && (
                 <span className="text-sm text-muted-foreground">
@@ -39,7 +39,7 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
               )}
             </div>
             <h3 className="font-semibold text-base">
-              {schedule.meetingTopic || schedule.outingTopic || "일정"}
+              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
             </h3>
           </div>
         </div>
@@ -85,6 +85,13 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
                 </div>
               )}
             </>
+          )}
+
+          {/* 기타 정보 */}
+          {schedule.category === "기타" && schedule.etcDescription && (
+            <div className="mt-2 p-2 bg-muted rounded text-sm">
+              {schedule.etcDescription}
+            </div>
           )}
         </div>
 

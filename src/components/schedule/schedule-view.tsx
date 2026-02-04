@@ -161,6 +161,13 @@ export function ScheduleView() {
         >
           🚗 외근
         </Button>
+        <Button
+          variant={selectedCategory === "기타" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedCategory("기타")}
+        >
+          📌 기타
+        </Button>
       </div>
 
       {/* 일정 목록 */}

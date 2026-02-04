@@ -43,8 +43,8 @@ export function ScheduleDetailDialog({
         <div className="p-4 space-y-4">
           {/* 카테고리 및 타입 */}
           <div className="flex items-center gap-2">
-            <Badge variant={schedule.category === "회의" ? "default" : "secondary"}>
-              {schedule.category === "회의" ? "💼" : "🚗"} {schedule.category}
+            <Badge variant={schedule.category === "회의" ? "default" : schedule.category === "외근" ? "secondary" : "outline"}>
+              {schedule.category === "회의" ? "💼" : schedule.category === "외근" ? "🚗" : "📌"} {schedule.category}
             </Badge>
             {schedule.category === "회의" && schedule.meetingType && (
               <span className="text-sm text-muted-foreground">{schedule.meetingType}</span>
@@ -57,7 +57,7 @@ export function ScheduleDetailDialog({
           {/* 주제 */}
           <div>
             <h3 className="font-semibold text-lg">
-              {schedule.meetingTopic || schedule.outingTopic || "일정"}
+              {schedule.meetingTopic || schedule.outingTopic || schedule.etcTopic || "일정"}
             </h3>
           </div>
 
@@ -118,6 +118,16 @@ export function ScheduleDetailDialog({
                 )}
               </>
             )}
+
+          {/* 기타 정보 */}
+          {schedule.category === "기타" && schedule.etcDescription && (
+            <div className="mt-3 p-3 bg-muted rounded-lg">
+              <div className="text-sm font-medium mb-1">설명</div>
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {schedule.etcDescription}
+              </div>
+            </div>
+          )}
           </div>
 
           {/* 메타 정보 */}

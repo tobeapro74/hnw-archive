@@ -1,5 +1,5 @@
 // 일정 카테고리
-export type ScheduleCategory = "회의" | "외근";
+export type ScheduleCategory = "회의" | "외근" | "기타";
 
 // 회의 유형
 export type MeetingType = "팀회의" | "외부미팅" | "부서간회의";
@@ -35,6 +35,10 @@ export interface Schedule {
   outingTopic?: string;             // 미팅주제 (외근인 경우)
   preparationItems?: string;        // 준비물 (외근인 경우)
 
+  // 기타 관련 필드
+  etcTopic?: string;                // 일정 제목 (기타인 경우)
+  etcDescription?: string;          // 일정 설명 (기타인 경우)
+
   // 메타데이터
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -61,6 +65,10 @@ export interface CreateScheduleRequest {
   customerInfo?: string;
   outingTopic?: string;
   preparationItems?: string;
+
+  // 기타
+  etcTopic?: string;
+  etcDescription?: string;
 }
 
 // 일정 수정 요청
@@ -70,6 +78,7 @@ export interface UpdateScheduleRequest extends Partial<CreateScheduleRequest> {}
 export const scheduleCategories: { id: ScheduleCategory; name: string; icon: string }[] = [
   { id: "회의", name: "회의", icon: "💼" },
   { id: "외근", name: "외근", icon: "🚗" },
+  { id: "기타", name: "기타", icon: "📌" },
 ];
 
 // 회의 유형 옵션

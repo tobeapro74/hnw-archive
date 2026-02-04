@@ -55,6 +55,9 @@ export function ScheduleFormDialog({
     customerInfo: "",
     outingTopic: "",
     preparationItems: "",
+    // 기타
+    etcTopic: "",
+    etcDescription: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -78,6 +81,8 @@ export function ScheduleFormDialog({
         customerInfo: schedule.customerInfo || "",
         outingTopic: schedule.outingTopic || "",
         preparationItems: schedule.preparationItems || "",
+        etcTopic: schedule.etcTopic || "",
+        etcDescription: schedule.etcDescription || "",
       });
     } else {
       // 새 일정 - 폼 초기화
@@ -96,6 +101,8 @@ export function ScheduleFormDialog({
         customerInfo: "",
         outingTopic: "",
         preparationItems: "",
+        etcTopic: "",
+        etcDescription: "",
       });
     }
   }, [schedule, open]);
@@ -130,6 +137,8 @@ export function ScheduleFormDialog({
             : undefined,
         outingTopic: formData.category === "외근" ? formData.outingTopic : undefined,
         preparationItems: formData.category === "외근" ? formData.preparationItems : undefined,
+        etcTopic: formData.category === "기타" ? formData.etcTopic : undefined,
+        etcDescription: formData.category === "기타" ? formData.etcDescription : undefined,
       };
 
       const url = isEditing ? `/api/schedules/${schedule._id}` : "/api/schedules";
@@ -198,6 +207,7 @@ export function ScheduleFormDialog({
               <SelectContent>
                 <SelectItem value="회의">💼 회의</SelectItem>
                 <SelectItem value="외근">🚗 외근</SelectItem>
+                <SelectItem value="기타">📌 기타</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -379,6 +389,36 @@ export function ScheduleFormDialog({
                   }
                   placeholder="준비할 자료나 물품을 입력하세요"
                   rows={2}
+                />
+              </div>
+            </>
+          )}
+
+          {/* 기타 관련 필드 */}
+          {formData.category === "기타" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="etcTopic">일정 제목</Label>
+                <Input
+                  id="etcTopic"
+                  value={formData.etcTopic}
+                  onChange={(e) =>
+                    setFormData({ ...formData, etcTopic: e.target.value })
+                  }
+                  placeholder="일정 제목을 입력하세요"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="etcDescription">일정 설명</Label>
+                <Textarea
+                  id="etcDescription"
+                  value={formData.etcDescription}
+                  onChange={(e) =>
+                    setFormData({ ...formData, etcDescription: e.target.value })
+                  }
+                  placeholder="일정에 대한 상세 설명을 입력하세요"
+                  rows={3}
                 />
               </div>
             </>
