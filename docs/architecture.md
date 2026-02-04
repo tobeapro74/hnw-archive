@@ -70,6 +70,8 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   ├── resources/            # 자료실 API (신규)
 │   │   │   └── [id]/
 │   │   │       └── download/     # 파일 다운로드
+│   │   ├── schedules/            # 일정 API (신규)
+│   │   │   └── [id]/
 │   │   ├── image/                # 이미지 검색 API
 │   │   ├── og-image/             # OG 이미지 API
 │   │   ├── push/                 # 푸시 알림 API (신규)
@@ -90,6 +92,12 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   ├── resource-viewer.tsx   # 파일 뷰어 (PDF, Office)
 │   │   ├── resource-form-dialog.tsx  # 자료 등록 폼
 │   │   └── file-type-selector.tsx    # 파일 타입 선택 모달
+│   ├── schedule/                 # 일정 관련 컴포넌트 (신규)
+│   │   ├── index.ts              # 컴포넌트 exports
+│   │   ├── schedule-view.tsx     # 일정 메인 뷰
+│   │   ├── schedule-card.tsx     # 일정 카드
+│   │   ├── schedule-form-dialog.tsx      # 일정 등록/수정 폼
+│   │   └── schedule-detail-dialog.tsx    # 일정 상세
 │   ├── seminar/                  # 세미나 관련 컴포넌트 (신규)
 │   │   ├── index.ts              # 컴포넌트 exports
 │   │   ├── seminar-view.tsx      # 세미나 메인 뷰
@@ -113,6 +121,8 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
     ├── mongodb.ts                # MongoDB 연결
     ├── types.ts                  # 공통 타입 정의 (UserPermissions 포함)
     ├── seminar-types.ts          # 세미나 타입 정의
+    ├── schedule-types.ts         # 일정 타입 정의 (신규)
+    ├── resource-types.ts         # 자료실 타입 정의
     ├── auth.ts                   # 권한 체크 유틸리티 (신규)
     └── utils.ts                  # 유틸리티 함수
 
@@ -230,14 +240,15 @@ docs/                             # 프로젝트 문서
 
 ## 하단 네비게이션
 
-| 탭       | 아이콘        | 설명                    |
-| -------- | ------------- | ----------------------- |
-| 홈       | Home          | 메인 대시보드           |
-| 목록     | List          | 홍보 기사 목록          |
-| 캘린더   | Calendar      | 홍보 캘린더             |
-| 세미나   | ClipboardList | 세미나 관리             |
-| 자료실   | FolderOpen    | 문서 자료 관리          |
-| 기사관리 | Settings      | 관리자 전용 (로그인 시) |
+| 탭       | 아이콘        | 설명                    | 권한 요구사항 |
+| -------- | ------------- | ----------------------- | ------------- |
+| 홈       | Home          | 메인 대시보드           | 공개          |
+| 목록     | List          | 홍보 기사 목록          | 공개          |
+| 캘린더   | Calendar      | 홍보 캘린더             | 공개          |
+| 세미나   | ClipboardList | 세미나 관리             | 공개 (조회) / 로그인 (등록/수정/삭제) |
+| 일정     | CalendarCheck | 팀 일정 관리            | 공개 (조회) / 로그인 (등록/수정/삭제) |
+| 자료실   | FolderOpen    | 문서 자료 관리          | 특정 이메일만 (로그인 필요) |
+| 기사관리 | Settings      | 관리자 전용 (로그인 시) | 관리자 전용   |
 
 ## 데이터베이스 스키마
 
@@ -400,6 +411,40 @@ docs/                             # 프로젝트 문서
 }
 ```
 
+#### schedules (일정) - 신규
+
+```javascript
+{
+  _id: ObjectId,
+  category: String,                 // "회의" | "외근"
+  date: Date,                       // 일정 날짜
+  time: String,                     // 시간 (예: "14:00")
+  location: String,                 // 장소
+
+  // 회의 관련 필드
+  meetingType: String,              // "팀회의" | "외부미팅" | "부서간회의"
+  meetingTopic: String,             // 회의 주제
+
+  // 외근 관련 필드
+  outingType: String,               // "직원미팅" | "고객미팅"
+  center: String,                   // 센터
+  rmName: String,                   // 담당 RM
+  contact: String,                  // 연락처
+
+  // 고객미팅 전용 필드
+  customerName: String,             // 고객명
+  customerInfo: String,             // 고객 기타정보
+
+  // 외근 공통
+  outingTopic: String,              // 미팅 주제
+  preparationItems: String,         // 준비물
+
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: String
+}
+```
+
 ## API 엔드포인트
 
 ### 인증 API
@@ -465,20 +510,31 @@ docs/                             # 프로젝트 문서
 
 | 메서드 | 경로                      | 설명                      | 권한     |
 | ------ | ------------------------- | ------------------------- | -------- |
-| GET    | /api/resources            | 자료 목록 (캐싱 30초)     | 공개     |
-| POST   | /api/resources            | 자료 등록                 | 관리자   |
-| GET    | /api/resources/[id]       | 자료 상세                 | 공개     |
-| DELETE | /api/resources/[id]       | 자료 삭제                 | 관리자   |
-| GET    | /api/resources/[id]/download | 파일 다운로드          | 공개     |
+| GET    | /api/resources            | 자료 목록 (캐싱 30초)     | 특정 이메일 |
+| POST   | /api/resources            | 자료 등록                 | 특정 이메일 |
+| GET    | /api/resources/[id]       | 자료 상세                 | 특정 이메일 |
+| DELETE | /api/resources/[id]       | 자료 삭제                 | 특정 이메일 |
+| GET    | /api/resources/[id]/download | 파일 다운로드          | 특정 이메일 |
+
+### 일정 API (신규)
+
+| 메서드 | 경로                | 설명                                    | 권한     |
+| ------ | ------------------- | --------------------------------------- | -------- |
+| GET    | /api/schedules      | 일정 목록 (필터: year, month, category) | 공개     |
+| POST   | /api/schedules      | 일정 생성                               | 로그인   |
+| GET    | /api/schedules/[id] | 일정 상세                               | 공개     |
+| PUT    | /api/schedules/[id] | 일정 수정                               | 로그인   |
+| DELETE | /api/schedules/[id] | 일정 삭제                               | 로그인   |
 
 ### 푸시 알림 API (신규)
 
-| 메서드 | 경로                  | 설명                                    |
-| ------ | --------------------- | --------------------------------------- |
-| POST   | /api/push/subscribe   | 푸시 구독 등록                          |
-| POST   | /api/push/send        | 푸시 알림 발송                          |
-| GET    | /api/push/debug       | 구독자 수 확인 (디버그)                 |
-| GET    | /api/cron/notifications | D-day 알림 크론 (Vercel Cron에서 호출) |
+| 메서드 | 경로                  | 설명                                    | 권한     |
+| ------ | --------------------- | --------------------------------------- | -------- |
+| POST   | /api/push/subscribe   | 푸시 구독 등록                          | 로그인   |
+| DELETE | /api/push/subscribe   | 푸시 구독 해제                          | 로그인   |
+| POST   | /api/push/send        | 푸시 알림 발송                          | 관리자   |
+| GET    | /api/push/debug       | 구독자 수 확인 (디버그)                 | 관리자   |
+| GET    | /api/cron/notifications | D-day 알림 크론 (Vercel Cron에서 호출) | 크론     |
 
 ## UI 컴포넌트
 
@@ -512,6 +568,15 @@ docs/                             # 프로젝트 문서
   - Office: Google Docs Viewer
 - **ResourceFormDialog**: 자료 등록 폼 (하단 슬라이드 팝업)
 - **FileTypeSelector**: 파일 타입 선택 모달 (그룹화된 파일용)
+
+### 일정 관련 (신규)
+
+- **ScheduleView**: 일정 메인 뷰 (월별 그룹화, 카테고리 필터)
+- **ScheduleCard**: 일정 카드 (회의/외근 구분 표시)
+- **ScheduleFormDialog**: 일정 등록/수정 폼 (하단 슬라이드 팝업)
+  - 회의: 회의 유형, 회의 주제, 날짜/시간, 장소
+  - 외근: 외근 유형, 센터/RM/연락처, 고객정보, 미팅 주제, 준비물
+- **ScheduleDetailDialog**: 일정 상세 (하단 슬라이드 팝업)
 
 ### UI 패턴
 
@@ -591,13 +656,19 @@ interface UserPermissions {
 
 ### 접근 권한 구조
 
-| 사용자 유형 | 콘텐츠 조회 | 콘텐츠 수정 | 관리자 페이지 |
-|------------|------------|------------|--------------|
-| 비로그인 사용자 | ✅ 가능 | ❌ 불가 | ❌ 불가 |
-| 일반 사용자 | ✅ 가능 | ❌ 불가 (권한 없음) | ❌ 불가 |
-| 관리자 | ✅ 가능 | ✅ 가능 | ✅ 가능 |
+| 사용자 유형 | 홈/목록/캘린더/세미나 조회 | 일정 조회 | 일정 등록/수정/삭제 | 푸시 알림 | 자료실 | 기사관리 |
+|------------|--------------------------|----------|-------------------|----------|--------|---------|
+| 비로그인 사용자 | ✅ 가능 | ✅ 가능 | ❌ 불가 | ❌ 불가 | ❌ 불가 | ❌ 불가 |
+| 일반 사용자 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ❌ 불가 | ❌ 불가 |
+| 특정 이메일 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ❌ 불가 |
+| 관리자 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 |
 
-**참고**: 일반 열람 시 로그인이 필요 없음. 관리자 기능(세미나 등록/수정, 기사 관리 등)에만 로그인 필요.
+**접근 권한 정책 (2026-02-04 업데이트)**:
+- **홈, 목록, 캘린더, 세미나**: 로그인 없이 조회 가능
+- **일정**: 조회는 로그인 없이 가능, 등록/수정/삭제는 로그인 필요
+- **푸시 알림**: 로그인한 사용자만 구독 가능
+- **자료실**: 특정 이메일(tobeapro@gmail.com, sweetas11@nhsec.com) 또는 관리자만 접근 가능
+- **기사관리**: 관리자 전용
 
 ### 기본 권한
 
@@ -813,6 +884,21 @@ return NextResponse.json(data, {
 - `stale-while-revalidate=60`: 60초간 캐시 응답 제공하면서 백그라운드 갱신
 
 ## 최근 업데이트 내역
+
+### 2026-02-04
+- **권한 체계 개선**:
+  - 홈, 목록, 캘린더, 세미나: 로그인 없이 조회 가능 (이미 구현됨)
+  - 자료실, 기사관리: 로그인 시에만 하단 네비게이션에 표시 (이미 구현됨)
+  - 푸시 알림: 로그인한 사용자만 구독 가능 (신규)
+  - 등록/수정/삭제: 로그인 필요 (이미 구현됨)
+- **일정 관리 기능 추가**:
+  - 회의 관리: 팀회의, 외부미팅, 부서간회의
+  - 외근 관리: 직원미팅, 고객미팅
+  - 회의 정보: 회의 주제, 날짜/시간, 장소
+  - 외근 정보: 센터, 담당RM, 연락처, 고객명, 고객 기타정보, 미팅 주제, 준비물
+  - 일정 CRUD API 엔드포인트 구현
+  - 월별 그룹화 및 카테고리 필터 지원
+  - 하단 네비게이션에 일정 탭 추가
 
 ### 2026-01-29
 - **자료실 기능 추가**:
