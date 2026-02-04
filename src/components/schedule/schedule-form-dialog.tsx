@@ -108,8 +108,23 @@ export function ScheduleFormDialog({
   }, [schedule, open]);
 
   const handleSubmit = async () => {
-    if (!formData.category || !formData.date || !formData.time || !formData.location) {
-      alert("필수 항목을 입력해주세요.");
+    // 기본 필수 항목 체크
+    if (!formData.category || !formData.date) {
+      alert("카테고리와 날짜는 필수 항목입니다.");
+      return;
+    }
+
+    // 카테고리별 필수 항목 체크
+    if (formData.category === "회의" && !formData.meetingTopic) {
+      alert("회의주제를 입력해주세요.");
+      return;
+    }
+    if (formData.category === "외근" && !formData.outingTopic) {
+      alert("미팅주제를 입력해주세요.");
+      return;
+    }
+    if (formData.category === "기타" && !formData.etcTopic) {
+      alert("일정 제목을 입력해주세요.");
       return;
     }
 
@@ -129,8 +144,8 @@ export function ScheduleFormDialog({
       const payload: CreateScheduleRequest = {
         category: formData.category,
         date: formData.date,
-        time: formData.time,
-        location: formData.location,
+        time: formData.time || "하루종일",
+        location: formData.location || "-",
         meetingType: formData.category === "회의" ? formData.meetingType : undefined,
         meetingTopic: formData.category === "회의" ? (formData.meetingTopic || undefined) : undefined,
         outingType: formData.category === "외근" ? formData.outingType : undefined,
@@ -234,19 +249,20 @@ export function ScheduleFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="time">시간 *</Label>
+              <Label htmlFor="time">시간</Label>
               <Input
                 id="time"
                 type="time"
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                placeholder="입력 안 하면 하루종일"
               />
             </div>
           </div>
 
           {/* 장소 */}
           <div className="space-y-2">
-            <Label htmlFor="location">장소 *</Label>
+            <Label htmlFor="location">장소</Label>
             <Input
               id="location"
               value={formData.location}
@@ -280,7 +296,7 @@ export function ScheduleFormDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="meetingTopic">회의 주제</Label>
+                <Label htmlFor="meetingTopic">회의 주제 *</Label>
                 <Input
                   id="meetingTopic"
                   value={formData.meetingTopic}
@@ -378,7 +394,7 @@ export function ScheduleFormDialog({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="outingTopic">미팅 주제</Label>
+                <Label htmlFor="outingTopic">미팅 주제 *</Label>
                 <Input
                   id="outingTopic"
                   value={formData.outingTopic}
@@ -408,7 +424,7 @@ export function ScheduleFormDialog({
           {formData.category === "기타" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="etcTopic">일정 제목</Label>
+                <Label htmlFor="etcTopic">일정 제목 *</Label>
                 <Input
                   id="etcTopic"
                   value={formData.etcTopic}

@@ -76,10 +76,30 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateScheduleRequest = await request.json();
 
-    // 필수 필드 검증
-    if (!body.category || !body.date || !body.time || !body.location) {
+    // 기본 필수 필드 검증
+    if (!body.category || !body.date) {
       return NextResponse.json(
-        { error: "필수 필드가 누락되었습니다." },
+        { error: "카테고리와 날짜는 필수 항목입니다." },
+        { status: 400 }
+      );
+    }
+
+    // 카테고리별 필수 필드 검증
+    if (body.category === "회의" && !body.meetingTopic) {
+      return NextResponse.json(
+        { error: "회의주제를 입력해주세요." },
+        { status: 400 }
+      );
+    }
+    if (body.category === "외근" && !body.outingTopic) {
+      return NextResponse.json(
+        { error: "미팅주제를 입력해주세요." },
+        { status: 400 }
+      );
+    }
+    if (body.category === "기타" && !body.etcTopic) {
+      return NextResponse.json(
+        { error: "일정 제목을 입력해주세요." },
         { status: 400 }
       );
     }
@@ -91,8 +111,8 @@ export async function POST(request: NextRequest) {
     const newSchedule: Omit<Schedule, "_id"> = {
       category: body.category,
       date: new Date(body.date),
-      time: body.time,
-      location: body.location,
+      time: body.time || "하루종일",
+      location: body.location || "-",
       meetingType: body.meetingType,
       meetingTopic: body.meetingTopic,
       outingType: body.outingType,

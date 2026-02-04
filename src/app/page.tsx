@@ -382,7 +382,9 @@ function HomeContent() {
   const fetchSchedules = async () => {
     try {
       const currentYear = new Date().getFullYear();
-      const res = await fetch(`/api/schedules?year=${currentYear}`);
+      const res = await fetch(`/api/schedules?year=${currentYear}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
       if (Array.isArray(data)) {
         setSchedules(data);
@@ -399,14 +401,15 @@ function HomeContent() {
       window.location.href = "/admin";
       return;
     }
-    setCurrentView(tab);
-    setSelectedDateArticles([]);
-    setSelectedDate(null);
 
-    // 캘린더 탭으로 돌아올 때 일정 다시 가져오기
+    // 캘린더 탭으로 이동할 때 일정 먼저 가져오기
     if (tab === "calendar") {
       await fetchSchedules();
     }
+
+    setCurrentView(tab);
+    setSelectedDateArticles([]);
+    setSelectedDate(null);
   };
 
   // 캘린더 날짜 선택

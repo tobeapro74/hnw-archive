@@ -28,9 +28,14 @@ export function ScheduleView() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/schedules?year=${selectedYear}`);
+      console.log('[fetchSchedules] API 호출:', `year=${selectedYear}`);
+      const res = await fetch(`/api/schedules?year=${selectedYear}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
+      console.log('[fetchSchedules] 받은 데이터:', data);
       setSchedules(Array.isArray(data) ? data : []);
+      console.log('[fetchSchedules] setSchedules 완료');
     } catch (error) {
       console.error("Failed to fetch schedules:", error);
       setSchedules([]);
@@ -77,6 +82,7 @@ export function ScheduleView() {
   }, [filteredSchedules]);
 
   const handleSave = async (schedule: Schedule) => {
+    console.log('[handleSave] 저장된 일정:', schedule);
     setFormOpen(false);
     setEditingSchedule(null);
 
@@ -87,7 +93,9 @@ export function ScheduleView() {
     }
 
     // 최신 데이터 동기화
+    console.log('[handleSave] fetchSchedules 호출 전');
     await fetchSchedules();
+    console.log('[handleSave] fetchSchedules 호출 완료');
   };
 
   const handleEdit = (schedule: Schedule) => {
@@ -105,11 +113,14 @@ export function ScheduleView() {
       });
 
       if (res.ok) {
+        console.log('[handleDelete] 삭제 성공:', scheduleId);
         setDetailOpen(false);
         setSelectedSchedule(null);
 
         // 최신 데이터 동기화
+        console.log('[handleDelete] fetchSchedules 호출 전');
         await fetchSchedules();
+        console.log('[handleDelete] fetchSchedules 호출 완료');
       } else {
         const error = await res.json();
         if (res.status === 401 || error.error === "로그인이 필요합니다.") {
