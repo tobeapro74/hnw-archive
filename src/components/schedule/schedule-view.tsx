@@ -77,20 +77,6 @@ export function ScheduleView() {
   }, [filteredSchedules]);
 
   const handleSave = async (schedule: Schedule) => {
-    // 신규 등록인 경우 즉시 목록에 추가, 수정인 경우 기존 항목 업데이트
-    setSchedules((prev) => {
-      const existingIndex = prev.findIndex((s) => s._id === schedule._id);
-      if (existingIndex >= 0) {
-        // 수정
-        const updated = [...prev];
-        updated[existingIndex] = schedule;
-        return updated;
-      } else {
-        // 신규 등록
-        return [schedule, ...prev];
-      }
-    });
-
     setFormOpen(false);
     setEditingSchedule(null);
 
@@ -100,8 +86,8 @@ export function ScheduleView() {
       setDetailOpen(true);
     }
 
-    // 백그라운드에서 최신 데이터 동기화
-    fetchSchedules();
+    // 최신 데이터 동기화
+    await fetchSchedules();
   };
 
   const handleEdit = (schedule: Schedule) => {
@@ -119,13 +105,11 @@ export function ScheduleView() {
       });
 
       if (res.ok) {
-        // 즉시 UI에서 제거
-        setSchedules((prev) => prev.filter((s) => s._id !== scheduleId));
         setDetailOpen(false);
         setSelectedSchedule(null);
 
-        // 백그라운드에서 최신 데이터 동기화
-        fetchSchedules();
+        // 최신 데이터 동기화
+        await fetchSchedules();
       } else {
         const error = await res.json();
         if (res.status === 401 || error.error === "로그인이 필요합니다.") {
