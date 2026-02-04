@@ -204,10 +204,10 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
                         <div
                           key={`schedule-${i}`}
                           className={cn(
-                            "w-1.5 h-1.5 rounded-full",
-                            schedule.category === "회의" && "bg-green-500",
-                            schedule.category === "외근" && "bg-yellow-500",
-                            schedule.category === "기타" && "bg-pink-500"
+                            "w-0 h-0 border-l-[2px] border-l-transparent border-r-[2px] border-r-transparent border-b-[3px]",
+                            schedule.category === "회의" && "border-b-green-500",
+                            schedule.category === "외근" && "border-b-yellow-500",
+                            schedule.category === "기타" && "border-b-pink-500"
                           )}
                         />
                       );
@@ -245,15 +245,15 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
           </div>
           <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-green-500" />
             <span className="text-muted-foreground">회의</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-yellow-500" />
+            <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-yellow-500" />
             <span className="text-muted-foreground">외근</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-pink-500" />
+            <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-pink-500" />
             <span className="text-muted-foreground">기타</span>
           </div>
         </div>
