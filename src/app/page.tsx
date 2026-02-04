@@ -656,27 +656,23 @@ function HomeContent() {
       {selectedDate && (
         <div className="space-y-4">
           {/* 기사 목록 */}
-          <div className="bg-card rounded-xl p-4 shadow-sm">
-            <h3 className="text-base font-semibold mb-3">
-              {formatDate(selectedDate)} 기사
-            </h3>
-            <div className="space-y-3">
-              {selectedDateArticles.length > 0 ? (
-                selectedDateArticles.map((article) => (
+          {selectedDateArticles.length > 0 && (
+            <div className="bg-card rounded-xl p-4 shadow-sm">
+              <h3 className="text-base font-semibold mb-3">
+                {formatDate(selectedDate)} 기사
+              </h3>
+              <div className="space-y-3">
+                {selectedDateArticles.map((article) => (
                   <ArticleCard
                     key={article._id}
                     article={article}
                     relatedCount={getRelatedArticleCount(article.eventName)}
                     onShowRelated={handleShowRelatedArticles}
                   />
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  해당 날짜에 기사가 없습니다.
-                </p>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 일정 목록 */}
           {selectedDateSchedules.length > 0 && (
