@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +138,86 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
       onDateSelect?.(new Date(), [], [], []);
     }
   };
+
+  // 초기 로딩 시 가장 가까운 미래 일정 선택
+  const selectNearestFutureItem = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const futureItems: { date: Date; type: 'article' | 'schedule' | 'seminar' }[] = [];
+
+    // 오늘 이후의 기사 수집
+    articles.forEach(article => {
+      const date = new Date(article.publishedAt);
+      date.setHours(0, 0, 0, 0);
+      if (date >= today) {
+        futureItems.push({ date, type: 'article' });
+      }
+    });
+
+    // 오늘 이후의 일정 수집
+    schedules.forEach(schedule => {
+      const date = new Date(schedule.date);
+      date.setHours(0, 0, 0, 0);
+      if (date >= today) {
+        futureItems.push({ date, type: 'schedule' });
+      }
+    });
+
+    // 오늘 이후의 세미나 수집
+    seminars.forEach(seminar => {
+      const date = new Date(seminar.date);
+      date.setHours(0, 0, 0, 0);
+      if (date >= today) {
+        futureItems.push({ date, type: 'seminar' });
+      }
+    });
+
+    // 날짜순으로 정렬 (가까운 순)
+    futureItems.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    if (futureItems.length > 0) {
+      const nearestDate = futureItems[0].date;
+
+      // 해당 월로 이동
+      setCurrentDate(new Date(nearestDate.getFullYear(), nearestDate.getMonth(), 1));
+      setSelectedDate(nearestDate);
+
+      // 해당 날짜의 모든 데이터 수집
+      const day = nearestDate.getDate();
+      const nearestYear = nearestDate.getFullYear();
+      const nearestMonth = nearestDate.getMonth();
+
+      const dayArticles = articles.filter(article => {
+        const date = new Date(article.publishedAt);
+        return date.getFullYear() === nearestYear &&
+               date.getMonth() === nearestMonth &&
+               date.getDate() === day;
+      });
+
+      const daySchedules = schedules.filter(schedule => {
+        const date = new Date(schedule.date);
+        return date.getFullYear() === nearestYear &&
+               date.getMonth() === nearestMonth &&
+               date.getDate() === day;
+      });
+
+      const daySeminars = seminars.filter(seminar => {
+        const date = new Date(seminar.date);
+        return date.getFullYear() === nearestYear &&
+               date.getMonth() === nearestMonth &&
+               date.getDate() === day;
+      });
+
+      onDateSelect?.(nearestDate, dayArticles, daySchedules, daySeminars);
+    }
+  };
+
+  // 초기 로딩 시 가장 가까운 미래 일정 선택
+  useEffect(() => {
+    selectNearestFutureItem();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePrevMonth = () => {
     const newDate = new Date(year, month - 1, 1);
