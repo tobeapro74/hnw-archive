@@ -21,8 +21,11 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   const [dailyEnabled, setDailyEnabled] = useState(false);
 
   useEffect(() => {
-    checkSupport();
-    checkLoginStatus();
+    const initialize = async () => {
+      await Promise.all([checkSupport(), checkLoginStatus()]);
+      setIsLoading(false);
+    };
+    initialize();
   }, []);
 
   const checkLoginStatus = async () => {
@@ -40,7 +43,6 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     // 브라우저 지원 확인
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setIsSupported(false);
-      setIsLoading(false);
       return;
     }
 
@@ -61,8 +63,6 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     } catch (error) {
       console.error("Failed to check subscription:", error);
     }
-
-    setIsLoading(false);
   };
 
   const loadNotificationSettings = async (endpoint: string) => {
@@ -238,6 +238,30 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       alert('설정 변경에 실패했습니다.');
     }
   };
+
+  // 로딩 중일 때 (모든 체크가 완료될 때까지)
+  if (isLoading) {
+    if (compact) {
+      return (
+        <div className="p-2">
+          <Loader2 className="w-5 h-5 animate-spin text-white" />
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          <div>
+            <div className="font-medium">푸시 알림</div>
+            <div className="text-sm text-muted-foreground">
+              설정을 불러오는 중...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 로그인하지 않은 경우
   if (!isLoggedIn) {
