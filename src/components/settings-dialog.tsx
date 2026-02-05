@@ -1,12 +1,24 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bell, X, Loader2 } from "lucide-react";
 import { NotificationSettings } from "./notification-settings";
 
 export function SettingsDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isContentReady, setIsContentReady] = useState(false);
+
+  // 모달 열릴 때 배경 스크롤 방지
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const handleOpen = () => {
     setIsContentReady(false);
@@ -29,11 +41,12 @@ export function SettingsDialog() {
 
       {/* 다이얼로그 */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
           {/* 백드롭 */}
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setIsOpen(false)}
+            onTouchMove={(e) => e.preventDefault()}
           />
 
           {/* 다이얼로그 컨텐츠 */}
