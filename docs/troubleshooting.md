@@ -6,7 +6,8 @@
 3. [데이터베이스 관련](#데이터베이스-관련)
 4. [세미나 관리 관련](#세미나-관리-관련)
 5. [파일 뷰어 관련](#파일-뷰어-관련)
-6. [배포 관련](#배포-관련)
+6. [모달/팝업 관련](#모달팝업-관련)
+7. [배포 관련](#배포-관련)
 
 ---
 
@@ -396,6 +397,124 @@ export async function GET(request, { params }) {
 | DOCX | mammoth.js | 클라이언트에서 HTML 변환 |
 | DOC, PPT, PPTX, XLS, XLSX | Google Docs Viewer | 배포 환경에서만 작동 |
 | 기타 | 미리보기 불가 | 다운로드만 지원 |
+
+---
+
+## 모달/팝업 관련
+
+### 문제: 설정 모달이 열릴 때 빈 프레임이 먼저 보임
+
+**증상**: 설정 모달을 열면 빈 "알림" 섹션이 먼저 표시되고, 잠시 후 전체 UI(푸시 알림, D-day 알림, 금일 일정 알림)가 나타남
+
+**원인**: `NotificationSettings` 컴포넌트가 비동기 초기화(로그인 상태 확인, 구독 상태 확인) 중 `null`을 반환하여 모달 자체는 열리지만 내용이 비어있는 상태로 먼저 렌더링됨
+
+**해결책**: 부모 컴포넌트(`SettingsDialog`)에서 초기화 완료 여부를 추적하고, 초기화 중에는 로딩 스피너를 표시
+
+```tsx
+// settings-dialog.tsx
+const [isContentReady, setIsContentReady] = useState(false);
+
+const handleInitialized = useCallback(() => {
+  setIsContentReady(true);
+}, []);
+
+// 모달 콘텐츠
+{!isContentReady && (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+)}
+<div className={isContentReady ? "block" : "hidden"}>
+  <NotificationSettings onInitialized={handleInitialized} />
+</div>
+```
+
+```tsx
+// notification-settings.tsx
+interface NotificationSettingsProps {
+  onInitialized?: () => void;
+}
+
+useEffect(() => {
+  const initialize = async () => {
+    await Promise.all([checkSupport(), checkLoginStatus()]);
+    setIsInitializing(false);
+    onInitialized?.();  // 초기화 완료 알림
+  };
+  initialize();
+}, [onInitialized]);
+```
+
+**핵심 포인트**:
+- 자식 컴포넌트에서 `onInitialized` 콜백으로 초기화 완료를 부모에게 알림
+- 부모에서는 `hidden` 클래스로 콘텐츠를 숨기고 로딩 스피너 표시
+- 초기화 완료 후 콘텐츠 전체가 한 번에 나타남
+
+---
+
+### 문제: 모달이 열렸을 때 배경이 스크롤됨
+
+**증상**: 모달/팝업이 열린 상태에서 스크롤하면 뒷배경이 같이 움직임
+
+**원인**: `body` 요소의 스크롤이 비활성화되지 않음
+
+**해결책**: 모달이 열릴 때 `body`의 `overflow`를 `hidden`으로 설정
+
+```tsx
+// settings-dialog.tsx
+useEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
+  }
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [isOpen]);
+
+// 백드롭에 터치 이벤트 방지 추가
+<div
+  className="absolute inset-0 bg-black/50"
+  onClick={() => setIsOpen(false)}
+  onTouchMove={(e) => e.preventDefault()}
+/>
+```
+
+---
+
+### 문제: PWA에서 코드 변경이 반영되지 않음
+
+**증상**: 배포 후에도 PWA(홈화면에 추가한 앱)에서 이전 코드가 실행됨
+
+**원인**: Service Worker의 캐시가 갱신되지 않음
+
+**해결책**:
+1. Service Worker 버전 업데이트
+```javascript
+// public/sw.js
+const CACHE_NAME = 'hnw-archive-v3';  // 버전 증가
+```
+
+2. 네트워크 우선 전략 사용
+```javascript
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate' ||
+      event.request.destination === 'script' ||
+      event.request.destination === 'style') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => response)
+        .catch(() => caches.match(event.request))
+    );
+  }
+});
+```
+
+3. 사용자에게 캐시 클리어 안내
+   - Safari: 설정 → Safari → 고급 → 웹 사이트 데이터 → 해당 사이트 삭제
+   - PWA 삭제 후 재설치
+   - 브라우저에서 직접 접속하여 테스트
 
 ---
 

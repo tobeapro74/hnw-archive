@@ -904,6 +904,17 @@ return NextResponse.json(data, {
 
 ## 최근 업데이트 내역
 
+### 2026-02-05
+- **설정 모달 UI 개선**:
+  - 모달 로딩 상태 개선: 빈 프레임 대신 로딩 스피너 표시
+  - `NotificationSettings`에서 `onInitialized` 콜백으로 초기화 완료 알림
+  - `SettingsDialog`에서 초기화 완료 전까지 콘텐츠 숨김 처리
+  - 모달 열릴 때 배경 스크롤 방지 (`body.style.overflow = "hidden"`)
+  - 백드롭 터치 스크롤 방지 (`onTouchMove` 이벤트)
+- **푸시 구독 마이그레이션 수정**:
+  - 기존 구독자의 `notificationTypes` 필드 누락 문제 해결
+  - `$setOnInsert` 대신 조건부 `$set` 사용하여 업데이트 시에도 기본값 설정
+
 ### 2026-02-04
 - **권한 체계 개선**:
   - 홈, 목록, 캘린더, 세미나: 로그인 없이 조회 가능 (이미 구현됨)
