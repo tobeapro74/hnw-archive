@@ -6,9 +6,10 @@ import { Switch } from "@/components/ui/switch";
 
 interface NotificationSettingsProps {
   compact?: boolean;
+  onInitialized?: () => void;
 }
 
-export function NotificationSettings({ compact = false }: NotificationSettingsProps) {
+export function NotificationSettings({ compact = false, onInitialized }: NotificationSettingsProps) {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);  // 초기 로딩
@@ -25,9 +26,10 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     const initialize = async () => {
       await Promise.all([checkSupport(), checkLoginStatus()]);
       setIsInitializing(false);
+      onInitialized?.();
     };
     initialize();
-  }, []);
+  }, [onInitialized]);
 
   const checkLoginStatus = async () => {
     try {
