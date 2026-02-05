@@ -240,8 +240,20 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     }
   };
 
-  // 로그인하지 않은 경우 (초기화 완료 후에만 체크)
-  if (!isInitializing && !isLoggedIn) {
+  // 초기화 중일 때는 아무것도 표시하지 않음 (깜빡임 방지)
+  if (isInitializing) {
+    if (compact) {
+      return (
+        <div className="p-2">
+          <Loader2 className="w-5 h-5 animate-spin text-white" />
+        </div>
+      );
+    }
+    return null;
+  }
+
+  // 로그인하지 않은 경우
+  if (!isLoggedIn) {
     if (compact) return null;
     return (
       <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
@@ -258,8 +270,8 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     );
   }
 
-  // 지원하지 않는 브라우저 (초기화 완료 후에만 체크)
-  if (!isInitializing && !isSupported) {
+  // 지원하지 않는 브라우저
+  if (!isSupported) {
     if (compact) return null;
     return (
       <div className="text-sm text-muted-foreground">
@@ -273,17 +285,17 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     return (
       <button
         onClick={toggleSubscription}
-        disabled={isInitializing || isToggling}
+        disabled={isToggling}
         className="relative p-2 rounded-full hover:bg-white/20 transition-colors disabled:opacity-50"
       >
-        {(isInitializing || isToggling) ? (
+        {isToggling ? (
           <Loader2 className="w-5 h-5 animate-spin text-white" />
         ) : isSubscribed ? (
           <Bell className="w-5 h-5 text-white" />
         ) : (
           <BellOff className="w-5 h-5 text-white/70" />
         )}
-        {isSubscribed && !isInitializing && (
+        {isSubscribed && (
           <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full" />
         )}
       </button>
@@ -296,9 +308,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       {/* 푸시 알림 마스터 토글 */}
       <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
         <div className="flex items-center gap-3">
-          {isInitializing ? (
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          ) : isSubscribed ? (
+          {isSubscribed ? (
             <Bell className="w-5 h-5 text-primary" />
           ) : (
             <BellOff className="w-5 h-5 text-muted-foreground" />
@@ -306,23 +316,21 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
           <div>
             <div className="font-medium">푸시 알림</div>
             <div className="text-sm text-muted-foreground">
-              {isInitializing
-                ? "설정을 불러오는 중..."
-                : isSubscribed
-                  ? "알림이 활성화되었습니다"
-                  : "알림을 켜면 일정 알림을 받을 수 있습니다"}
+              {isSubscribed
+                ? "알림이 활성화되었습니다"
+                : "알림을 켜면 일정 알림을 받을 수 있습니다"}
             </div>
           </div>
         </div>
         <Switch
           checked={isSubscribed}
           onCheckedChange={toggleSubscription}
-          disabled={isInitializing || isToggling}
+          disabled={isToggling}
         />
       </div>
 
-      {/* 개별 알림 설정 (구독 시에만 표시, 초기화 중이 아닐 때) */}
-      {!isInitializing && isSubscribed && (
+      {/* 개별 알림 설정 (구독 시에만 표시) */}
+      {isSubscribed && (
         <div className="ml-4 space-y-3">
           {/* D-day 알림 */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
