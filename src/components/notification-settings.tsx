@@ -11,7 +11,8 @@ interface NotificationSettingsProps {
 export function NotificationSettings({ compact = false }: NotificationSettingsProps) {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);  // 초기 로딩
+  const [isToggling, setIsToggling] = useState(false);  // 토글 액션 중
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -23,7 +24,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([checkSupport(), checkLoginStatus()]);
-      setIsLoading(false);
+      setIsInitializing(false);
     };
     initialize();
   }, []);
@@ -85,7 +86,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       return;
     }
 
-    setIsLoading(true);
+    setIsToggling(true);
 
     try {
       // 알림 권한 요청
@@ -94,7 +95,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
 
       if (permission !== "granted") {
         alert("알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.");
-        setIsLoading(false);
+        setIsToggling(false);
         return;
       }
 
@@ -134,7 +135,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       alert("알림 등록에 실패했습니다. 다시 시도해주세요.");
     }
 
-    setIsLoading(false);
+    setIsToggling(false);
   };
 
   const unsubscribe = async () => {
@@ -143,7 +144,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       return;
     }
 
-    setIsLoading(true);
+    setIsToggling(true);
 
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -170,7 +171,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
       alert("알림 해제에 실패했습니다.");
     }
 
-    setIsLoading(false);
+    setIsToggling(false);
   };
 
   const toggleSubscription = async () => {
@@ -239,8 +240,8 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     }
   };
 
-  // 로딩 중일 때 (모든 체크가 완료될 때까지)
-  if (isLoading) {
+  // 초기 로딩 중일 때만 로딩 화면 표시
+  if (isInitializing) {
     if (compact) {
       return (
         <div className="p-2">
@@ -296,10 +297,10 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
     return (
       <button
         onClick={toggleSubscription}
-        disabled={isLoading}
+        disabled={isToggling}
         className="relative p-2 rounded-full hover:bg-white/20 transition-colors disabled:opacity-50"
       >
-        {isLoading ? (
+        {isToggling ? (
           <Loader2 className="w-5 h-5 animate-spin text-white" />
         ) : isSubscribed ? (
           <Bell className="w-5 h-5 text-white" />
@@ -336,7 +337,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
         <Switch
           checked={isSubscribed}
           onCheckedChange={toggleSubscription}
-          disabled={isLoading}
+          disabled={isToggling}
         />
       </div>
 
@@ -354,7 +355,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
             <Switch
               checked={ddayEnabled}
               onCheckedChange={toggleDdayNotification}
-              disabled={isLoading}
+              disabled={isToggling}
             />
           </div>
 
@@ -369,7 +370,7 @@ export function NotificationSettings({ compact = false }: NotificationSettingsPr
             <Switch
               checked={dailyEnabled}
               onCheckedChange={toggleDailyNotification}
-              disabled={isLoading}
+              disabled={isToggling}
             />
           </div>
         </div>

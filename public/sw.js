@@ -1,5 +1,5 @@
 // Service Worker for Web Push Notifications
-const CACHE_NAME = 'hnw-archive-v1';
+const CACHE_NAME = 'hnw-archive-v2';
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -7,10 +7,47 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event
+// Activate event - 이전 캐시 삭제
 self.addEventListener('activate', (event) => {
   console.log('[SW] Service Worker activated');
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
+});
+
+// Fetch event - 네트워크 우선, 실패 시 캐시
+self.addEventListener('fetch', (event) => {
+  // API 요청은 항상 네트워크로
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // HTML, JS, CSS 파일은 네트워크 우선
+  if (
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'script' ||
+    event.request.destination === 'style'
+  ) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
 });
 
 // Push event - 푸시 알림 수신
