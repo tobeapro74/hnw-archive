@@ -1,5 +1,5 @@
 // Service Worker for Web Push Notifications
-const CACHE_NAME = 'hnw-archive-v2';
+const CACHE_NAME = 'hnw-archive-v3';
 
 // Install event
 self.addEventListener('install', (event) => {
