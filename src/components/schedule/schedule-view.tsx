@@ -8,7 +8,12 @@ import { ScheduleCard } from "./schedule-card";
 import { ScheduleFormDialog } from "./schedule-form-dialog";
 import { ScheduleDetailDialog } from "./schedule-detail-dialog";
 
-export function ScheduleView() {
+interface ScheduleViewProps {
+  highlightScheduleId?: string | null;
+  onHighlightHandled?: () => void;
+}
+
+export function ScheduleView({ highlightScheduleId, onHighlightHandled }: ScheduleViewProps = {}) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -24,6 +29,18 @@ export function ScheduleView() {
   useEffect(() => {
     fetchSchedules();
   }, [selectedYear]);
+
+  // highlightScheduleId가 전달되면 해당 일정 상세 모달 열기
+  useEffect(() => {
+    if (highlightScheduleId && schedules.length > 0) {
+      const targetSchedule = schedules.find(s => s._id === highlightScheduleId);
+      if (targetSchedule) {
+        setSelectedSchedule(targetSchedule);
+        setDetailOpen(true);
+        onHighlightHandled?.();
+      }
+    }
+  }, [highlightScheduleId, schedules, onHighlightHandled]);
 
   const fetchSchedules = async () => {
     try {

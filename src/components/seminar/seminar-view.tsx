@@ -35,7 +35,12 @@ interface CacheEntry {
   timestamp: number;
 }
 
-export function SeminarView() {
+interface SeminarViewProps {
+  initialMonth?: Date | null;
+  onInitialMonthHandled?: () => void;
+}
+
+export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarViewProps = {}) {
   const [seminars, setSeminars] = useState<(Seminar & { progress?: { total: number; completed: number; percentage: number } })[]>([]);
   const [requests, setRequests] = useState<SeminarRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,6 +130,13 @@ export function SeminarView() {
   useEffect(() => {
     fetchData();
   }, [selectedYear]);
+
+  // initialMonth가 처리되면 콜백 호출
+  useEffect(() => {
+    if (initialMonth) {
+      onInitialMonthHandled?.();
+    }
+  }, [initialMonth, onInitialMonthHandled]);
 
   // 캐시 무효화 후 새로고침
   const invalidateAndRefresh = useCallback(() => {
@@ -362,6 +374,7 @@ export function SeminarView() {
                 onDateClick={handleDateClick}
                 onSeminarClick={handleSeminarClick}
                 onRequestClick={handleRequestClick}
+                initialMonth={initialMonth}
               />
             ) : (
               <div className="space-y-2">

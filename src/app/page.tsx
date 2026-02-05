@@ -72,6 +72,10 @@ function HomeContent() {
   const [relatedModalOpen, setRelatedModalOpen] = useState(false);
   const [selectedEventName, setSelectedEventName] = useState<string>("");
 
+  // 캘린더에서 탭 이동 시 전달할 데이터
+  const [highlightScheduleId, setHighlightScheduleId] = useState<string | null>(null);
+  const [targetSeminarMonth, setTargetSeminarMonth] = useState<Date | null>(null);
+
   // URL 쿼리 파라미터로 탭 설정 (푸시 알림 클릭 시 사용)
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -378,6 +382,18 @@ function HomeContent() {
     setRelatedModalOpen(true);
   };
 
+  // 캘린더에서 일정 카드 클릭 시 일정 탭으로 이동
+  const handleCalendarScheduleClick = (schedule: Schedule) => {
+    setHighlightScheduleId(schedule._id || null);
+    setCurrentView("schedule");
+  };
+
+  // 캘린더에서 세미나 카드 클릭 시 세미나 탭으로 이동
+  const handleCalendarSeminarClick = (seminar: Seminar) => {
+    setTargetSeminarMonth(new Date(seminar.date));
+    setCurrentView("seminar");
+  };
+
   // 일정 다시 가져오기
   const fetchSchedules = async () => {
     try {
@@ -682,9 +698,10 @@ function HomeContent() {
               </h3>
               <div className="space-y-3">
                 {selectedDateSchedules.map((schedule) => (
-                  <div
+                  <button
                     key={schedule._id}
-                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    onClick={() => handleCalendarScheduleClick(schedule)}
+                    className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start gap-2 mb-2">
                       <Badge variant={schedule.category === "회의" ? "default" : schedule.category === "외근" ? "secondary" : "outline"}>
@@ -704,7 +721,7 @@ function HomeContent() {
                       <p>🕐 {schedule.time}</p>
                       <p>📍 {schedule.location}</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -718,9 +735,10 @@ function HomeContent() {
               </h3>
               <div className="space-y-3">
                 {selectedDateSeminars.map((seminar) => (
-                  <div
+                  <button
                     key={seminar._id}
-                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    onClick={() => handleCalendarSeminarClick(seminar)}
+                    className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start gap-2 mb-2">
                       <Badge variant={seminar.category === "패밀리오피스" ? "default" : "secondary"}>
@@ -735,7 +753,7 @@ function HomeContent() {
                         <p>👥 예상 참석자: {seminar.expectedAttendees}명</p>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -832,8 +850,18 @@ function HomeContent() {
         {/* 메인 콘텐츠 */}
         {currentView === "home" && renderHome()}
         {currentView === "list" && renderList()}
-        {currentView === "seminar" && <SeminarView />}
-        {currentView === "schedule" && <ScheduleView />}
+        {currentView === "seminar" && (
+          <SeminarView
+            initialMonth={targetSeminarMonth}
+            onInitialMonthHandled={() => setTargetSeminarMonth(null)}
+          />
+        )}
+        {currentView === "schedule" && (
+          <ScheduleView
+            highlightScheduleId={highlightScheduleId}
+            onHighlightHandled={() => setHighlightScheduleId(null)}
+          />
+        )}
         {currentView === "resources" && <ResourceView />}
         {currentView === "calendar" && renderCalendar()}
         {currentView === "admin" && user?.is_admin && (

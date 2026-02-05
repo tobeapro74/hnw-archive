@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -15,6 +15,7 @@ interface SeminarCalendarProps {
   onDateClick?: (date: Date, seminars: Seminar[], requests: SeminarRequest[]) => void;
   onSeminarClick?: (seminar: Seminar) => void;
   onRequestClick?: (request: SeminarRequest) => void;
+  initialMonth?: Date | null;
 }
 
 export function SeminarCalendar({
@@ -23,11 +24,19 @@ export function SeminarCalendar({
   onDateClick,
   onSeminarClick,
   onRequestClick,
+  initialMonth,
 }: SeminarCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // initialMonth가 전달되면 해당 월로 이동
+  useEffect(() => {
+    if (initialMonth) {
+      setCurrentDate(new Date(initialMonth.getFullYear(), initialMonth.getMonth(), 1));
+    }
+  }, [initialMonth]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
