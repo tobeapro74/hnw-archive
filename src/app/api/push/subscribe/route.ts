@@ -33,18 +33,20 @@ export async function POST(request: NextRequest) {
 
     if (existingSubscription) {
       // 기존 구독 업데이트
+      const updateData: Record<string, unknown> = {
+        subscription,
+        userId: userId || null,
+        updatedAt: new Date(),
+      };
+
+      // notificationTypes가 없는 기존 구독자에게 기본값 설정 (마이그레이션)
+      if (!existingSubscription.notificationTypes) {
+        updateData.notificationTypes = ['dday', 'daily'];
+      }
+
       await db.collection('push_subscriptions').updateOne(
         { endpoint: subscription.endpoint },
-        {
-          $set: {
-            subscription,
-            userId: userId || null,
-            updatedAt: new Date(),
-          },
-          $setOnInsert: {
-            notificationTypes: ['dday', 'daily'],  // 기존에 없으면 기본값
-          }
-        }
+        { $set: updateData }
       );
     } else {
       // 새 구독 등록
