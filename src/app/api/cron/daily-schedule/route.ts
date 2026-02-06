@@ -14,9 +14,11 @@ export async function GET(request: NextRequest) {
 
     const db = await getDb();
 
-    // 오늘 날짜 설정 (KST 기준)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 오늘 날짜 설정 (KST 기준 - UTC+9)
+    const now = new Date();
+    const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kstDateStr = kstNow.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    const today = new Date(kstDateStr + 'T00:00:00.000Z');
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 

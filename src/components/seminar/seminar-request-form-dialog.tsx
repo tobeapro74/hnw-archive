@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Check, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   SeminarRequest,
   SeminarRequestTopic,
@@ -115,7 +116,7 @@ export function SeminarRequestFormDialog({
       !formData.receiver ||
       formData.topics.length === 0
     ) {
-      alert("필수 항목을 입력해주세요. (주제를 1개 이상 선택해주세요)");
+      toast.warning("필수 항목을 입력해주세요. (주제를 1개 이상 선택해주세요)");
       return;
     }
 
@@ -151,15 +152,16 @@ export function SeminarRequestFormDialog({
 
       if (res.ok) {
         const savedRequest = await res.json();
+        toast.success("세미나 요청을 저장했습니다.");
         onSave(savedRequest);
         onOpenChange(false);
       } else {
         const error = await res.json();
-        alert(error.error || "저장에 실패했습니다.");
+        toast.error(error.error || "저장에 실패했습니다.");
       }
     } catch (error) {
       console.error("Failed to save request:", error);
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -177,15 +179,16 @@ export function SeminarRequestFormDialog({
       });
 
       if (res.ok) {
+        toast.success("세미나 요청을 삭제했습니다.");
         onDelete?.(request._id);
         onOpenChange(false);
       } else {
         const error = await res.json();
-        alert(error.error || "삭제에 실패했습니다.");
+        toast.error(error.error || "삭제에 실패했습니다.");
       }
     } catch (error) {
       console.error("Failed to delete request:", error);
-      alert("삭제에 실패했습니다.");
+      toast.error("삭제에 실패했습니다.");
     } finally {
       setDeleting(false);
     }

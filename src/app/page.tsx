@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { User, LogOut, ChevronDown, Search, ChevronLeft } from "lucide-react";
+import { User, LogOut, ChevronDown, Search, ChevronLeft, Newspaper } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -551,9 +552,7 @@ function HomeContent() {
                 />
               ))
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                등록된 기사가 없습니다.
-              </div>
+              <EmptyState icon={Newspaper} title="등록된 기사가 없습니다." />
             )}
           </div>
         </section>
@@ -651,9 +650,7 @@ function HomeContent() {
             />
           ))
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            조건에 맞는 기사가 없습니다.
-          </div>
+          <EmptyState icon={Search} title="조건에 맞는 기사가 없습니다." />
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Download, FileText, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Resource, fileTypeConfig, formatFileSize } from "@/lib/resource-types";
@@ -127,7 +128,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "다운로드에 실패했습니다.");
+        toast.error(error.error || "다운로드에 실패했습니다.");
         return;
       }
 
@@ -143,7 +144,7 @@ export function ResourceViewer({ resource, open, onOpenChange }: ResourceViewerP
       document.body.removeChild(a);
     } catch (error) {
       console.error("Download error:", error);
-      alert("다운로드 중 오류가 발생했습니다.");
+      toast.error("다운로드 중 오류가 발생했습니다.");
     } finally {
       setDownloading(false);
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 interface NotificationSettingsProps {
   compact?: boolean;
@@ -84,7 +85,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
 
   const subscribe = async () => {
     if (!isLoggedIn) {
-      alert("로그인이 필요한 기능입니다.");
+      toast.warning("로그인이 필요한 기능입니다.");
       return;
     }
 
@@ -96,7 +97,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
       setPermission(permission);
 
       if (permission !== "granted") {
-        alert("알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.");
+        toast.warning("알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.");
         setIsToggling(false);
         return;
       }
@@ -134,7 +135,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
       }
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert("알림 등록에 실패했습니다. 다시 시도해주세요.");
+      toast.error("알림 등록에 실패했습니다. 다시 시도해주세요.");
     }
 
     setIsToggling(false);
@@ -142,7 +143,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
 
   const unsubscribe = async () => {
     if (!isLoggedIn) {
-      alert("로그인이 필요한 기능입니다.");
+      toast.warning("로그인이 필요한 기능입니다.");
       return;
     }
 
@@ -170,7 +171,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
       setDailyEnabled(false);
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
-      alert("알림 해제에 실패했습니다.");
+      toast.error("알림 해제에 실패했습니다.");
     }
 
     setIsToggling(false);
@@ -209,7 +210,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
       }
     } catch (error) {
       console.error('Failed to update D-day notification:', error);
-      alert('설정 변경에 실패했습니다.');
+      toast.error("설정 변경에 실패했습니다.");
     }
   };
 
@@ -238,7 +239,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
       }
     } catch (error) {
       console.error('Failed to update daily notification:', error);
-      alert('설정 변경에 실패했습니다.');
+      toast.error("설정 변경에 실패했습니다.");
     }
   };
 
@@ -354,7 +355,7 @@ export function NotificationSettings({ compact = false, onInitialized }: Notific
             <div>
               <div className="text-sm font-medium">금일 일정 알림</div>
               <div className="text-xs text-muted-foreground">
-                매일 오전 9시(KST)
+                매일 오전 8시(KST)
               </div>
             </div>
             <Switch

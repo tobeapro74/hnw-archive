@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Plus,
   Edit,
@@ -230,11 +232,11 @@ export default function AdminPage() {
           thumbnailUrl: data.data.ogImage,
         });
       } else {
-        alert("이미지를 찾을 수 없습니다.");
+        toast.error("이미지를 찾을 수 없습니다.");
       }
     } catch (error) {
       console.error("OG image fetch error:", error);
-      alert("이미지 가져오기에 실패했습니다.");
+      toast.error("이미지 가져오기에 실패했습니다.");
     } finally {
       setFetchingOgImage(false);
     }
@@ -262,11 +264,11 @@ export default function AdminPage() {
           publishedAt: scraped.publishedAt ? new Date(scraped.publishedAt) : prev?.publishedAt || new Date(),
         }));
       } else {
-        alert(data.error || "기사 정보를 불러올 수 없습니다.");
+        toast.error(data.error || "기사 정보를 불러올 수 없습니다.");
       }
     } catch (error) {
       console.error("Article scrape error:", error);
-      alert("기사 스크래핑에 실패했습니다.");
+      toast.error("기사 스크래핑에 실패했습니다.");
     } finally {
       setScrapingArticle(false);
     }
@@ -282,7 +284,7 @@ export default function AdminPage() {
     const articlesToUpdate = articlesWithUrl.filter((article) => !article.thumbnailUrl);
 
     if (articlesToUpdate.length === 0) {
-      alert(`업데이트할 기사가 없습니다.\n\n• 전체 기사: ${articles.length}개\n• 이미 썸네일 있음: ${articlesWithThumbnail.length}개\n• URL 없음: ${articles.length - articlesWithUrl.length}개`);
+      toast.warning("업데이트할 기사가 없습니다.");
       return;
     }
 
@@ -330,7 +332,7 @@ export default function AdminPage() {
     }
 
     setBatchUpdating(false);
-    alert(`완료! ${successCount}/${articlesToUpdate.length}개 기사의 썸네일이 업데이트되었습니다.`);
+    toast.success(`${successCount}/${articlesToUpdate.length}개 기사의 썸네일이 업데이트되었습니다.`);
     fetchArticles();
   };
 
@@ -484,7 +486,7 @@ export default function AdminPage() {
     }
 
     if (!searchKeyword) {
-      alert("검색할 키워드를 입력해주세요.");
+      toast.warning("검색할 키워드를 입력해주세요.");
       return;
     }
 
@@ -517,15 +519,16 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
+        toast.success("기사를 저장했습니다.");
         setEditDialogOpen(false);
         setEditingArticle(null);
         fetchArticles();
       } else {
-        alert(data.error || "저장에 실패했습니다.");
+        toast.error(data.error || "저장에 실패했습니다.");
       }
     } catch (error) {
       console.error("Save error:", error);
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     }
   };
 
@@ -708,15 +711,13 @@ export default function AdminPage() {
         }
       }
 
-      const pendingMsg = pendingArticle ? " (원본 기사 포함)" : "";
-      const skippedMsg = skippedCount > 0 ? ` (중복 ${skippedCount}건 제외)` : "";
-      alert(`${savedCount}개의 기사가 저장되었습니다${pendingMsg}${skippedMsg}.`);
+      toast.success(`${savedCount}개의 기사가 저장되었습니다.`);
       setCrawlDialogOpen(false);
       setPendingArticle(null);
       fetchArticles();
     } catch (error) {
       console.error("Save crawled articles error:", error);
-      alert("기사 저장 중 오류가 발생했습니다.");
+      toast.error("기사 저장 중 오류가 발생했습니다.");
     } finally {
       setSavingCrawledArticles(false);
     }
@@ -733,15 +734,16 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
+        toast.success("기사를 삭제했습니다.");
         setDeleteDialogOpen(false);
         setDeletingArticleId(null);
         fetchArticles();
       } else {
-        alert(data.error || "삭제에 실패했습니다.");
+        toast.error(data.error || "삭제에 실패했습니다.");
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("삭제에 실패했습니다.");
+      toast.error("삭제에 실패했습니다.");
     }
   };
 
@@ -802,13 +804,13 @@ export default function AdminPage() {
         if (res.ok) successCount++;
       }
 
-      alert(`${successCount}/${selectedArticles.size}개 기사가 수정되었습니다.`);
+      toast.success(`${successCount}/${selectedArticles.size}개 기사가 수정되었습니다.`);
       setBatchEditDialogOpen(false);
       setSelectedArticles(new Set());
       fetchArticles();
     } catch (error) {
       console.error("Batch edit error:", error);
-      alert("일괄 수정 중 오류가 발생했습니다.");
+      toast.error("일괄 수정 중 오류가 발생했습니다.");
     } finally {
       setBatchSaving(false);
     }
@@ -832,7 +834,7 @@ export default function AdminPage() {
       }
     }
 
-    alert(`${successCount}/${selectedArticles.size}개 기사가 삭제되었습니다.`);
+    toast.success(`${successCount}/${selectedArticles.size}개 기사가 삭제되었습니다.`);
     setSelectedArticles(new Set());
     fetchArticles();
   };
@@ -1335,28 +1337,21 @@ export default function AdminPage() {
                 </Card>
               );
             })
+          ) : articles.length === 0 ? (
+              <EmptyState icon={Newspaper} title="등록된 기사가 없습니다." />
           ) : (
-            <div className="py-12 text-center text-muted-foreground">
-              {articles.length === 0 ? (
-                "등록된 기사가 없습니다."
-              ) : (
-                <>
-                  필터 조건에 맞는 기사가 없습니다.
-                  <br />
-                  <Button
-                    variant="link"
-                    className="mt-2"
-                    onClick={() => {
-                      setFilterCategory("전체");
-                      setFilterTag("전체");
-                      setSearchQuery("");
-                    }}
-                  >
-                    필터 초기화
-                  </Button>
-                </>
-              )}
-            </div>
+              <EmptyState
+                icon={Search}
+                title="필터 조건에 맞는 기사가 없습니다."
+                action={{
+                  label: "필터 초기화",
+                  onClick: () => {
+                    setFilterCategory("전체");
+                    setFilterTag("전체");
+                    setSearchQuery("");
+                  },
+                }}
+              />
           )}
         </div>
       </div>
@@ -1879,9 +1874,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ) : savedRelatedArticles.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    검색 결과가 없습니다.
-                  </div>
+                  <EmptyState icon={Search} title="검색 결과가 없습니다." />
                 ) : null}
               </>
             )}

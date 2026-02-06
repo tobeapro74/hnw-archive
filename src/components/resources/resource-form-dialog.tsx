@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,17 +98,17 @@ export function ResourceFormDialog({
 
   const handleSubmit = async () => {
     if (!title || !category || !fileUrl || !fileName || !fileType) {
-      alert("필수 항목을 모두 입력해주세요.");
+      toast.warning("필수 항목을 모두 입력해주세요.");
       return;
     }
 
     if (category === "회의록" && !subCategory) {
-      alert("회의록 유형(내부/외부)을 선택해주세요.");
+      toast.warning("회의록 유형(내부/외부)을 선택해주세요.");
       return;
     }
 
     if (category === "보고서" && !subCategory) {
-      alert("보고서 유형(초안/완료/요약)을 선택해주세요.");
+      toast.warning("보고서 유형(초안/완료/요약)을 선택해주세요.");
       return;
     }
 
@@ -130,14 +131,15 @@ export function ResourceFormDialog({
 
       const data = await res.json();
       if (data.success) {
+        toast.success("자료를 등록했습니다.");
         resetForm();
         onSuccess();
       } else {
-        alert(data.error || "등록에 실패했습니다.");
+        toast.error(data.error || "등록에 실패했습니다.");
       }
     } catch (error) {
       console.error("Failed to create resource:", error);
-      alert("등록에 실패했습니다.");
+      toast.error("등록에 실패했습니다.");
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ListChecks } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import {
   ChecklistItem,
@@ -115,9 +116,7 @@ export function ChecklistSection({
                 />
               ))
           ) : (
-            <div className="py-4 text-center text-sm text-muted-foreground">
-              체크리스트 항목이 없습니다.
-            </div>
+            <EmptyState icon={ListChecks} title="체크리스트 항목이 없습니다." />
           )}
 
           {/* 항목 추가 */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Schedule,
   ScheduleCategory,
@@ -110,21 +111,21 @@ export function ScheduleFormDialog({
   const handleSubmit = async () => {
     // 기본 필수 항목 체크
     if (!formData.category || !formData.date) {
-      alert("카테고리와 날짜는 필수 항목입니다.");
+      toast.warning("카테고리와 날짜는 필수 항목입니다.");
       return;
     }
 
     // 카테고리별 필수 항목 체크
     if (formData.category === "회의" && !formData.meetingTopic) {
-      alert("회의주제를 입력해주세요.");
+      toast.warning("회의주제를 입력해주세요.");
       return;
     }
     if (formData.category === "외근" && !formData.outingTopic) {
-      alert("미팅주제를 입력해주세요.");
+      toast.warning("미팅주제를 입력해주세요.");
       return;
     }
     if (formData.category === "기타" && !formData.etcTopic) {
-      alert("일정 제목을 입력해주세요.");
+      toast.warning("일정 제목을 입력해주세요.");
       return;
     }
 
@@ -177,6 +178,7 @@ export function ScheduleFormDialog({
 
       if (res.ok) {
         const savedSchedule = await res.json();
+        toast.success("일정을 저장했습니다.");
         onSave(savedSchedule);
         onOpenChange(false);
       } else {
@@ -186,12 +188,12 @@ export function ScheduleFormDialog({
             window.location.href = "/admin";
           }
         } else {
-          alert(error.error || "저장에 실패했습니다.");
+          toast.error(error.error || "저장에 실패했습니다.");
         }
       }
     } catch (error) {
       console.error("Failed to save schedule:", error);
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }

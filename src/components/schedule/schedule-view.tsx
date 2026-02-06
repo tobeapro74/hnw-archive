@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Calendar } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Schedule, ScheduleCategory } from "@/lib/schedule-types";
 import { ScheduleCard } from "./schedule-card";
@@ -131,6 +133,7 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
 
       if (res.ok) {
         console.log('[handleDelete] 삭제 성공:', scheduleId);
+        toast.success("일정을 삭제했습니다.");
         setDetailOpen(false);
         setSelectedSchedule(null);
 
@@ -145,12 +148,12 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
             window.location.href = "/admin";
           }
         } else {
-          alert(error.error || "삭제에 실패했습니다.");
+          toast.error(error.error || "삭제에 실패했습니다.");
         }
       }
     } catch (error) {
       console.error("Failed to delete schedule:", error);
-      alert("삭제에 실패했습니다.");
+      toast.error("삭제에 실패했습니다.");
     }
   };
 
@@ -231,13 +234,12 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
           ))}
         </div>
       ) : (
-        <div className="py-16 text-center text-muted-foreground">
-          <p>등록된 일정이 없습니다.</p>
-          <Button onClick={handleNewSchedule} variant="outline" className="mt-4">
-            <Plus className="w-4 h-4 mr-2" />
-            첫 일정 만들기
-          </Button>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title="등록된 일정이 없습니다."
+          description="새 일정을 등록해보세요."
+          action={{ label: "첫 일정 만들기", onClick: handleNewSchedule }}
+        />
       )}
 
       {/* 폼 다이얼로그 */}

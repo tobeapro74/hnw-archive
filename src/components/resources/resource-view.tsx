@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Plus, FileText, Users, Briefcase, ClipboardList } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -117,16 +118,17 @@ export function ResourceView() {
       const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
+        toast.success("자료를 삭제했습니다.");
         // 캐시 무효화 후 새로고침
         cacheRef.current.clear();
         fetchResources(true);
       } else {
         console.error("Failed to delete resource:", data.error);
-        alert("삭제에 실패했습니다: " + (data.error || "알 수 없는 오류"));
+        toast.error("삭제에 실패했습니다: " + (data.error || "알 수 없는 오류"));
       }
     } catch (error) {
       console.error("Failed to delete resource:", error);
-      alert("삭제 중 오류가 발생했습니다.");
+      toast.error("삭제 중 오류가 발생했습니다.");
     }
   };
 

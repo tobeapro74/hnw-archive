@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Calendar as CalendarIcon, List, X } from "lucide-react";
+import { Calendar as CalendarIcon, List, X, Megaphone } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import {
   Seminar,
@@ -389,9 +390,7 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
                       />
                     ))
                 ) : (
-                  <div className="py-12 text-center text-muted-foreground">
-                    등록된 세미나가 없습니다.
-                  </div>
+                  <EmptyState icon={Megaphone} title="등록된 세미나가 없습니다." />
                 )}
               </div>
             )}

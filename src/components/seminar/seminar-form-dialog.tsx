@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Seminar,
   SeminarCategory,
@@ -91,7 +92,7 @@ export function SeminarFormDialog({
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.date || !formData.location) {
-      alert("필수 항목을 입력해주세요.");
+      toast.warning("필수 항목을 입력해주세요.");
       return;
     }
 
@@ -130,15 +131,16 @@ export function SeminarFormDialog({
 
       if (res.ok) {
         const savedSeminar = await res.json();
+        toast.success("세미나를 저장했습니다.");
         onSave(savedSeminar);
         onOpenChange(false);
       } else {
         const error = await res.json();
-        alert(error.error || "저장에 실패했습니다.");
+        toast.error(error.error || "저장에 실패했습니다.");
       }
     } catch (error) {
       console.error("Failed to save seminar:", error);
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }

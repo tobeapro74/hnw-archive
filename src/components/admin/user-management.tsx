@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { User, UserPermissions, DEFAULT_PERMISSIONS } from "@/lib/types";
-import { Loader2, Shield, ShieldCheck, ShieldOff, ShieldPlus, User as UserIcon } from "lucide-react";
+import { Loader2, Shield, ShieldCheck, ShieldOff, ShieldPlus, User as UserIcon, Users } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface UserWithId extends Omit<User, '_id'> {
   _id: string;
@@ -205,9 +206,7 @@ export function UserManagement() {
         </h3>
 
         {regularUsers.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            등록된 일반 사용자가 없습니다.
-          </p>
+          <EmptyState icon={Users} title="등록된 일반 사용자가 없습니다." />
         ) : (
           <div className="space-y-4">
             {regularUsers.map((user) => {

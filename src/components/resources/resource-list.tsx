@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { FolderOpen } from "lucide-react";
 import { Resource } from "@/lib/resource-types";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ResourceCard } from "./resource-card";
 import { ResourceViewer } from "./resource-viewer";
 import { FileTypeSelector } from "./file-type-selector";
@@ -112,11 +114,7 @@ export function ResourceList({ resources, loading, onDelete, onRefresh }: Resour
   }
 
   if (resources.length === 0) {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        등록된 자료가 없습니다.
-      </div>
-    );
+    return <EmptyState icon={FolderOpen} title="등록된 자료가 없습니다." />;
   }
 
   return (
