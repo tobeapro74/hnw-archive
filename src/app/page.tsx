@@ -800,7 +800,7 @@ function HomeContent() {
               {currentView === "seminar" && "세미나 관리"}
               {currentView === "schedule" && "일정"}
               {currentView === "resources" && "자료실"}
-              {currentView === "calendar" && "홍보 캘린더"}
+              {currentView === "calendar" && "HNW 캘린더"}
               {currentView === "admin" && "기사관리"}
             </h1>
 
