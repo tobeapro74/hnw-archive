@@ -18,6 +18,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 주말(토/일) 체크 - KST 기준
+    const kstForDay = getKSTNow();
+    const dayOfWeek = kstForDay.getUTCDay(); // 0=일, 6=토
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return NextResponse.json({
+        success: true,
+        message: 'Weekend - skipping reminders',
+        sent: 0,
+      });
+    }
+
     const db = await getDb();
     const kstNow = getKSTNow();
     const currentMinutes = kstNow.getHours() * 60 + kstNow.getMinutes();

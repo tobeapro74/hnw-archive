@@ -23,6 +23,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 주말(토/일) 체크 - KST 기준
+    const nowForDay = new Date();
+    const kstForDay = new Date(nowForDay.getTime() + 9 * 60 * 60 * 1000);
+    const dayOfWeek = kstForDay.getUTCDay(); // 0=일, 6=토
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return NextResponse.json({
+        success: true,
+        message: 'Weekend - skipping notifications',
+        notified: 0,
+      });
+    }
+
     const db = await getDb();
 
     // 오늘 날짜
