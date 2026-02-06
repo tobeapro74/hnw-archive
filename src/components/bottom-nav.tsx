@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, List, Calendar, Settings, ClipboardList, FolderOpen, CalendarCheck } from "lucide-react";
+import { Home, List, Calendar, Settings, ClipboardList, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type TabType = "home" | "list" | "seminar" | "schedule" | "resources" | "calendar" | "admin";
@@ -18,9 +18,8 @@ export function BottomNav({ activeTab, onTabChange, isAdmin, hasResourceAccess }
     { id: "list" as TabType, icon: List, label: "목록" },
     { id: "calendar" as TabType, icon: Calendar, label: "캘린더" },
     { id: "seminar" as TabType, icon: ClipboardList, label: "세미나" },
-    { id: "schedule" as TabType, icon: CalendarCheck, label: "일정" },
     ...(hasResourceAccess ? [{ id: "resources" as TabType, icon: FolderOpen, label: "자료실" }] : []),
-    ...(isAdmin ? [{ id: "admin" as TabType, icon: Settings, label: "기사관리" }] : []),
+    ...(isAdmin ? [{ id: "admin" as TabType, icon: Settings, label: "관리" }] : []),
   ];
 
   return (

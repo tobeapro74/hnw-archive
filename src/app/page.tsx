@@ -19,7 +19,6 @@ import { MonthlyTimeline } from "@/components/dashboard/monthly-timeline";
 import { HighlightSection } from "@/components/dashboard/highlight-section";
 import { SeminarView } from "@/components/seminar";
 import { ResourceView } from "@/components/resources";
-import { ScheduleView } from "@/components/schedule";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
@@ -74,13 +73,12 @@ function HomeContent() {
   const [selectedEventName, setSelectedEventName] = useState<string>("");
 
   // 캘린더에서 탭 이동 시 전달할 데이터
-  const [highlightScheduleId, setHighlightScheduleId] = useState<string | null>(null);
   const [targetSeminarMonth, setTargetSeminarMonth] = useState<Date | null>(null);
 
   // URL 쿼리 파라미터로 탭 설정 (푸시 알림 클릭 시 사용)
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["home", "list", "seminar", "schedule", "resources", "calendar"].includes(tab)) {
+    if (tab && ["home", "list", "seminar", "resources", "calendar"].includes(tab)) {
       setCurrentView(tab as ViewType);
     }
   }, [searchParams]);
@@ -383,10 +381,9 @@ function HomeContent() {
     setRelatedModalOpen(true);
   };
 
-  // 캘린더에서 일정 카드 클릭 시 일정 탭으로 이동
-  const handleCalendarScheduleClick = (schedule: Schedule) => {
-    setHighlightScheduleId(schedule._id || null);
-    setCurrentView("schedule");
+  // 캘린더에서 일정 카드 클릭 시 관리 페이지 일정 탭으로 이동
+  const handleCalendarScheduleClick = (_schedule: Schedule) => {
+    window.location.href = "/admin?tab=schedule";
   };
 
   // 캘린더에서 세미나 카드 클릭 시 세미나 탭으로 이동
@@ -791,7 +788,6 @@ function HomeContent() {
               )}
               {currentView === "list" && "홍보 목록"}
               {currentView === "seminar" && "세미나 관리"}
-              {currentView === "schedule" && "일정 관리"}
               {currentView === "resources" && "자료실"}
               {currentView === "calendar" && "홍보 캘린더"}
               {currentView === "admin" && "기사관리"}
@@ -851,12 +847,6 @@ function HomeContent() {
           <SeminarView
             initialMonth={targetSeminarMonth}
             onInitialMonthHandled={() => setTargetSeminarMonth(null)}
-          />
-        )}
-        {currentView === "schedule" && (
-          <ScheduleView
-            highlightScheduleId={highlightScheduleId}
-            onHighlightHandled={() => setHighlightScheduleId(null)}
           />
         )}
         {currentView === "resources" && <ResourceView />}

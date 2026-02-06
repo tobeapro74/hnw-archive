@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -41,7 +41,8 @@ import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/ty
 import { formatDate, formatDateForInput } from "@/lib/utils";
 import { BottomNav } from "@/components/bottom-nav";
 import { UserManagement } from "@/components/admin/user-management";
-import { Users } from "lucide-react";
+import { ScheduleView } from "@/components/schedule";
+import { Users, CalendarCheck } from "lucide-react";
 
 interface UserInfo {
   id: string;
@@ -121,8 +122,9 @@ function extractMediaFromUrl(url: string): string {
   }
 }
 
-export default function AdminPage() {
+function AdminContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -180,7 +182,15 @@ export default function AdminPage() {
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, success: 0 });
 
   // 탭 상태
-  const [activeAdminTab, setActiveAdminTab] = useState<"articles" | "users">("articles");
+  const [activeAdminTab, setActiveAdminTab] = useState<"articles" | "schedule" | "users">("articles");
+
+  // URL 쿼리 파라미터로 탭 설정
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["articles", "schedule", "users"].includes(tab)) {
+      setActiveAdminTab(tab as "articles" | "schedule" | "users");
+    }
+  }, [searchParams]);
 
   // 필터 상태
   const [filterCategory, setFilterCategory] = useState<ArticleCategory | "전체">("전체");
@@ -1021,6 +1031,17 @@ export default function AdminPage() {
             기사 관리
           </button>
           <button
+            onClick={() => setActiveAdminTab("schedule")}
+            className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              activeAdminTab === "schedule"
+                ? "text-white border-b-2 border-white"
+                : "text-white/70 hover:text-white active:text-white"
+            }`}
+          >
+            <CalendarCheck className="w-4 h-4" />
+            일정 관리
+          </button>
+          <button
             onClick={() => setActiveAdminTab("users")}
             className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
               activeAdminTab === "users"
@@ -1039,6 +1060,8 @@ export default function AdminPage() {
         <div className="p-4">
           <UserManagement />
         </div>
+      ) : activeAdminTab === "schedule" ? (
+        <ScheduleView />
       ) : (
       <div className="p-4 space-y-4">
         {/* 상단 액션 버튼 */}
@@ -1927,5 +1950,13 @@ export default function AdminPage() {
         isAdmin={true}
       />
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+      <AdminContent />
+    </Suspense>
   );
 }
