@@ -50,6 +50,7 @@ const RESOURCE_ALLOWED_EMAILS = [
 function HomeContent() {
   const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState<ViewType>("home");
+  const [previousView, setPreviousView] = useState<ViewType>("home");
   const [articles, setArticles] = useState<Article[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [seminars, setSeminars] = useState<Seminar[]>([]);
@@ -384,6 +385,7 @@ function HomeContent() {
 
   // 캘린더에서 일정 카드 클릭 시 읽기전용 일정 탭으로 이동
   const handleCalendarScheduleClick = (_schedule: Schedule) => {
+    setPreviousView(currentView);
     setCurrentView("schedule");
   };
 
@@ -771,7 +773,14 @@ function HomeContent() {
             <div className="w-[80px] flex justify-start">
               {currentView !== "home" && (
                 <button
-                  onClick={() => setCurrentView("home")}
+                  onClick={() => {
+                    if (currentView === "schedule" && previousView !== "home") {
+                      setCurrentView(previousView);
+                    } else {
+                      setCurrentView("home");
+                    }
+                    setPreviousView("home");
+                  }}
                   className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
