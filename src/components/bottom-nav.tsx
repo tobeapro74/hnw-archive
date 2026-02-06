@@ -15,7 +15,7 @@ interface BottomNavProps {
 export function BottomNav({ activeTab, onTabChange, isAdmin, hasResourceAccess }: BottomNavProps) {
   const tabs = [
     { id: "home" as TabType, icon: Home, label: "홈" },
-    { id: "list" as TabType, icon: List, label: "목록" },
+    { id: "list" as TabType, icon: List, label: "기사" },
     { id: "calendar" as TabType, icon: Calendar, label: "캘린더" },
     { id: "seminar" as TabType, icon: ClipboardList, label: "세미나" },
     ...(hasResourceAccess ? [{ id: "resources" as TabType, icon: FolderOpen, label: "자료실" }] : []),

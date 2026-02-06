@@ -796,7 +796,7 @@ function HomeContent() {
                   <span className="text-base">아카이브</span>
                 </span>
               )}
-              {currentView === "list" && "홍보 목록"}
+              {currentView === "list" && "기사"}
               {currentView === "seminar" && "세미나 관리"}
               {currentView === "schedule" && "일정"}
               {currentView === "resources" && "자료실"}
