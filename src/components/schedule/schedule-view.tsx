@@ -13,9 +13,10 @@ import { ScheduleDetailDialog } from "./schedule-detail-dialog";
 interface ScheduleViewProps {
   highlightScheduleId?: string | null;
   onHighlightHandled?: () => void;
+  readOnly?: boolean;
 }
 
-export function ScheduleView({ highlightScheduleId, onHighlightHandled }: ScheduleViewProps = {}) {
+export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly }: ScheduleViewProps = {}) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -171,11 +172,13 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
     <div className="p-4 space-y-4">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">일정 관리</h2>
-        <Button onClick={handleNewSchedule} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          새 일정
-        </Button>
+        <h2 className="text-xl font-semibold">{readOnly ? "일정" : "일정 관리"}</h2>
+        {!readOnly && (
+          <Button onClick={handleNewSchedule} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            새 일정
+          </Button>
+        )}
       </div>
 
       {/* 필터 */}
@@ -237,18 +240,20 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
         <EmptyState
           icon={Calendar}
           title="등록된 일정이 없습니다."
-          description="새 일정을 등록해보세요."
-          action={{ label: "첫 일정 만들기", onClick: handleNewSchedule }}
+          description={readOnly ? undefined : "새 일정을 등록해보세요."}
+          action={readOnly ? undefined : { label: "첫 일정 만들기", onClick: handleNewSchedule }}
         />
       )}
 
       {/* 폼 다이얼로그 */}
-      <ScheduleFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        schedule={editingSchedule}
-        onSave={handleSave}
-      />
+      {!readOnly && (
+        <ScheduleFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          schedule={editingSchedule}
+          onSave={handleSave}
+        />
+      )}
 
       {/* 상세 다이얼로그 */}
       {selectedSchedule && (
@@ -258,6 +263,7 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled }: Schedu
           schedule={selectedSchedule}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          readOnly={readOnly}
         />
       )}
     </div>

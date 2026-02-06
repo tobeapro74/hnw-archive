@@ -12,6 +12,7 @@ interface ScheduleDetailDialogProps {
   schedule: Schedule;
   onEdit: (schedule: Schedule) => void;
   onDelete: (scheduleId: string) => void;
+  readOnly?: boolean;
 }
 
 export function ScheduleDetailDialog({
@@ -20,6 +21,7 @@ export function ScheduleDetailDialog({
   schedule,
   onEdit,
   onDelete,
+  readOnly,
 }: ScheduleDetailDialogProps) {
   if (!open) return null;
 
@@ -139,22 +141,24 @@ export function ScheduleDetailDialog({
         </div>
 
         {/* 푸터 */}
-        <div className="sticky bottom-0 bg-background border-t p-4 flex justify-between">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => {
-              if (schedule._id) onDelete(schedule._id);
-            }}
-          >
-            <Trash2 className="w-4 h-4 mr-1" />
-            삭제
-          </Button>
-          <Button size="sm" onClick={() => onEdit(schedule)}>
-            <Edit className="w-4 h-4 mr-1" />
-            수정
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="sticky bottom-0 bg-background border-t p-4 flex justify-between">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (schedule._id) onDelete(schedule._id);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              삭제
+            </Button>
+            <Button size="sm" onClick={() => onEdit(schedule)}>
+              <Edit className="w-4 h-4 mr-1" />
+              수정
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
