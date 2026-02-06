@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { X, Edit, Trash2, Calendar, Clock, MapPin, Users, Briefcase } from "lucide-react";
 import { Schedule } from "@/lib/schedule-types";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,32 @@ export function ScheduleDetailDialog({
   onDelete,
   readOnly,
 }: ScheduleDetailDialogProps) {
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const scheduleDate = new Date(schedule.date);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="relative bg-background rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      onClick={() => onOpenChange(false)}
+      onTouchMove={(e) => e.preventDefault()}
+    >
+      <div
+        className="relative bg-background rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         {/* 헤더 */}
         <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">일정 상세</h2>
