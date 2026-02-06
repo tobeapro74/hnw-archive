@@ -79,13 +79,16 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   │   ├── send/             # 알림 발송
 │   │   │   └── debug/            # 디버그
 │   │   └── cron/                 # 크론 작업 (신규)
-│   │       └── notifications/    # D-day 알림
+│   │       ├── notifications/    # D-day 알림
+│   │       ├── daily-schedule/   # 금일 일정 알림 (신규)
+│   │       └── schedule-reminder/ # 일정 리마인더 (신규)
 │   ├── admin/                    # 관리자 페이지
 │   ├── layout.tsx                # 루트 레이아웃
 │   ├── page.tsx                  # 메인 페이지 (URL ?tab=xxx 딥링크 지원)
 │   └── globals.css               # 전역 스타일
 ├── components/
 │   ├── ui/                       # shadcn/ui 기본 컴포넌트
+│   │   └── empty-state.tsx       # EmptyState 컴포넌트 (신규)
 │   ├── resource/                 # 자료실 관련 컴포넌트 (신규)
 │   │   ├── resource-view.tsx     # 자료실 메인 뷰
 │   │   ├── resource-card.tsx     # 자료 카드 (파일 그룹화 지원)
@@ -251,10 +254,16 @@ docs/                             # 프로젝트 문서
 
 - **Service Worker**: 백그라운드 푸시 수신
 - **VAPID 인증**: Web Push Protocol 기반 보안 푸시
-- **D-day 알림**: 매일 오전 10시(KST) 크론 작업
+- **알림 타입별 관리** (2026-02-06): `notificationTypes` 배열로 dday/daily 개별 토글
+- **D-day 알림**: 매일 오전 10시(KST) - `/api/cron/notifications`
   - 패밀리오피스/법인 각각 가장 가까운 예정 세미나 알림
+- **금일 일정 알림** (2026-02-06 신규): 매일 오전 8시(KST) - `/api/cron/daily-schedule`
+  - 금일 세미나(준비중) + 일정(회의/외근) 합산 알림
+- **일정 리마인더** (2026-02-06 신규): 5분마다 체크 - `/api/cron/schedule-reminder`
+  - 회의 20분 전, 외근 1시간 전 리마인더
+  - `notification_logs`로 중복 발송 방지
 - **설정**: 설정 화면에서 알림 구독/해제
-- **알림 클릭 랜딩**: 세미나 탭으로 자동 이동 (`/?tab=seminar`)
+- **알림 클릭 랜딩**: 세미나 탭(`/?tab=seminar`) 또는 캘린더 탭(`/?tab=calendar`)
 - **구독 방식**: 로그인 불필요, 브라우저 endpoint 기반 (아래 상세 설명)
 
 ## 하단 네비게이션
@@ -334,6 +343,10 @@ docs/                             # 프로젝트 문서
     }
   },
   userId: String | null,   // 로그인한 경우 사용자 ID (선택)
+  notificationTypes: [String],  // 알림 유형 배열 (2026-02-06 추가)
+                                // 'dday': D-day 알림, 'daily': 금일 일정 + 리마인더
+                                // 기본값: ['dday', 'daily']
+                                // 기존 구독자는 필드 없음 → $exists:false fallback
   createdAt: Date,
   updatedAt: Date
 }
@@ -554,6 +567,10 @@ docs/                             # 프로젝트 문서
 | POST   | /api/push/send        | 푸시 알림 발송                          | 관리자   |
 | GET    | /api/push/debug       | 구독자 수 확인 (디버그)                 | 관리자   |
 | GET    | /api/cron/notifications | D-day 알림 크론 (Vercel Cron에서 호출) | 크론     |
+| GET    | /api/cron/daily-schedule | 금일 일정 알림 크론 (신규)             | 크론     |
+| GET    | /api/cron/schedule-reminder | 일정 리마인더 크론 (신규)           | 크론     |
+| GET    | /api/push/settings     | 알림 설정 조회 (신규)                   | 로그인   |
+| PATCH  | /api/push/settings     | 알림 타입 토글 (신규)                   | 로그인   |
 
 ## UI 컴포넌트
 
@@ -604,9 +621,11 @@ docs/                             # 프로젝트 문서
   - 스크롤 가능한 콘텐츠 영역
   - 고정 푸터 (액션 버튼)
 
-### 공통
+### 공통 (2026-02-06 업데이트)
 
 - **BottomNav**: 하단 네비게이션 (홈, 목록, 캘린더, 세미나, 기사관리)
+- **EmptyState**: 빈 화면 컴포넌트 (아이콘 + 제목 + 설명 + CTA)
+- **Toaster (sonner)**: 토스트 알림 (success/error/warning)
 
 ## 기본 체크리스트 템플릿
 
@@ -903,6 +922,21 @@ return NextResponse.json(data, {
 - `stale-while-revalidate=60`: 60초간 캐시 응답 제공하면서 백그라운드 갱신
 
 ## 최근 업데이트 내역
+
+### 2026-02-06
+- **NDS 디자인가이드 기반 UI 개선**:
+  - sonner 토스트 도입: `alert()` 44개소 → `toast.success/error/warning` 전면 교체
+  - EmptyState 컴포넌트 생성: 빈 화면 10개소 교체 (아이콘+제목+설명+CTA)
+  - 터치 영역 확대: 버튼/입력/탭/셀렉트/스위치 최소 40px (WCAG 접근성)
+  - 모달 스크롤 방지: `position:fixed` + scroll restore 패턴 통일
+- **푸시 알림 확장**:
+  - 금일 일정 알림 크론 (`/api/cron/daily-schedule`): 매일 오전 8시 KST
+  - 일정 리마인더 크론 (`/api/cron/schedule-reminder`): 5분 간격, 회의 20분전/외근 1시간전
+  - 알림 타입별 관리: `notificationTypes` 배열 (dday/daily)
+  - 알림 설정 API (`/api/push/settings`): GET/PATCH
+- **푸시 알림 버그 수정**:
+  - 기존 구독자(`notificationTypes` 필드 미존재) daily/reminder 크론에서 누락되던 문제
+  - 3개 크론 모두 `$or` + `$exists: false` fallback 패턴 통일
 
 ### 2026-02-05
 - **설정 모달 UI 개선**:

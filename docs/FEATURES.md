@@ -218,14 +218,40 @@
 - **구독 방식**: 로그인 필요 (2026-02-04 업데이트)
 - **Service Worker**: 백그라운드 푸시 수신
 
+#### 알림 타입 (2026-02-06 업데이트)
+- **notificationTypes 배열**: 사용자별 알림 유형 선택 가능
+  - `dday`: 세미나 D-day 알림
+  - `daily`: 금일 일정 알림 + 일정 리마인더
+- **기존 구독자 호환**: `notificationTypes` 필드가 없는 기존 구독자도 `$exists: false` fallback으로 알림 수신
+
 #### D-day 알림
 - **발송 시간**: 매일 오전 10시(KST)
-- **크론 작업**: Vercel Cron으로 자동 실행
+- **크론 경로**: `/api/cron/notifications`
+- **크론 스케줄**: `0 1 * * *` (UTC)
 - **알림 내용**:
   - 패밀리오피스: 가장 가까운 예정 세미나
   - 법인: 가장 가까운 예정 세미나
   - 각 카테고리별 1건씩 (총 2건)
 - **알림 클릭**: 세미나 탭으로 자동 이동 (`/?tab=seminar`)
+
+#### 금일 일정 알림 (2026-02-06 신규)
+- **발송 시간**: 매일 오전 8시(KST)
+- **크론 경로**: `/api/cron/daily-schedule`
+- **크론 스케줄**: `0 23 * * *` (UTC, 전날 23시 = KST 다음날 8시)
+- **알림 내용**:
+  - 금일 세미나(준비중) + 일정(회의/외근) 합산
+  - 최대 3건 표시, 초과 시 "외 N건"
+- **알림 클릭**: 캘린더 탭으로 자동 이동 (`/?tab=calendar`)
+
+#### 일정 리마인더 (2026-02-06 신규)
+- **발송 조건**: 5분마다 체크
+- **크론 경로**: `/api/cron/schedule-reminder`
+- **크론 스케줄**: `*/5 * * * *`
+- **리마인더 규칙**:
+  - 회의: 시작 20분 전 알림
+  - 외근: 시작 1시간(60분) 전 알림
+- **중복 방지**: `notification_logs`에 발송 기록 저장, 같은 일정 당일 중복 발송 없음
+- **알림 클릭**: 캘린더 탭으로 자동 이동 (`/?tab=calendar`)
 
 #### 보안
 - VAPID 인증 (Web Push Protocol)
@@ -280,6 +306,31 @@
 
 ## UI/UX 특징
 
+### NDS 디자인가이드 기반 UI 개선 (2026-02-06)
+
+#### 토스트 알림 (sonner)
+- **라이브러리**: sonner
+- **위치**: 하단 중앙 (`bottom-center`)
+- **타입별 사용**:
+  - `toast.success()`: 저장/삭제 성공
+  - `toast.error()`: API 오류, 네트워크 오류
+  - `toast.warning()`: 유효성 검증 실패
+- **기존 alert() 44개소 전면 교체**
+
+#### EmptyState 컴포넌트
+- **파일**: `src/components/ui/empty-state.tsx`
+- **구성**: 아이콘 + 제목 + 설명(옵션) + CTA 버튼(옵션)
+- **적용 화면**: 기사 목록, 일정, 자료실, 세미나, 체크리스트 등 10개소
+
+#### 터치 영역 확대 (WCAG 접근성)
+- **기본**: 40px (Button default, Input, TabsList, SelectTrigger, Switch)
+- **최대**: 44px (Button lg)
+- **변경 파일**: button.tsx, input.tsx, tabs.tsx, select.tsx, switch.tsx
+
+#### 모달 스크롤 방지 통일
+- **패턴**: `position: fixed` + `scroll position restore`
+- **적용**: settings-dialog, resource-viewer, resource-form-dialog 등 모든 모달
+
 ### 하단 네비게이션
 - 홈, 목록, 캘린더, 세미나, 일정
 - 로그인 시: 자료실, 기사관리 탭 추가
@@ -330,6 +381,17 @@
 ---
 
 ## 업데이트 이력
+
+### 2026-02-06
+- NDS 디자인가이드 기반 UI 개선:
+  - sonner 토스트 도입 (alert 44개소 → toast 교체)
+  - EmptyState 컴포넌트 생성 및 10개소 적용
+  - 터치 영역 확대 (버튼/입력/탭/셀렉트/스위치 최소 40px)
+  - 모달 스크롤 방지 position:fixed 패턴 통일
+- 금일 일정 알림 크론 추가 (매일 오전 8시 KST)
+- 일정 리마인더 크론 추가 (회의 20분전, 외근 1시간전)
+- 알림 타입별 구독 관리 (dday/daily)
+- 푸시 알림 기존 구독자 fallback 쿼리 수정
 
 ### 2026-02-04
 - 권한 체계 개선 (푸시 알림 로그인 필수)

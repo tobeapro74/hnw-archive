@@ -635,20 +635,107 @@ D-day 알림 크론 (Vercel Cron에서 호출)
 
 매일 오전 10시(KST) 실행, 패밀리오피스/법인 카테고리별 가장 가까운 세미나 알림
 
+**크론 스케줄**: `0 1 * * *` (UTC)
+
 **인증**: `Authorization: Bearer {CRON_SECRET}`
+
+**구독자 조회**: `notificationTypes`에 `'dday'` 포함 또는 필드 없는 기존 구독자
 
 **Response**
 ```json
 {
   "success": true,
-  "notifications": [
-    {
-      "category": "패밀리오피스",
-      "title": "세미나명",
-      "dday": 7,
-      "sent": 10
-    }
-  ]
+  "seminarsNotified": 2,
+  "totalSent": 10,
+  "expiredRemoved": 0
+}
+```
+
+---
+
+### GET /api/cron/daily-schedule (신규 2026-02-06)
+금일 일정 알림 크론
+
+매일 오전 8시(KST) 실행, 금일 세미나(준비중) + 일정(회의/외근) 합산 알림
+
+**크론 스케줄**: `0 23 * * *` (UTC)
+
+**인증**: `Authorization: Bearer {CRON_SECRET}`
+
+**구독자 조회**: `notificationTypes`에 `'daily'` 포함 또는 필드 없는 기존 구독자
+
+**Response**
+```json
+{
+  "success": true,
+  "schedulesCount": 3,
+  "totalSent": 10,
+  "expiredRemoved": 0
+}
+```
+
+---
+
+### GET /api/cron/schedule-reminder (신규 2026-02-06)
+일정 리마인더 크론
+
+5분마다 실행, 회의 20분 전 / 외근 1시간 전 리마인더 발송
+
+**크론 스케줄**: `*/5 * * * *`
+
+**인증**: `Authorization: Bearer {CRON_SECRET}`
+
+**중복 방지**: `notification_logs`에 당일 발송 이력 확인 후 미발송분만 발송
+
+**구독자 조회**: `notificationTypes`에 `'daily'` 포함 또는 필드 없는 기존 구독자
+
+**Response**
+```json
+{
+  "success": true,
+  "remindersSent": 1,
+  "totalSent": 10,
+  "expiredRemoved": 0
+}
+```
+
+---
+
+### GET /api/push/settings (신규 2026-02-06)
+현재 구독의 알림 설정 조회
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| endpoint | O | 현재 구독의 endpoint URL |
+
+**Response**
+```json
+{
+  "success": true,
+  "notificationTypes": ["dday", "daily"]
+}
+```
+
+---
+
+### PATCH /api/push/settings (신규 2026-02-06)
+알림 타입 토글 (활성화/비활성화)
+
+**Request Body**
+```json
+{
+  "endpoint": "https://fcm.googleapis.com/...",
+  "type": "daily",
+  "enabled": false
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "notificationTypes": ["dday"]
 }
 ```
 

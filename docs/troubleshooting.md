@@ -7,7 +7,8 @@
 4. [세미나 관리 관련](#세미나-관리-관련)
 5. [파일 뷰어 관련](#파일-뷰어-관련)
 6. [모달/팝업 관련](#모달팝업-관련)
-7. [배포 관련](#배포-관련)
+7. [푸시 알림 관련](#푸시-알림-관련)
+8. [배포 관련](#배포-관련)
 
 ---
 
@@ -515,6 +516,48 @@ self.addEventListener('fetch', (event) => {
    - Safari: 설정 → Safari → 고급 → 웹 사이트 데이터 → 해당 사이트 삭제
    - PWA 삭제 후 재설치
    - 브라우저에서 직접 접속하여 테스트
+
+---
+
+## 푸시 알림 관련
+
+### 문제: 푸시 알림이 일부 사용자에게만 발송됨 (2026-02-06 해결)
+
+**증상**: 오전 일정 알림(daily-schedule)이나 리마인더(schedule-reminder)가 특정 사용자에게만 발송되고, 나머지 사용자에게는 발송되지 않음. D-day 알림은 정상 발송.
+
+**원인**: `daily-schedule` 및 `schedule-reminder` 크론의 MongoDB 쿼리에 기존 구독자 fallback이 누락됨.
+
+기존 구독자의 `push_subscriptions` 레코드에는 `notificationTypes` 필드가 존재하지 않음. D-day 크론에는 `$exists: false` fallback이 있었지만, daily/reminder 크론에는 없었음.
+
+```typescript
+// 버그 코드 (daily-schedule, schedule-reminder)
+const subscriptions = await db.collection('push_subscriptions').find({
+  notificationTypes: 'daily',  // ❌ $exists: false 누락
+}).toArray();
+
+// D-day 크론 (정상 코드)
+const subscriptions = await db.collection('push_subscriptions').find({
+  $or: [
+    { notificationTypes: 'dday' },
+    { notificationTypes: { $exists: false } }  // ✅ 기존 구독자 포함
+  ]
+}).toArray();
+```
+
+**해결책**: 3개 크론 모두 동일한 `$or` + `$exists: false` 패턴으로 통일
+
+```typescript
+const subscriptions = await db.collection('push_subscriptions').find({
+  $or: [
+    { notificationTypes: 'daily' },
+    { notificationTypes: { $exists: false } }
+  ]
+}).toArray();
+```
+
+**근본적 해결**: 사용자가 설정 화면에서 알림을 껐다 켜면 `notificationTypes: ['dday', 'daily']` 필드가 정상 생성되어 fallback 없이도 쿼리됨.
+
+**교훈**: 새로운 필드를 추가할 때 기존 레코드에 해당 필드가 없는 경우를 반드시 고려해야 함. 모든 관련 쿼리에 `$exists: false` fallback을 통일 적용할 것.
 
 ---
 
