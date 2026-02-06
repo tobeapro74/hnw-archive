@@ -793,7 +793,7 @@ function HomeContent() {
               {currentView === "home" && (
                 <span className="flex flex-col">
                   <span className="text-sm opacity-80">HNW</span>
-                  <span className="text-base">홍보 아카이브</span>
+                  <span className="text-base">아카이브</span>
                 </span>
               )}
               {currentView === "list" && "홍보 목록"}
