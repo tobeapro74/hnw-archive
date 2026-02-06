@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,7 +51,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <PullToRefresh>{children}</PullToRefresh>
         <Toaster richColors closeButton position="bottom-center" />
       </body>
     </html>
