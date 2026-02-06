@@ -45,7 +45,10 @@ export async function GET(request: NextRequest) {
 
     // 'daily' 알림을 활성화한 구독자 조회
     const subscriptions = await db.collection('push_subscriptions').find({
-      notificationTypes: 'daily',  // 배열에 'daily' 포함
+      $or: [
+        { notificationTypes: 'daily' },
+        { notificationTypes: { $exists: false } }  // 기존 구독자 포함 (기본값)
+      ]
     }).toArray();
 
     if (subscriptions.length === 0) {
