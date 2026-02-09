@@ -25,7 +25,7 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
 
   // 필터 상태
-  const [selectedCategory, setSelectedCategory] = useState<ScheduleCategory | "전체">("전체");
+  const [selectedCategory, setSelectedCategory] = useState<ScheduleCategory | "전체" | "지난일정">("전체");
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   // 일정 목록 조회
@@ -66,12 +66,34 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
 
   // 필터링된 일정
   const filteredSchedules = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isPastFilter = selectedCategory === "지난일정";
+
     return schedules.filter((schedule) => {
-      if (selectedCategory !== "전체" && schedule.category !== selectedCategory) {
-        return false;
+      const scheduleDate = new Date(schedule.date);
+      scheduleDate.setHours(0, 0, 0, 0);
+
+      if (isPastFilter) {
+        // 지난일정: 오늘 이전 일정만
+        return scheduleDate < today;
+      } else {
+        // 다가오는 일정: 오늘 이후 일정만 + 카테고리 필터
+        if (scheduleDate < today) return false;
+        if (selectedCategory !== "전체" && schedule.category !== selectedCategory) {
+          return false;
+        }
+        return true;
       }
-      return true;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }).sort((a, b) => {
+      if (isPastFilter) {
+        // 지난일정: 최근 것이 위로 (내림차순)
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+      // 다가오는 일정: 가까운 것이 위로 (오름차순)
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
   }, [schedules, selectedCategory]);
 
   // 월별로 그룹화
@@ -212,6 +234,15 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
         >
           📌 기타
         </Button>
+        <div className="w-px h-5 bg-border flex-shrink-0" />
+        <Button
+          variant={selectedCategory === "지난일정" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedCategory("지난일정")}
+          className="flex-shrink-0"
+        >
+          🕐 지난일정
+        </Button>
       </div>
 
       {/* 일정 목록 */}
@@ -239,9 +270,9 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
       ) : (
         <EmptyState
           icon={Calendar}
-          title="등록된 일정이 없습니다."
-          description={readOnly ? undefined : "새 일정을 등록해보세요."}
-          action={readOnly ? undefined : { label: "첫 일정 만들기", onClick: handleNewSchedule }}
+          title={selectedCategory === "지난일정" ? "지난 일정이 없습니다." : "다가오는 일정이 없습니다."}
+          description={readOnly || selectedCategory === "지난일정" ? undefined : "새 일정을 등록해보세요."}
+          action={readOnly || selectedCategory === "지난일정" ? undefined : { label: "첫 일정 만들기", onClick: handleNewSchedule }}
         />
       )}
 
