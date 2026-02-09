@@ -204,36 +204,24 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
       </div>
 
       {/* 필터 */}
-      <div className="flex gap-2 items-center overflow-x-auto pb-2">
+      <div className="flex gap-2 items-center overflow-x-auto pb-2 scrollbar-hide">
         <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        <Button
-          variant={selectedCategory === "전체" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedCategory("전체")}
-        >
-          전체
-        </Button>
-        <Button
-          variant={selectedCategory === "회의" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedCategory("회의")}
-        >
-          💼 회의
-        </Button>
-        <Button
-          variant={selectedCategory === "외근" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedCategory("외근")}
-        >
-          🚗 외근
-        </Button>
-        <Button
-          variant={selectedCategory === "기타" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedCategory("기타")}
-        >
-          📌 기타
-        </Button>
+        {([
+          { key: "전체" as const, label: "전체" },
+          { key: "회의" as const, label: "💼 회의" },
+          { key: "외근" as const, label: "🚗 외근" },
+          { key: "기타" as const, label: "📌 기타" },
+        ] as const).map((item) => (
+          <Button
+            key={item.key}
+            variant={selectedCategory === item.key ? "default" : "outline"}
+            size="sm"
+            className="flex-shrink-0"
+            onClick={() => setSelectedCategory(item.key)}
+          >
+            {item.label}
+          </Button>
+        ))}
         <div className="w-px h-5 bg-border flex-shrink-0" />
         <Button
           variant={selectedCategory === "지난일정" ? "default" : "outline"}

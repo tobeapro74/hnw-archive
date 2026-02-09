@@ -96,6 +96,15 @@ body {
   overflow: hidden;
 }
 
+/* Scrollbar hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Shadow */
 .shadow-premium {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
