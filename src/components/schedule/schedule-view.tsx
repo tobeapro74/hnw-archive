@@ -204,33 +204,36 @@ export function ScheduleView({ highlightScheduleId, onHighlightHandled, readOnly
       </div>
 
       {/* 필터 */}
-      <div className="flex gap-2 items-center overflow-x-auto pb-2 scrollbar-hide">
-        <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        {([
-          { key: "전체" as const, label: "전체" },
-          { key: "회의" as const, label: "💼 회의" },
-          { key: "외근" as const, label: "🚗 외근" },
-          { key: "기타" as const, label: "📌 기타" },
-        ] as const).map((item) => (
+      <div className="relative">
+        <div className="flex gap-2 items-center overflow-x-auto pb-2 scrollbar-hide pr-6">
+          <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          {([
+            { key: "전체" as const, label: "전체" },
+            { key: "회의" as const, label: "💼 회의" },
+            { key: "외근" as const, label: "🚗 외근" },
+            { key: "기타" as const, label: "📌 기타" },
+          ] as const).map((item) => (
+            <Button
+              key={item.key}
+              variant={selectedCategory === item.key ? "default" : "outline"}
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => setSelectedCategory(item.key)}
+            >
+              {item.label}
+            </Button>
+          ))}
+          <div className="w-px h-5 bg-border flex-shrink-0" />
           <Button
-            key={item.key}
-            variant={selectedCategory === item.key ? "default" : "outline"}
+            variant={selectedCategory === "지난일정" ? "default" : "outline"}
             size="sm"
+            onClick={() => setSelectedCategory("지난일정")}
             className="flex-shrink-0"
-            onClick={() => setSelectedCategory(item.key)}
           >
-            {item.label}
+            🕐 지난일정
           </Button>
-        ))}
-        <div className="w-px h-5 bg-border flex-shrink-0" />
-        <Button
-          variant={selectedCategory === "지난일정" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedCategory("지난일정")}
-          className="flex-shrink-0"
-        >
-          🕐 지난일정
-        </Button>
+        </div>
+        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
       </div>
 
       {/* 일정 목록 */}
