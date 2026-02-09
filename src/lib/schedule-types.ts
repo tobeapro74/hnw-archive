@@ -20,6 +20,7 @@ export interface Schedule {
   // 회의 관련 필드
   meetingType?: MeetingType;        // "팀회의" | "외부미팅" | "부서간회의"
   meetingTopic?: string;            // 회의주제
+  meetingEtc?: string;              // 기타 (외부미팅 시 추가 정보)
 
   // 외근 관련 필드
   outingType?: OutingType;          // "직원미팅" | "고객미팅"
@@ -55,6 +56,7 @@ export interface CreateScheduleRequest {
   // 회의
   meetingType?: MeetingType;
   meetingTopic?: string;
+  meetingEtc?: string;
 
   // 외근
   outingType?: OutingType;

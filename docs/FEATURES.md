@@ -331,6 +331,19 @@
 - **패턴**: `position: fixed` + `scroll position restore`
 - **적용**: settings-dialog, resource-viewer, resource-form-dialog 등 모든 모달
 
+#### Pull-to-Refresh (당겨서 새로고침)
+- **파일**: `src/components/ui/pull-to-refresh.tsx`
+- **적용**: 루트 레이아웃(`layout.tsx`)에서 전체 children 감싸기 → 모든 화면에서 동작
+- **동작 방식**:
+  - 화면 최상단에서 아래로 터치 드래그 시 활성화
+  - 임계값 80px 이상 당기면 새로고침 트리거
+  - 최대 당김 거리 120px, 감속 효과(50%) 적용
+- **시각적 피드백**:
+  - 화살표 아이콘: 당김 진행도에 따라 0°→180° 회전
+  - 텍스트: "당겨서 새로고침" → "놓으면 새로고침" → "새로고침 중..."
+  - 로딩 스피너: 새로고침 진행 중 표시
+- **새로고침 방식**: `router.refresh()` + 300ms 후 `window.location.reload()`
+
 ### 하단 네비게이션
 - 홈, 목록, 캘린더, 세미나, 일정
 - 로그인 시: 자료실, 기사관리 탭 추가
@@ -383,6 +396,7 @@
 ## 업데이트 이력
 
 ### 2026-02-06
+- Pull-to-Refresh 기능 추가: 모든 화면에서 당겨서 새로고침 지원
 - NDS 디자인가이드 기반 UI 개선:
   - sonner 토스트 도입 (alert 44개소 → toast 교체)
   - EmptyState 컴포넌트 생성 및 10개소 적용

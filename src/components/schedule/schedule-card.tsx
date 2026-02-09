@@ -57,6 +57,13 @@ export function ScheduleCard({ schedule, onClick }: ScheduleCardProps) {
             <span>{schedule.location}</span>
           </div>
 
+          {/* 외부미팅 기타 정보 */}
+          {schedule.category === "회의" && schedule.meetingEtc && (
+            <div className="mt-2 p-2 bg-muted rounded text-xs">
+              <strong>기타:</strong> {schedule.meetingEtc}
+            </div>
+          )}
+
           {/* 외근 정보 */}
           {schedule.category === "외근" && (
             <>

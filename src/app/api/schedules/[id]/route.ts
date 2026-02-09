@@ -81,6 +81,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.location !== undefined) updateFields.location = body.location;
     if (body.meetingType !== undefined) updateFields.meetingType = body.meetingType;
     if (body.meetingTopic !== undefined) updateFields.meetingTopic = body.meetingTopic;
+    if (body.meetingEtc !== undefined) updateFields.meetingEtc = body.meetingEtc;
     if (body.outingType !== undefined) updateFields.outingType = body.outingType;
     if (body.center !== undefined) updateFields.center = body.center;
     if (body.rmName !== undefined) updateFields.rmName = body.rmName;

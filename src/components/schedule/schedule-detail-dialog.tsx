@@ -98,6 +98,16 @@ export function ScheduleDetailDialog({
               <span>{schedule.location}</span>
             </div>
 
+            {/* 외부미팅 기타 정보 */}
+            {schedule.category === "회의" && schedule.meetingEtc && (
+              <div className="mt-3 p-3 bg-muted rounded-lg">
+                <div className="text-sm font-medium mb-1">기타</div>
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {schedule.meetingEtc}
+                </div>
+              </div>
+            )}
+
             {/* 외근 상세 정보 */}
             {schedule.category === "외근" && (
               <>

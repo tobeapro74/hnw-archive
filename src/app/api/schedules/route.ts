@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       location: body.location || "-",
       meetingType: body.meetingType,
       meetingTopic: body.meetingTopic,
+      meetingEtc: body.meetingEtc,
       outingType: body.outingType,
       center: body.center,
       rmName: body.rmName,

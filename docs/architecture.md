@@ -88,7 +88,8 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   └── globals.css               # 전역 스타일
 ├── components/
 │   ├── ui/                       # shadcn/ui 기본 컴포넌트
-│   │   └── empty-state.tsx       # EmptyState 컴포넌트 (신규)
+│   │   ├── empty-state.tsx       # EmptyState 컴포넌트 (신규)
+│   │   └── pull-to-refresh.tsx  # Pull-to-Refresh 컴포넌트 (신규)
 │   ├── resource/                 # 자료실 관련 컴포넌트 (신규)
 │   │   ├── resource-view.tsx     # 자료실 메인 뷰
 │   │   ├── resource-card.tsx     # 자료 카드 (파일 그룹화 지원)
@@ -625,6 +626,7 @@ docs/                             # 프로젝트 문서
 
 - **BottomNav**: 하단 네비게이션 (홈, 목록, 캘린더, 세미나, 기사관리)
 - **EmptyState**: 빈 화면 컴포넌트 (아이콘 + 제목 + 설명 + CTA)
+- **PullToRefresh**: 당겨서 새로고침 (루트 레이아웃 적용, 전 화면 지원)
 - **Toaster (sonner)**: 토스트 알림 (success/error/warning)
 
 ## 기본 체크리스트 템플릿
@@ -924,6 +926,7 @@ return NextResponse.json(data, {
 ## 최근 업데이트 내역
 
 ### 2026-02-06
+- **Pull-to-Refresh 추가**: 모든 화면에서 당겨서 새로고침 지원 (`pull-to-refresh.tsx`, 루트 레이아웃 적용)
 - **NDS 디자인가이드 기반 UI 개선**:
   - sonner 토스트 도입: `alert()` 44개소 → `toast.success/error/warning` 전면 교체
   - EmptyState 컴포넌트 생성: 빈 화면 10개소 교체 (아이콘+제목+설명+CTA)

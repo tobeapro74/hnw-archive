@@ -47,6 +47,7 @@ export function ScheduleFormDialog({
     // 회의
     meetingType: undefined as MeetingType | undefined,
     meetingTopic: "",
+    meetingEtc: "",
     // 외근
     outingType: undefined as OutingType | undefined,
     center: "",
@@ -74,6 +75,7 @@ export function ScheduleFormDialog({
         location: schedule.location,
         meetingType: schedule.meetingType,
         meetingTopic: schedule.meetingTopic || "",
+        meetingEtc: schedule.meetingEtc || "",
         outingType: schedule.outingType,
         center: schedule.center || "",
         rmName: schedule.rmName || "",
@@ -94,6 +96,7 @@ export function ScheduleFormDialog({
         location: "",
         meetingType: undefined,
         meetingTopic: "",
+        meetingEtc: "",
         outingType: undefined,
         center: "",
         rmName: "",
@@ -149,6 +152,10 @@ export function ScheduleFormDialog({
         location: formData.location || "-",
         meetingType: formData.category === "회의" ? formData.meetingType : undefined,
         meetingTopic: formData.category === "회의" ? (formData.meetingTopic || undefined) : undefined,
+        meetingEtc:
+          formData.category === "회의" && formData.meetingType === "외부미팅"
+            ? (formData.meetingEtc || undefined)
+            : undefined,
         outingType: formData.category === "외근" ? formData.outingType : undefined,
         center: formData.category === "외근" ? (formData.center || undefined) : undefined,
         rmName: formData.category === "외근" ? (formData.rmName || undefined) : undefined,
@@ -339,6 +346,21 @@ export function ScheduleFormDialog({
                   placeholder="예: 2026년 1분기 마케팅 계획"
                 />
               </div>
+
+              {formData.meetingType === "외부미팅" && (
+                <div className="space-y-2">
+                  <Label htmlFor="meetingEtc">기타</Label>
+                  <Textarea
+                    id="meetingEtc"
+                    value={formData.meetingEtc}
+                    onChange={(e) =>
+                      setFormData({ ...formData, meetingEtc: e.target.value })
+                    }
+                    placeholder="회의주제 이외의 추가 정보를 입력하세요"
+                    rows={2}
+                  />
+                </div>
+              )}
             </>
           )}
 
