@@ -19,7 +19,7 @@ import { MonthlyTimeline } from "@/components/dashboard/monthly-timeline";
 import { HighlightSection } from "@/components/dashboard/highlight-section";
 import { SeminarView } from "@/components/seminar";
 import { ResourceView } from "@/components/resources";
-import { ScheduleView } from "@/components/schedule";
+import { ScheduleView, ScheduleDetailDialog } from "@/components/schedule";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
@@ -73,6 +73,10 @@ function HomeContent() {
   // 연관 기사 모달
   const [relatedModalOpen, setRelatedModalOpen] = useState(false);
   const [selectedEventName, setSelectedEventName] = useState<string>("");
+
+  // 캘린더 일정 상세 모달
+  const [calendarScheduleDetailOpen, setCalendarScheduleDetailOpen] = useState(false);
+  const [calendarSelectedSchedule, setCalendarSelectedSchedule] = useState<Schedule | null>(null);
 
   // 캘린더에서 탭 이동 시 전달할 데이터
   const [targetSeminarMonth, setTargetSeminarMonth] = useState<Date | null>(null);
@@ -383,10 +387,10 @@ function HomeContent() {
     setRelatedModalOpen(true);
   };
 
-  // 캘린더에서 일정 카드 클릭 시 읽기전용 일정 탭으로 이동
-  const handleCalendarScheduleClick = (_schedule: Schedule) => {
-    setPreviousView(currentView);
-    setCurrentView("schedule");
+  // 캘린더에서 일정 카드 클릭 시 상세 모달 표시
+  const handleCalendarScheduleClick = (schedule: Schedule) => {
+    setCalendarSelectedSchedule(schedule);
+    setCalendarScheduleDetailOpen(true);
   };
 
   // 캘린더에서 세미나 카드 클릭 시 세미나 탭으로 이동
@@ -883,6 +887,18 @@ function HomeContent() {
         isAdmin={user?.is_admin}
         hasResourceAccess={user?.is_admin || (user?.email ? RESOURCE_ALLOWED_EMAILS.includes(user.email) : false)}
       />
+
+      {/* 캘린더 일정 상세 모달 */}
+      {calendarSelectedSchedule && (
+        <ScheduleDetailDialog
+          open={calendarScheduleDetailOpen}
+          onOpenChange={setCalendarScheduleDetailOpen}
+          schedule={calendarSelectedSchedule}
+          onEdit={() => {}}
+          onDelete={() => {}}
+          readOnly
+        />
+      )}
 
       {/* 연관 기사 모달 */}
       <Dialog open={relatedModalOpen} onOpenChange={setRelatedModalOpen}>
