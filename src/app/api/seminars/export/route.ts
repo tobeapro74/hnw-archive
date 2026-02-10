@@ -96,8 +96,24 @@ export async function POST(request: Request) {
 
     rows.sort((a, b) => a.날짜.localeCompare(b.날짜));
 
-    // 워크시트 생성
-    const ws = XLSX.utils.json_to_sheet(rows);
+    // 다운로드 날짜 기준 누적 회수 계산
+    const today = formatDate(new Date());
+    const regularCount = rows.filter(r => r.구분 === "정기" && r.날짜 <= today).length;
+    const irregularCount = rows.filter(r => r.구분 === "비정기" && r.날짜 <= today).length;
+
+    // AOA 구성: 상단 요약 + 빈 행 + 데이터 테이블
+    const headers = ["구분", "날짜", "주관", "세미나명", "장소", "인원", "주차", "담당자", "기타(지원 등)"];
+    const SUMMARY_ROWS = 4; // 요약 3행 + 빈 행 1행
+    const aoa: (string | number)[][] = [
+      [`*${yearNum}년 세미나 회수`],
+      ["정기", regularCount],
+      ["비정기", irregularCount],
+      [],
+      headers,
+      ...rows.map(r => [r.구분, r.날짜, r.주관, r.세미나명, r.장소, r.인원, r.주차, r.담당자, r["기타(지원 등)"]]),
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [
       { wch: 8 },  // 구분
       { wch: 12 }, // 날짜
@@ -110,8 +126,7 @@ export async function POST(request: Request) {
       { wch: 30 }, // 기타(지원 등)
     ];
 
-    // 스타일 적용: 헤더(회색+볼드) + 전체 그리드
-    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+    // 스타일 정의
     const border = {
       top: { style: "thin", color: { rgb: "000000" } },
       bottom: { style: "thin", color: { rgb: "000000" } },
@@ -119,19 +134,35 @@ export async function POST(request: Request) {
       right: { style: "thin", color: { rgb: "000000" } },
     };
 
-    for (let R = range.s.r; R <= range.e.r; R++) {
-      for (let C = range.s.c; C <= range.e.c; C++) {
+    // 요약 영역 스타일
+    // Row 0: 제목 볼드
+    const titleAddr = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (ws[titleAddr]) ws[titleAddr].s = { font: { bold: true } };
+
+    // Row 1-2: 정기/비정기 요약 (테두리)
+    for (let R = 1; R <= 2; R++) {
+      for (let C = 0; C <= 1; C++) {
         const addr = XLSX.utils.encode_cell({ r: R, c: C });
         if (!ws[addr]) ws[addr] = { v: "", t: "s" };
-        if (R === 0) {
-          // 헤더: 회색 배경 + 볼드
+        ws[addr].s = { border };
+      }
+    }
+
+    // 데이터 테이블 스타일
+    const headerRow = SUMMARY_ROWS; // row index 4
+    const dataRange = XLSX.utils.decode_range(ws["!ref"] || "A1");
+
+    for (let R = headerRow; R <= dataRange.e.r; R++) {
+      for (let C = 0; C <= 8; C++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) ws[addr] = { v: "", t: "s" };
+        if (R === headerRow) {
           ws[addr].s = {
             font: { bold: true },
             fill: { fgColor: { rgb: "D9D9D9" } },
             border,
           };
         } else {
-          // 데이터: 그리드만
           ws[addr].s = { border };
         }
       }
