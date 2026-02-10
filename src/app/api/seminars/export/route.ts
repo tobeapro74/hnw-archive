@@ -5,14 +5,13 @@ import * as XLSX from "xlsx";
 
 interface ExcelRow {
   날짜: string;
-  요청센터: string;
+  주관: string;
+  세미나명: string;
+  장소: string;
+  인원: string;
+  주차: string;
   담당자: string;
-  "세미나 장소": string;
-  수용가능인원: string;
-  세미나실: string;
-  주차지원여부: string;
-  센터담당자: string;
-  지원내용: string;
+  "기타(지원 등)": string;
 }
 
 function formatDate(date: Date | string): string {
@@ -26,28 +25,26 @@ function formatDate(date: Date | string): string {
 function seminarToRow(seminar: Seminar): ExcelRow {
   return {
     날짜: formatDate(seminar.date),
-    요청센터: "",
-    담당자: seminar.title,
-    "세미나 장소": seminar.location,
-    수용가능인원: seminar.expectedAttendees?.toString() || "",
-    세미나실: "",
-    주차지원여부: seminar.parkingSupport ? "O" : "X",
-    센터담당자: "",
-    지원내용: seminar.description || "",
+    주관: "",
+    세미나명: seminar.title,
+    장소: seminar.location,
+    인원: seminar.expectedAttendees?.toString() || "",
+    주차: seminar.parkingSupport ? "O" : "X",
+    담당자: "",
+    "기타(지원 등)": seminar.description || "",
   };
 }
 
 function requestToRow(request: SeminarRequest): ExcelRow {
   return {
     날짜: formatDate(request.requestedDate),
-    요청센터: request.requestingCenter,
+    주관: request.requestingCenter,
+    세미나명: request.targetCorporation,
+    장소: request.requestLocation,
+    인원: request.maxAttendees?.toString() || "",
+    주차: request.parkingSupport ? "O" : "X",
     담당자: request.receiver,
-    "세미나 장소": request.requestLocation,
-    수용가능인원: request.maxAttendees?.toString() || "",
-    세미나실: request.requestLocation,
-    주차지원여부: request.parkingSupport ? "O" : "X",
-    센터담당자: request.centerContact || "",
-    지원내용: request.topics?.join(", ") || "",
+    "기타(지원 등)": request.topics?.join(", ") || "",
   };
 }
 
@@ -99,8 +96,14 @@ export async function POST(request: Request) {
     // 워크시트 생성
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
-      { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
-      { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 30 },
+      { wch: 12 }, // 날짜
+      { wch: 15 }, // 주관
+      { wch: 35 }, // 세미나명
+      { wch: 20 }, // 장소
+      { wch: 8 },  // 인원
+      { wch: 6 },  // 주차
+      { wch: 12 }, // 담당자
+      { wch: 30 }, // 기타(지원 등)
     ];
 
     const wb = XLSX.utils.book_new();
