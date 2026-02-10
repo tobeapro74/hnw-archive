@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { Seminar, SeminarRequest } from "@/lib/seminar-types";
-import * as XLSX from "xlsx";
+import XLSX from "xlsx-js-style";
 
 interface ExcelRow {
+  구분: string;
   날짜: string;
   주관: string;
   세미나명: string;
@@ -24,6 +25,7 @@ function formatDate(date: Date | string): string {
 
 function seminarToRow(seminar: Seminar): ExcelRow {
   return {
+    구분: "정기",
     날짜: formatDate(seminar.date),
     주관: "",
     세미나명: seminar.title,
@@ -37,6 +39,7 @@ function seminarToRow(seminar: Seminar): ExcelRow {
 
 function requestToRow(request: SeminarRequest): ExcelRow {
   return {
+    구분: "비정기",
     날짜: formatDate(request.requestedDate),
     주관: request.requestingCenter,
     세미나명: request.targetCorporation,
@@ -96,6 +99,7 @@ export async function POST(request: Request) {
     // 워크시트 생성
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
+      { wch: 8 },  // 구분
       { wch: 12 }, // 날짜
       { wch: 15 }, // 주관
       { wch: 35 }, // 세미나명
@@ -105,6 +109,33 @@ export async function POST(request: Request) {
       { wch: 12 }, // 담당자
       { wch: 30 }, // 기타(지원 등)
     ];
+
+    // 스타일 적용: 헤더(회색+볼드) + 전체 그리드
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+    const border = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } },
+    };
+
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) ws[addr] = { v: "", t: "s" };
+        if (R === 0) {
+          // 헤더: 회색 배경 + 볼드
+          ws[addr].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "D9D9D9" } },
+            border,
+          };
+        } else {
+          // 데이터: 그리드만
+          ws[addr].s = { border };
+        }
+      }
+    }
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "세미나현황");
