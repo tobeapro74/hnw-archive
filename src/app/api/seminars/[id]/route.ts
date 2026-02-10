@@ -106,6 +106,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.expectedAttendees !== undefined) updateFields.expectedAttendees = body.expectedAttendees;
     if (body.actualAttendees !== undefined) updateFields.actualAttendees = body.actualAttendees;
     if (body.description !== undefined) updateFields.description = body.description;
+    if (body.parkingSupport !== undefined) updateFields.parkingSupport = body.parkingSupport;
     if (body.status !== undefined) updateFields.status = body.status;
 
     const result = await collection.findOneAndUpdate(

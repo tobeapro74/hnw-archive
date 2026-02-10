@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
       targetType: body.targetType,
       expectedAttendees: body.expectedAttendees,
       description: body.description,
+      parkingSupport: body.parkingSupport || false,
       status: "준비중",
       requestId: body.requestId,
       createdAt: now,

@@ -57,6 +57,7 @@ export function SeminarRequestFormDialog({
     topicDetail: "",
     receiver: "",
     centerContact: "",
+    parkingSupport: false,
     notes: "",
     status: "요청접수" as SeminarRequestStatus,
   });
@@ -77,6 +78,7 @@ export function SeminarRequestFormDialog({
         topicDetail: request.topicDetail || "",
         receiver: request.receiver,
         centerContact: request.centerContact || "",
+        parkingSupport: request.parkingSupport || false,
         notes: request.notes || "",
         status: request.status,
       });
@@ -92,6 +94,7 @@ export function SeminarRequestFormDialog({
         topicDetail: "",
         receiver: "",
         centerContact: "",
+        parkingSupport: false,
         notes: "",
         status: "요청접수",
       });
@@ -134,6 +137,7 @@ export function SeminarRequestFormDialog({
         topicDetail: formData.topics.includes("기타") ? formData.topicDetail : undefined,
         receiver: formData.receiver,
         centerContact: formData.centerContact || undefined,
+        parkingSupport: formData.parkingSupport,
         notes: formData.notes || undefined,
       };
 
@@ -287,6 +291,19 @@ export function SeminarRequestFormDialog({
               />
               <span className="text-sm text-muted-foreground">명</span>
             </div>
+          </div>
+
+          {/* 주차지원여부 */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.parkingSupport}
+                onChange={(e) => setFormData({ ...formData, parkingSupport: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm font-medium">주차지원여부</span>
+            </label>
           </div>
 
           {/* 요청일자 */}

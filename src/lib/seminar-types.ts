@@ -45,6 +45,7 @@ export interface Seminar {
   expectedAttendees?: number;         // 예상 참석자 수
   actualAttendees?: number;           // 실제 참석자 수
   description?: string;
+  parkingSupport?: boolean;              // 주차지원여부
   status: SeminarStatus;
   // 비정기 세미나 요청 연결 (비정기인 경우)
   requestId?: string;
@@ -66,6 +67,7 @@ export interface SeminarRequest {
   topicDetail?: string;               // 주제 상세 (기타인 경우)
   receiver: string;                   // 접수자
   centerContact?: string;             // 센터 담당자
+  parkingSupport?: boolean;           // 주차지원여부
   status: SeminarRequestStatus;       // 요청 상태
   // 승인 시 연결되는 세미나 ID
   seminarId?: string;
@@ -127,6 +129,7 @@ export interface CreateSeminarRequest {
   targetType?: TargetType;
   expectedAttendees?: number;
   description?: string;
+  parkingSupport?: boolean;
   requestId?: string;                 // 비정기 세미나의 경우 요청 ID
 }
 
@@ -148,6 +151,7 @@ export interface CreateSeminarRequestInput {
   topicDetail?: string;
   receiver: string;
   centerContact?: string;
+  parkingSupport?: boolean;
   notes?: string;
 }
 

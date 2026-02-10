@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Calendar as CalendarIcon, List, X, Megaphone } from "lucide-react";
+import { Calendar as CalendarIcon, List, X, Megaphone, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { exportSeminarsToExcel } from "@/lib/seminar-excel-export";
 
 type ViewMode = "calendar" | "list";
 type FilterType = "all" | "정기" | "비정기";
@@ -349,6 +350,19 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
               <SelectItem value="법인">법인</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="flex-1" />
+
+          {/* 엑셀 내보내기 */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 px-2"
+            onClick={() => exportSeminarsToExcel(filteredSeminars, filteredRequests, selectedYear)}
+            title="엑셀 내보내기"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
 
         </div>
       </div>

@@ -82,6 +82,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.topicDetail !== undefined) updateFields.topicDetail = body.topicDetail;
     if (body.receiver !== undefined) updateFields.receiver = body.receiver;
     if (body.centerContact !== undefined) updateFields.centerContact = body.centerContact;
+    if (body.parkingSupport !== undefined) updateFields.parkingSupport = body.parkingSupport;
     if (body.status !== undefined) updateFields.status = body.status;
     if (body.seminarId !== undefined) updateFields.seminarId = body.seminarId;
     if (body.notes !== undefined) updateFields.notes = body.notes;

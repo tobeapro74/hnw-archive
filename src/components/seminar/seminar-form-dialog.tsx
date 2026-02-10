@@ -49,6 +49,7 @@ export function SeminarFormDialog({
     targetType: undefined as TargetType | undefined,
     expectedAttendees: "",
     actualAttendees: "",
+    parkingSupport: false,
     description: "",
     status: "준비중" as SeminarStatus,
   });
@@ -69,6 +70,7 @@ export function SeminarFormDialog({
         targetType: seminar.targetType,
         expectedAttendees: seminar.expectedAttendees?.toString() || "",
         actualAttendees: seminar.actualAttendees?.toString() || "",
+        parkingSupport: seminar.parkingSupport || false,
         description: seminar.description || "",
         status: seminar.status,
       });
@@ -84,6 +86,7 @@ export function SeminarFormDialog({
         targetType: undefined,
         expectedAttendees: "",
         actualAttendees: "",
+        parkingSupport: false,
         description: "",
         status: "준비중",
       });
@@ -111,6 +114,7 @@ export function SeminarFormDialog({
           ? parseInt(formData.expectedAttendees)
           : undefined,
         description: formData.description || undefined,
+        parkingSupport: formData.parkingSupport,
       };
 
       if (isEditing) {
@@ -343,6 +347,19 @@ export function SeminarFormDialog({
                 />
               </div>
             )}
+          </div>
+
+          {/* 주차지원여부 */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.parkingSupport}
+                onChange={(e) => setFormData({ ...formData, parkingSupport: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm font-medium">주차지원여부</span>
+            </label>
           </div>
 
           {/* 상태 (편집 모드) */}

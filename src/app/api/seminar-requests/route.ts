@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       topicDetail: body.topicDetail,
       receiver: body.receiver,
       centerContact: body.centerContact,
+      parkingSupport: body.parkingSupport || false,
       status: "요청접수",
       notes: body.notes,
       createdAt: now,
