@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { Seminar, SeminarRequest } from "@/lib/seminar-types";
 import * as XLSX from "xlsx";
-import * as fs from "fs";
-import * as path from "path";
-
-const EXPORT_DIR = "/Users/byungchulpark/Downloads/(0)회의록/엑셀";
 
 interface ExcelRow {
   날짜: string;
@@ -55,7 +51,7 @@ function requestToRow(request: SeminarRequest): ExcelRow {
   };
 }
 
-// POST /api/seminars/export - 엑셀 파일 저장
+// POST /api/seminars/export - 엑셀 파일 다운로드
 export async function POST(request: Request) {
   try {
     const { year, seminarType, category } = await request.json();
@@ -110,26 +106,21 @@ export async function POST(request: Request) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "세미나현황");
 
-    // 디렉토리 확인 및 생성
-    if (!fs.existsSync(EXPORT_DIR)) {
-      fs.mkdirSync(EXPORT_DIR, { recursive: true });
-    }
+    // 메모리에서 바이너리 생성
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 
-    // 파일 저장
-    const fileName = `세미나현황_${year}.xlsx`;
-    const filePath = path.join(EXPORT_DIR, fileName);
-    XLSX.writeFile(wb, filePath);
+    const fileName = encodeURIComponent(`세미나현황_${year}.xlsx`);
 
-    return NextResponse.json({
-      success: true,
-      filePath,
-      fileName,
-      rowCount: rows.length,
+    return new Response(buf, {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
+      },
     });
   } catch (error) {
     console.error("POST /api/seminars/export error:", error);
     return NextResponse.json(
-      { error: "엑셀 파일 저장에 실패했습니다." },
+      { error: "엑셀 파일 생성에 실패했습니다." },
       { status: 500 }
     );
   }
