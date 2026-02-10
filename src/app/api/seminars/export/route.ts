@@ -11,7 +11,8 @@ interface ExcelRow {
   장소: string;
   인원: string;
   주차: string;
-  담당자: string;
+  접수자: string;
+  센터담당자: string;
   "기타(지원 등)": string;
 }
 
@@ -32,7 +33,8 @@ function seminarToRow(seminar: Seminar): ExcelRow {
     장소: seminar.location,
     인원: seminar.expectedAttendees?.toString() || "",
     주차: seminar.parkingSupport ? "O" : "X",
-    담당자: "",
+    접수자: "",
+    센터담당자: "",
     "기타(지원 등)": seminar.description || "",
   };
 }
@@ -46,7 +48,8 @@ function requestToRow(request: SeminarRequest): ExcelRow {
     장소: request.requestLocation,
     인원: request.maxAttendees?.toString() || "",
     주차: request.parkingSupport ? "O" : "X",
-    담당자: request.receiver,
+    접수자: request.receiver,
+    센터담당자: request.centerContact || "",
     "기타(지원 등)": request.topics?.join(", ") || "",
   };
 }
@@ -96,21 +99,22 @@ export async function POST(request: Request) {
 
     rows.sort((a, b) => a.날짜.localeCompare(b.날짜));
 
-    // 다운로드 날짜 기준 누적 회수 계산
+    // 다운로드 날짜 기준 누적 회수 계산 (해당 연도 내 날짜 <= 오늘인 건수)
     const today = formatDate(new Date());
-    const regularCount = rows.filter(r => r.구분 === "정기" && r.날짜 <= today).length;
-    const irregularCount = rows.filter(r => r.구분 === "비정기" && r.날짜 <= today).length;
+    const regularCount = rows.filter(r => r.구분 === "정기").length;
+    const irregularCount = rows.filter(r => r.구분 === "비정기").length;
 
     // AOA 구성: 상단 요약 + 빈 행 + 데이터 테이블
-    const headers = ["구분", "날짜", "주관", "세미나명", "장소", "인원", "주차", "담당자", "기타(지원 등)"];
+    const headers = ["구분", "날짜", "주관", "세미나명", "장소", "인원", "주차", "접수자", "센터 담당자", "기타(지원 등)"];
+    const COL_COUNT = headers.length;
     const SUMMARY_ROWS = 4; // 요약 3행 + 빈 행 1행
     const aoa: (string | number)[][] = [
-      [`*${yearNum}년 세미나 회수`],
+      [`*${yearNum}년 세미나 회수 (${today} 기준)`],
       ["정기", regularCount],
       ["비정기", irregularCount],
       [],
       headers,
-      ...rows.map(r => [r.구분, r.날짜, r.주관, r.세미나명, r.장소, r.인원, r.주차, r.담당자, r["기타(지원 등)"]]),
+      ...rows.map(r => [r.구분, r.날짜, r.주관, r.세미나명, r.장소, r.인원, r.주차, r.접수자, r.센터담당자, r["기타(지원 등)"]]),
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -122,7 +126,8 @@ export async function POST(request: Request) {
       { wch: 20 }, // 장소
       { wch: 8 },  // 인원
       { wch: 6 },  // 주차
-      { wch: 12 }, // 담당자
+      { wch: 12 }, // 접수자
+      { wch: 14 }, // 센터 담당자
       { wch: 30 }, // 기타(지원 등)
     ];
 
@@ -153,7 +158,7 @@ export async function POST(request: Request) {
     const dataRange = XLSX.utils.decode_range(ws["!ref"] || "A1");
 
     for (let R = headerRow; R <= dataRange.e.r; R++) {
-      for (let C = 0; C <= 8; C++) {
+      for (let C = 0; C < COL_COUNT; C++) {
         const addr = XLSX.utils.encode_cell({ r: R, c: C });
         if (!ws[addr]) ws[addr] = { v: "", t: "s" };
         if (R === headerRow) {
