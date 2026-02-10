@@ -358,7 +358,7 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
             size="sm"
             variant="outline"
             className="h-9 px-2"
-            onClick={() => exportSeminarsToExcel(filteredSeminars, filteredRequests, selectedYear)}
+            onClick={() => exportSeminarsToExcel(selectedYear, filterType, filterCategory)}
             title="엑셀 내보내기"
           >
             <Download className="w-4 h-4" />
