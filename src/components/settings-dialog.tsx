@@ -3,10 +3,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { Bell, X, Loader2 } from "lucide-react";
 import { NotificationSettings } from "./notification-settings";
+import { useFontSize, FontSizeKey } from "./font-size-provider";
 
 export function SettingsDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isContentReady, setIsContentReady] = useState(false);
+  const { fontSizeKey, setFontSizeKey, fontSizeKeys, fontSizeLabels, fontSizeMap } = useFontSize();
 
   // 모달 열릴 때 배경 스크롤 방지 (position:fixed 패턴)
   useEffect(() => {
@@ -82,6 +84,27 @@ export function SettingsDialog() {
               <div className="space-y-4 mt-6">
                 <h3 className="text-sm font-medium text-muted-foreground">알림</h3>
                 <NotificationSettings onInitialized={handleInitialized} />
+              </div>
+
+              {/* 글꼴 크기 */}
+              <div className="space-y-3 pt-4 mt-6 border-t">
+                <h3 className="text-sm font-medium text-muted-foreground">글꼴 크기</h3>
+                <div className="flex gap-1.5">
+                  {fontSizeKeys.map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => setFontSizeKey(key)}
+                      className={`flex-1 py-2 rounded-lg text-center transition-colors border ${
+                        fontSizeKey === key
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/50 text-foreground border-transparent hover:bg-muted"
+                      }`}
+                    >
+                      <span style={{ fontSize: `${fontSizeMap[key]}px` }}>가</span>
+                      <div className="text-[10px] mt-0.5 opacity-70">{fontSizeLabels[key]}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* 앱 정보 */}
