@@ -61,6 +61,7 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
 │   │   ├── news/                 # 뉴스 검색 API
 │   │   │   └── search/
 │   │   ├── seminars/             # 세미나 API (신규)
+│   │   │   ├── export/           # 엑셀 내보내기 API (신규)
 │   │   │   └── [id]/
 │   │   │       └── checklist/    # 체크리스트 API
 │   │   ├── seminar-requests/     # 비정기 세미나 요청 API (신규)
@@ -128,6 +129,7 @@ NH투자증권 HNW(High Net Worth) 본부의 홍보 기사 아카이브 및 세�
     ├── schedule-types.ts         # 일정 타입 정의 (신규)
     ├── resource-types.ts         # 자료실 타입 정의
     ├── auth.ts                   # 권한 체크 유틸리티 (신규)
+    ├── seminar-excel-export.ts   # 엑셀 내보내기 클라이언트 유틸리티 (신규)
     └── utils.ts                  # 유틸리티 함수
 
 public/                           # 정적 파일
@@ -374,6 +376,7 @@ docs/                             # 프로젝트 문서
   expectedAttendees: Number,        // 예상 참석자 수
   actualAttendees: Number,          // 실제 참석자 수
   description: String,
+  parkingSupport: Boolean,          // 주차지원여부 (2026-02-10 추가)
   status: String,                   // "준비중" | "완료" | "취소"
   requestId: String,                // 비정기 세미나의 경우 요청 ID
   createdAt: Date,
@@ -397,6 +400,7 @@ docs/                             # 프로젝트 문서
   topicDetail: String,              // 주제 상세 (기타인 경우)
   receiver: String,                 // 접수자
   centerContact: String,            // 센터 담당자
+  parkingSupport: Boolean,          // 주차지원여부 (2026-02-10 추가)
   status: String,                   // "요청접수" | "검토중" | "승인" | "반려" | "완료"
   seminarId: String,                // 승인 시 연결되는 세미나 ID
   notes: String,                    // 비고
@@ -520,6 +524,7 @@ docs/                             # 프로젝트 문서
 | GET    | /api/seminars/[id] | 세미나 상세 + 체크리스트                          | 공개     |
 | PUT    | /api/seminars/[id] | 세미나 수정                                       | 관리자   |
 | DELETE | /api/seminars/[id] | 세미나 삭제 (+ 체크리스트 삭제)                   | 관리자   |
+| POST   | /api/seminars/export | 엑셀 내보내기 (xlsx 바이너리 응답)              | 공개     |
 
 ### 비정기 세미나 요청 API (신규)
 
@@ -924,6 +929,24 @@ return NextResponse.json(data, {
 - `stale-while-revalidate=60`: 60초간 캐시 응답 제공하면서 백그라운드 갱신
 
 ## 최근 업데이트 내역
+
+### 2026-02-16
+- **모바일 가독성 최적화** (`globals.css`):
+  - body 기본 폰트: `font-size: 15px; line-height: 1.6` 설정
+  - `text-xs`(12px) → 13px, `text-sm`(14px) → 15px 오버라이드
+  - 임의 픽셀 크기 최소값: `text-[7~9px]` → 11px, `text-[10~11px]` → 12px
+  - Fluid Typography 클래스 추가: `text-fluid-xl/lg/base` (clamp() 기반)
+
+### 2026-02-10
+- **세미나 엑셀 내보내기 추가**:
+  - `/api/seminars/export` API: 서버 사이드 xlsx 생성 → 바이너리 다운로드
+  - `xlsx-js-style` 라이브러리로 셀 스타일링 (헤더 회색+볼드, 전체 그리드)
+  - 칼럼: 구분/날짜/주관/세미나명/장소/인원/주차/접수자/센터 담당자/기타(지원 등)
+  - 상단 요약: 정기/비정기 세미나 누적 회수 (다운로드 날짜 기준)
+  - 클라이언트: `seminar-excel-export.ts` → Blob 다운로드
+  - 세미나 뷰 필터 영역에 다운로드 버튼 추가
+- **주차지원여부(parkingSupport) 필드 추가**:
+  - Seminar, SeminarRequest 타입 + 폼 + API 엔드포인트 전체 반영
 
 ### 2026-02-06
 - **Pull-to-Refresh 추가**: 모든 화면에서 당겨서 새로고침 지원 (`pull-to-refresh.tsx`, 루트 레이아웃 적용)
