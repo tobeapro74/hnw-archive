@@ -16,6 +16,11 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isAtTop = useCallback(() => {
+    // 모달이 열려 있으면 pull-to-refresh 비활성화
+    // (모달 오픈 시 body.style.position = 'fixed'로 설정됨)
+    if (document.body.style.position === "fixed") {
+      return false;
+    }
     return window.scrollY <= 0;
   }, []);
 
