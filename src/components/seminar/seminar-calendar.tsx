@@ -199,20 +199,25 @@ export function SeminarCalendar({
           const dayOfWeek = (firstDayWeekday + day - 1) % 7;
           const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
 
-          // 카테고리별 배경색 결정
-          const categories = new Set(daySeminars.map(s => s.category));
+          // 세미나 색상 유형 결정 (FO/일반법인/지역금융)
+          const getSeminarColorType = (seminar: typeof daySeminars[0]) => {
+            if (seminar.category === "패밀리오피스") return "fo";
+            if (seminar.corporateType === "지역금융") return "regional";
+            return "corporate"; // 상장법인, 외감법인, 일반법인
+          };
+
+          const colorTypes = new Set(daySeminars.map(getSeminarColorType));
           const hasRequests = dayRequests.length > 0;
           let dayBgClass = "";
           if (hasItems && !isSelected) {
-            if (categories.size === 1 && !hasRequests) {
-              // 단일 카테고리만 있는 경우
-              if (categories.has("패밀리오피스")) dayBgClass = "bg-violet-100 hover:bg-violet-200 dark:bg-violet-500/20 dark:hover:bg-violet-500/30";
-              else if (categories.has("법인")) dayBgClass = "bg-sky-100 hover:bg-sky-200 dark:bg-sky-500/20 dark:hover:bg-sky-500/30";
+            if (colorTypes.size === 1 && !hasRequests) {
+              const type = [...colorTypes][0];
+              if (type === "fo") dayBgClass = "bg-violet-100 hover:bg-violet-200 dark:bg-violet-500/20 dark:hover:bg-violet-500/30";
+              else if (type === "corporate") dayBgClass = "bg-sky-100 hover:bg-sky-200 dark:bg-sky-500/20 dark:hover:bg-sky-500/30";
+              else if (type === "regional") dayBgClass = "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30";
             } else if (daySeminars.length === 0 && hasRequests) {
-              // 요청만 있는 경우
               dayBgClass = "bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/30";
             } else {
-              // 혼합 (여러 카테고리 or 세미나+요청)
               dayBgClass = "bg-muted hover:bg-muted/80";
             }
           }
@@ -235,17 +240,21 @@ export function SeminarCalendar({
               <span>{day}</span>
               {hasItems && (
                 <div className="flex gap-0.5 mt-0.5">
-                  {/* 세미나 점 (카테고리별 색상) */}
-                  {daySeminars.slice(0, 2).map((seminar, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full",
-                        seminar.category === "패밀리오피스" && "bg-violet-500",
-                        seminar.category === "법인" && "bg-sky-500"
-                      )}
-                    />
-                  ))}
+                  {/* 세미나 점 (FO/일반법인/지역금융 색상) */}
+                  {daySeminars.slice(0, 2).map((seminar, i) => {
+                    const type = getSeminarColorType(seminar);
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          type === "fo" && "bg-violet-500",
+                          type === "corporate" && "bg-sky-500",
+                          type === "regional" && "bg-emerald-500"
+                        )}
+                      />
+                    );
+                  })}
                   {/* 요청 점 (주황색) */}
                   {dayRequests.slice(0, 2 - daySeminars.length).map((_, i) => (
                     <div
@@ -265,14 +274,18 @@ export function SeminarCalendar({
       </div>
 
       {/* 범례 */}
-      <div className="flex justify-center gap-4 mt-4 pt-4 border-t">
+      <div className="flex justify-center gap-3 mt-4 pt-4 border-t flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
-          <span className="text-xs text-muted-foreground">패밀리오피스</span>
+          <span className="text-xs text-muted-foreground">FO</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-          <span className="text-xs text-muted-foreground">법인</span>
+          <span className="text-xs text-muted-foreground">일반법인</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          <span className="text-xs text-muted-foreground">지역금융</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
