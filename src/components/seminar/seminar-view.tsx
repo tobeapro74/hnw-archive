@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Calendar as CalendarIcon, List, X, Megaphone, Download } from "lucide-react";
+import { Calendar as CalendarIcon, List, X, Megaphone, Download, Plus } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import {
@@ -273,10 +273,12 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
       <div className="sticky top-0 z-30 border-b bg-background">
         <div className="px-4 py-3 flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={handleNewRequest}>
-            비정기
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            비정기 등록
           </Button>
           <Button size="sm" onClick={handleNewSeminar}>
-            정기
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            정기 등록
           </Button>
           <div className="flex-1" />
           {/* 뷰 모드 토글 */}
