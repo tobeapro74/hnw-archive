@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Article } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
 import { Seminar } from "@/lib/seminar-types";
@@ -390,11 +389,18 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
                         />
                       );
                     } else {
-                      // seminar
+                      // seminar - 카테고리별 색상 (FO: 보라, 지역금융: 초록, 일반법인: 파랑)
+                      const seminar = item.data as Seminar;
+                      const seminarColorClass =
+                        seminar.category === "패밀리오피스"
+                          ? "bg-violet-500"
+                          : seminar.corporateType === "지역금융"
+                          ? "bg-emerald-500"
+                          : "bg-sky-500";
                       return (
                         <div
                           key={`seminar-${i}`}
-                          className="w-2.5 h-2.5 rounded-full bg-orange-500"
+                          className={cn("w-2.5 h-2.5 rounded-full", seminarColorClass)}
                         />
                       );
                     }
@@ -419,7 +425,11 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
           </div>
           <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            <div className="flex gap-0.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            </div>
             <span className="text-muted-foreground">세미나</span>
           </div>
           <div className="w-px h-3 bg-border" />
