@@ -199,6 +199,24 @@ export function SeminarCalendar({
           const dayOfWeek = (firstDayWeekday + day - 1) % 7;
           const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
 
+          // 카테고리별 배경색 결정
+          const categories = new Set(daySeminars.map(s => s.category));
+          const hasRequests = dayRequests.length > 0;
+          let dayBgClass = "";
+          if (hasItems && !isSelected) {
+            if (categories.size === 1 && !hasRequests) {
+              // 단일 카테고리만 있는 경우
+              if (categories.has("패밀리오피스")) dayBgClass = "bg-violet-100 hover:bg-violet-200 dark:bg-violet-500/20 dark:hover:bg-violet-500/30";
+              else if (categories.has("법인")) dayBgClass = "bg-sky-100 hover:bg-sky-200 dark:bg-sky-500/20 dark:hover:bg-sky-500/30";
+            } else if (daySeminars.length === 0 && hasRequests) {
+              // 요청만 있는 경우
+              dayBgClass = "bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/30";
+            } else {
+              // 혼합 (여러 카테고리 or 세미나+요청)
+              dayBgClass = "bg-muted hover:bg-muted/80";
+            }
+          }
+
           return (
             <button
               key={day}
@@ -207,7 +225,7 @@ export function SeminarCalendar({
                 "aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors relative",
                 hasItems && "font-medium",
                 isSelected && "bg-primary text-primary-foreground",
-                !isSelected && hasItems && "bg-muted hover:bg-muted/80",
+                dayBgClass,
                 !isSelected && !hasItems && "hover:bg-muted/50",
                 dayOfWeek === 0 && !isSelected && "text-red-500",
                 dayOfWeek === 6 && !isSelected && "text-blue-500",
