@@ -15,6 +15,7 @@ interface SeminarCalendarProps {
   onDateClick?: (date: Date, seminars: Seminar[], requests: SeminarRequest[]) => void;
   onSeminarClick?: (seminar: Seminar) => void;
   onRequestClick?: (request: SeminarRequest) => void;
+  onMonthChange?: (year: number, month: number) => void;
   initialMonth?: Date | null;
 }
 
@@ -24,6 +25,7 @@ export function SeminarCalendar({
   onDateClick,
   onSeminarClick,
   onRequestClick,
+  onMonthChange,
   initialMonth,
 }: SeminarCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -80,13 +82,17 @@ export function SeminarCalendar({
   }, [requests, year, month]);
 
   const goToPreviousMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
+    const newDate = new Date(year, month - 1, 1);
+    setCurrentDate(newDate);
     setSelectedDate(null);
+    onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
   };
 
   const goToNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
+    const newDate = new Date(year, month + 1, 1);
+    setCurrentDate(newDate);
     setSelectedDate(null);
+    onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
   };
 
   const handleDateClick = (day: number) => {

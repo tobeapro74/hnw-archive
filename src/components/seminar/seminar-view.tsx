@@ -8,7 +8,6 @@ import {
   Seminar,
   SeminarRequest,
   SeminarCategory,
-  calculateDday,
 } from "@/lib/seminar-types";
 import { SeminarCalendar } from "./seminar-calendar";
 import { SeminarCard, SeminarListItem } from "./seminar-card";
@@ -69,7 +68,11 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
 
   // 연도 필터
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
+  // 캘린더 현재 월 (0-indexed)
+  const [calendarMonth, setCalendarMonth] = useState<number>(currentMonth);
 
   // 프론트엔드 캐시 (연도별)
   const cacheRef = useRef<Map<number, CacheEntry>>(new Map());
@@ -164,13 +167,25 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
     return requests;
   }, [requests, filterType, filterCategory]);
 
-  // 다가오는 세미나 (D-day 기준 정렬)
-  const upcomingSeminars = useMemo(() => {
+  // 캘린더 월에 해당하는 세미나
+  const monthSeminars = useMemo(() => {
     return filteredSeminars
-      .filter((s) => calculateDday(s.date) >= 0 && s.status === "준비중")
-      .sort((a, b) => calculateDday(a.date) - calculateDday(b.date))
-      .slice(0, 5);
-  }, [filteredSeminars]);
+      .filter((s) => {
+        const d = new Date(s.date);
+        return d.getFullYear() === selectedYear && d.getMonth() === calendarMonth;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [filteredSeminars, selectedYear, calendarMonth]);
+
+  // 캘린더 월에 해당하는 비정기 요청
+  const monthRequests = useMemo(() => {
+    return filteredRequests
+      .filter((r) => {
+        const d = new Date(r.requestedDate);
+        return d.getFullYear() === selectedYear && d.getMonth() === calendarMonth;
+      })
+      .sort((a, b) => new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime());
+  }, [filteredRequests, selectedYear, calendarMonth]);
 
   // 세미나 클릭
   const handleSeminarClick = (seminar: Seminar) => {
@@ -391,6 +406,10 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
                 onDateClick={handleDateClick}
                 onSeminarClick={handleSeminarClick}
                 onRequestClick={handleRequestClick}
+                onMonthChange={(y, m) => {
+                  setCalendarMonth(m);
+                  if (y !== selectedYear) setSelectedYear(y);
+                }}
                 initialMonth={initialMonth}
               />
             ) : (
@@ -411,12 +430,14 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
               </div>
             )}
 
-            {/* 다가오는 세미나 */}
-            {upcomingSeminars.length > 0 && viewMode === "calendar" && (
+            {/* 해당 월 세미나 */}
+            {monthSeminars.length > 0 && viewMode === "calendar" && (
               <div ref={upcomingSectionRef} className="scroll-mt-32">
-                <h3 className="text-sm font-semibold mb-2">다가오는 세미나</h3>
+                <h3 className="text-sm font-semibold mb-2">
+                  {calendarMonth + 1}월 세미나
+                </h3>
                 <div className="space-y-2">
-                  {upcomingSeminars.map((seminar) => (
+                  {monthSeminars.map((seminar) => (
                     <SeminarCard
                       key={seminar._id}
                       seminar={seminar}
@@ -428,29 +449,21 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
               </div>
             )}
 
-            {/* 비정기 세미나 요청 */}
-            {filteredRequests.length > 0 && (
+            {/* 해당 월 비정기 세미나 요청 */}
+            {monthRequests.length > 0 && viewMode === "calendar" && (
               <div ref={irregularSectionRef} className="scroll-mt-32">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">비정기 세미나 요청</h3>
-                  <Badge variant="secondary">{filteredRequests.length}건</Badge>
+                  <h3 className="text-sm font-semibold">{calendarMonth + 1}월 비정기 요청</h3>
+                  <Badge variant="secondary">{monthRequests.length}건</Badge>
                 </div>
                 <div className="space-y-2">
-                  {filteredRequests
-                    .sort((a, b) => new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime())
-                    .slice(0, 3)
-                    .map((request) => (
+                  {monthRequests.map((request) => (
                     <SeminarRequestCard
                       key={request._id}
                       request={request}
                       onClick={() => handleRequestClick(request)}
                     />
                   ))}
-                  {filteredRequests.length > 3 && (
-                    <Button variant="ghost" className="w-full text-sm">
-                      {filteredRequests.length - 3}개 더보기
-                    </Button>
-                  )}
                 </div>
               </div>
             )}
