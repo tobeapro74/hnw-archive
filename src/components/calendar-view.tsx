@@ -343,6 +343,28 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
             ...daySeminars.map(seminar => ({ type: 'seminar' as const, data: seminar }))
           ];
 
+          // 세미나만 있는 날 → 세미나 카테고리 배경색, 그 외 → muted
+          let dayBgClass = "";
+          if (!isSelected && hasContent) {
+            if (hasSeminars && !hasArticles && !hasSchedules) {
+              const seminarTypes = new Set(daySeminars.map(s =>
+                s.category === "패밀리오피스" ? "fo"
+                : s.corporateType === "지역금융" ? "regional"
+                : "corporate"
+              ));
+              if (seminarTypes.size === 1) {
+                const type = [...seminarTypes][0];
+                if (type === "fo") dayBgClass = "bg-violet-100 hover:bg-violet-200 dark:bg-violet-500/20";
+                else if (type === "regional") dayBgClass = "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-500/20";
+                else dayBgClass = "bg-sky-100 hover:bg-sky-200 dark:bg-sky-500/20";
+              } else {
+                dayBgClass = "bg-muted hover:bg-muted/80";
+              }
+            } else {
+              dayBgClass = "bg-muted hover:bg-muted/80";
+            }
+          }
+
           return (
             <button
               key={day}
@@ -351,7 +373,7 @@ export function CalendarView({ articles, schedules = [], seminars = [], onDateSe
                 "aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors relative",
                 hasContent && "font-medium",
                 isSelected && "bg-primary text-primary-foreground",
-                !isSelected && hasContent && "bg-muted hover:bg-muted/80",
+                dayBgClass,
                 !isSelected && !hasContent && "hover:bg-muted/50",
                 dayOfWeek === 0 && !isSelected && "text-red-500",
                 dayOfWeek === 6 && !isSelected && "text-blue-500",
