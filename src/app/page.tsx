@@ -23,7 +23,7 @@ import { ScheduleView, ScheduleDetailDialog } from "@/components/schedule";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Article, ArticleCategory, ArticleTag, categories, tags } from "@/lib/types";
 import { Schedule } from "@/lib/schedule-types";
-import { Seminar } from "@/lib/seminar-types";
+import { Seminar, SeminarRequest } from "@/lib/seminar-types";
 import { formatDate } from "@/lib/utils";
 import {
   Dialog,
@@ -54,6 +54,7 @@ function HomeContent() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [seminars, setSeminars] = useState<Seminar[]>([]);
+  const [seminarRequests, setSeminarRequests] = useState<SeminarRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -94,17 +95,19 @@ function HomeContent() {
     const fetchInitialData = async () => {
       try {
         const currentYear = new Date().getFullYear();
-        const [articlesRes, schedulesRes, seminarsRes, authRes] = await Promise.all([
+        const [articlesRes, schedulesRes, seminarsRes, seminarRequestsRes, authRes] = await Promise.all([
           fetch("/api/articles"),
           fetch(`/api/schedules?year=${currentYear}`),
           fetch("/api/seminars"),
+          fetch(`/api/seminar-requests?year=${currentYear}`),
           fetch("/api/auth/me"),
         ]);
 
-        const [articlesData, schedulesData, seminarsData, authData] = await Promise.all([
+        const [articlesData, schedulesData, seminarsData, seminarRequestsData, authData] = await Promise.all([
           articlesRes.json(),
           schedulesRes.json(),
           seminarsRes.json(),
+          seminarRequestsRes.json(),
           authRes.json(),
         ]);
 
@@ -117,6 +120,9 @@ function HomeContent() {
         if (Array.isArray(seminarsData)) {
           setSeminars(seminarsData);
         }
+        if (Array.isArray(seminarRequestsData)) {
+          setSeminarRequests(seminarRequestsData);
+        }
         if (authData.success) {
           setUser(authData.data);
         }
@@ -128,6 +134,24 @@ function HomeContent() {
     };
     fetchInitialData();
   }, []);
+
+  // 캘린더용 세미나 목록 (정기 세미나 + 비정기 요청을 세미나 형태로 변환)
+  const calendarSeminars = useMemo(() => {
+    const requestsAsSeminars: Seminar[] = seminarRequests
+      .filter(r => !r.seminarId) // 이미 세미나로 전환된 요청은 제외
+      .map(r => ({
+        _id: `req-${r._id}`,
+        title: `${r.targetCorporation} (비정기)`,
+        seminarType: "비정기" as const,
+        date: r.requestedDate,
+        location: r.requestLocation,
+        category: "법인" as const,
+        status: "준비중" as const,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      }));
+    return [...seminars, ...requestsAsSeminars];
+  }, [seminars, seminarRequests]);
 
   // 로그아웃
   const handleLogout = async () => {
@@ -666,7 +690,7 @@ function HomeContent() {
       <CalendarView
         articles={articles}
         schedules={schedules}
-        seminars={seminars}
+        seminars={calendarSeminars}
         onDateSelect={handleDateSelect}
       />
 
