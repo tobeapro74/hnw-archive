@@ -373,12 +373,16 @@ function HomeContent() {
     return data;
   }, [articles, selectedYear]);
 
-  // 하이라이트 기사 (단독/특집 중 최신 5개)
+  // 하이라이트 기사 (최신 1개 + 단독/특집 최신 4개)
   const highlightArticles = useMemo(() => {
-    return yearFilteredArticles
-      .filter((a) => a.tag === "단독기사" || a.tag === "특집기사")
-      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-      .slice(0, 5);
+    const sorted = [...yearFilteredArticles].sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+    const latest = sorted[0];
+    const featured = sorted
+      .filter((a) => (a.tag === "단독기사" || a.tag === "특집기사") && a._id !== latest?._id)
+      .slice(0, 4);
+    return latest ? [latest, ...featured] : featured;
   }, [yearFilteredArticles]);
 
   // 언론사 수
