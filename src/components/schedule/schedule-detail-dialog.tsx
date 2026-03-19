@@ -255,11 +255,9 @@ export function ScheduleDetailDialog({
                     >
                       <div className="shrink-0">{getFileIcon(file.mimeType)}</div>
                       <span className="flex-1 truncate text-xs">{file.name}</span>
-                      {file.webViewLink && (
-                        <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-muted rounded">
-                          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                        </a>
-                      )}
+                      <a href={`/api/drive/${file.driveFileId}?mode=view`} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-muted rounded">
+                        <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                      </a>
                       <a href={`/api/drive/${file.driveFileId}`} download className="p-1 hover:bg-muted rounded">
                         <Download className="w-3.5 h-3.5 text-muted-foreground" />
                       </a>

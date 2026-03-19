@@ -28,10 +28,14 @@ export async function GET(
     const buffer = Buffer.concat(chunks);
     const fileName = encodeURIComponent(metadata.name || "download");
 
+    // ?mode=view 이면 브라우저에서 바로 열기 (inline), 아니면 다운로드
+    const mode = request.nextUrl.searchParams.get("mode");
+    const disposition = mode === "view" ? "inline" : `attachment; filename*=UTF-8''${fileName}`;
+
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": metadata.mimeType || "application/octet-stream",
-        "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
+        "Content-Disposition": disposition,
         "Content-Length": buffer.length.toString(),
       },
     });

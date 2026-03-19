@@ -495,17 +495,15 @@ export function SeminarDetailDialog({
                               </p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              {file.webViewLink && (
-                                <a
-                                  href={file.webViewLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                  title="보기"
-                                >
-                                  <Eye className="w-4 h-4 text-muted-foreground" />
-                                </a>
-                              )}
+                              <a
+                                href={`/api/drive/${file.driveFileId}?mode=view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                title="보기"
+                              >
+                                <Eye className="w-4 h-4 text-muted-foreground" />
+                              </a>
                               <a
                                 href={`/api/drive/${file.driveFileId}`}
                                 download
