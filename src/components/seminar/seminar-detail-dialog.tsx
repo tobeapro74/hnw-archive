@@ -502,7 +502,7 @@ export function SeminarDetailDialog({
                               </div>
                             </a>
                             <button
-                              onClick={() => window.open(`/api/drive/${file.driveFileId}`, "_blank")}
+                              onClick={() => { location.href = `/api/drive/${file.driveFileId}`; }}
                               className="p-3 hover:bg-muted rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
                               title="다운로드"
                             >
