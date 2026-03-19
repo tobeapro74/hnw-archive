@@ -505,7 +505,7 @@ export function SeminarDetailDialog({
                                 <Eye className="w-4 h-4 text-muted-foreground" />
                               </a>
                               <a
-                                href={`/api/drive/${file.driveFileId}`}
+                                href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`}
                                 download
                                 className="p-2 hover:bg-muted rounded-lg transition-colors"
                                 title="다운로드"
