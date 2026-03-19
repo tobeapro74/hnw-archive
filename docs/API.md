@@ -347,6 +347,39 @@
 
 ---
 
+## 세미나 엑셀 내보내기 API (2026-02-10)
+
+### POST /api/seminars/export
+세미나 현황 엑셀 파일 다운로드
+
+**Request Body**
+```json
+{
+  "year": 2026,
+  "seminarType": "all",
+  "category": "all"
+}
+```
+
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| year | O | 연도 |
+| seminarType | X | 유형 필터 (all, 정기, 비정기) |
+| category | X | 카테고리 필터 (all, 패밀리오피스, 법인) |
+
+**Response**
+- Content-Type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- Content-Disposition: `attachment; filename*=UTF-8''세미나현황_2026.xlsx`
+- Body: xlsx 바이너리 데이터
+
+**엑셀 칼럼**: 구분, 날짜, 주관, 세미나명, 장소, 인원, 주차, 접수자, 센터 담당자, 기타(지원 등)
+
+**상단 요약**: 다운로드 날짜 기준 정기/비정기 세미나 누적 회수
+
+**스타일**: 헤더 회색 배경(#D9D9D9) + 볼드체, 전체 셀 thin 테두리
+
+---
+
 ## 체크리스트 API
 
 ### POST /api/seminars/[id]/checklist
@@ -963,11 +996,119 @@ seminars: { date: -1 }, { category: 1, status: 1 }, { seminarType: 1 }
 checklist_items: { seminarId: 1 }
 articles: { publishedAt: -1 }, { category: 1 }, { tag: 1 }, { eventId: 1 }
 seminar_requests: { requestedDate: -1 }, { status: 1 }
+seminar_files: { seminarId: 1 }
+schedule_files: { scheduleId: 1 }
 resources: { category: 1, subCategory: 1 }, { uploadedAt: -1 }
 ```
 
 ### N+1 쿼리 해결
 `/api/seminars` GET은 $lookup 집계 파이프라인으로 세미나와 체크리스트를 한 번에 조회합니다.
+
+---
+
+## 구글드라이브 연동 API (2026-03-19)
+
+### GET /api/drive/[fileId]
+구글드라이브 파일 다운로드 프록시
+
+**Response**
+- Content-Type: 파일 MIME 타입
+- Content-Disposition: `attachment; filename*=UTF-8''파일명`
+- Body: 파일 바이너리 (arraybuffer)
+
+**설정**: `maxDuration: 60` (Vercel Pro)
+
+---
+
+### GET /api/seminars/[id]/files
+세미나 자료 목록 조회 (구글드라이브 동기화 데이터)
+
+**Response**
+```json
+[
+  {
+    "_id": "...",
+    "seminarId": "...",
+    "driveFileId": "구글드라이브 파일 ID",
+    "name": "파일명.pdf",
+    "mimeType": "application/pdf",
+    "size": 4609824,
+    "modifiedTime": "2026-03-19T...",
+    "webViewLink": "https://drive.google.com/...",
+    "webContentLink": "https://drive.google.com/...",
+    "syncedAt": "2026-03-19T..."
+  }
+]
+```
+
+---
+
+### GET /api/schedules/[id]/files
+일정 자료 목록 조회 (구글드라이브 동기화 데이터)
+
+**Response**: 세미나 자료와 동일 구조 (`seminarId` → `scheduleId`)
+
+---
+
+### GET /api/cron/sync-drive
+구글드라이브 파일 자동 동기화 (Vercel Cron)
+
+**인증**: `x-vercel-cron` 헤더 또는 `?key=ADMIN_SECRET_KEY`
+
+**실행 주기**: 매일 07:00 KST (UTC 22:00)
+
+**동작**:
+1. `driveFolderId`가 있는 세미나/일정 조회
+2. 각 폴더의 파일 목록을 드라이브에서 조회
+3. 새 파일 추가 / 수정 파일 업데이트 / 삭제 파일 제거
+4. 새 파일에 공개 읽기 권한 자동 부여
+
+**Response**
+```json
+{
+  "success": true,
+  "seminars": { "processed": 18, "filesAdded": 1, "filesUpdated": 0, "filesDeleted": 0 },
+  "schedules": { "processed": 16, "filesAdded": 0, "filesUpdated": 0, "filesDeleted": 0 }
+}
+```
+
+### 구글드라이브 폴더 구조
+
+```
+HNW세미나/ (루트 폴더: 1D2vpCwHBUzItyk5FApzjw9ia499gPNtW)
+├── 2026-03-05_N2, Corporate Finance Seminar(지역금융법인)/
+├── 2026-03-19_Exclusive F_O Seminar/
+├── [회의]2026-03-06_법인 세미나 강의관련(상품기획부)/
+├── [외근]2026-02-09_패밀리오피스 컨설팅 (박현철 지원)/
+├── [기타]2026-03-23_ATI 유언대용신탁 계약 체결식/
+└── ...
+```
+
+- **세미나**: `날짜_세미나명` (생성 시 자동)
+- **일정**: `[카테고리]날짜_주제` (생성 시 자동)
+- **서비스 계정**: `hnw-drive-sync@hnw-archive.iam.gserviceaccount.com`
+
+### 환경변수
+
+| 변수명 | 설명 |
+|--------|------|
+| GOOGLE_SERVICE_ACCOUNT_KEY_BASE64 | 서비스 계정 JSON 키 (base64 인코딩) |
+| GOOGLE_SERVICE_ACCOUNT_EMAIL | 서비스 계정 이메일 (로컬용) |
+| GOOGLE_PRIVATE_KEY | 서비스 계정 비공개 키 (로컬용) |
+| GOOGLE_DRIVE_ROOT_FOLDER_ID | HNW세미나 루트 폴더 ID |
+
+### DB 컬렉션
+
+| 컬렉션 | 설명 |
+|--------|------|
+| seminar_files | 세미나 자료 (드라이브 동기화) |
+| schedule_files | 일정 자료 (드라이브 동기화) |
+
+### 자료 UX
+
+- **파일명 클릭**: 구글드라이브 뷰어로 미리보기
+- **↓ 버튼**: 구글드라이브 앱에서 열기 (저장/공유 가능)
+- **새로고침 버튼**: 수동 동기화 실행 후 파일 목록 갱신
 
 ---
 
@@ -977,9 +1118,11 @@ resources: { category: 1, subCategory: 1 }, { uploadedAt: -1 }
 - **데이터베이스**: MongoDB Atlas
 - **인증**: JWT (7일 유효), bcrypt
 - **푸시**: Web Push (VAPID)
-- **배포**: Vercel
+- **엑셀**: xlsx-js-style (서버 사이드 엑셀 생성 + 스타일링)
+- **구글드라이브**: googleapis (서비스 계정 인증, 파일 동기화)
+- **배포**: Vercel (Pro 플랜, Cron Jobs)
 
 ---
 
-**작성일**: 2026-01-29
+**작성일**: 2026-01-29 (최종 수정: 2026-03-19)
 **프로젝트**: HNW 홍보 아카이브
