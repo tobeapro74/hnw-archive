@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDriveFileMetadata } from "@/lib/google-drive";
 import { google } from "googleapis";
 
+// Vercel Pro: 최대 실행 시간 60초
+export const maxDuration = 60;
+
 function getAuthClient() {
   if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64) {
     const json = Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf-8");
@@ -19,7 +22,7 @@ function getAuthClient() {
   });
 }
 
-// GET /api/drive/[fileId] - 구글드라이브 파일 다운로드/보기 프록시 (스트리밍)
+// GET /api/drive/[fileId] - 구글드라이브 파일 다운로드 프록시
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }
@@ -35,32 +38,21 @@ export async function GET(
     const auth = getAuthClient();
     const drive = google.drive({ version: "v3", auth });
 
+    // arraybuffer로 한번에 받기
     const res = await drive.files.get(
       { fileId, alt: "media" },
-      { responseType: "stream" }
+      { responseType: "arraybuffer" }
     );
 
-    const mode = request.nextUrl.searchParams.get("mode");
-    const isView = mode === "view";
     const mimeType = metadata.mimeType || "application/octet-stream";
     const fileName = encodeURIComponent(metadata.name || "download");
+    const data = res.data as ArrayBuffer;
 
-    // Node.js ReadableStream → Web ReadableStream 변환
-    const nodeStream = res.data as NodeJS.ReadableStream;
-    const webStream = new ReadableStream({
-      start(controller) {
-        nodeStream.on("data", (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)));
-        nodeStream.on("end", () => controller.close());
-        nodeStream.on("error", (err) => controller.error(err));
-      },
-    });
-
-    return new Response(webStream, {
+    return new Response(data, {
       headers: {
         "Content-Type": mimeType,
-        "Content-Disposition": isView ? "inline" : `attachment; filename*=UTF-8''${fileName}`,
-        ...(metadata.size ? { "Content-Length": metadata.size.toString() } : {}),
-        ...(isView ? { "Cache-Control": "public, max-age=3600" } : {}),
+        "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
+        "Content-Length": data.byteLength.toString(),
       },
     });
   } catch (error) {

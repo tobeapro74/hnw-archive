@@ -502,7 +502,7 @@ export function SeminarDetailDialog({
                               </div>
                             </a>
                             <a
-                              href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`}
+                              href={`/api/drive/${file.driveFileId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-3 hover:bg-muted rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
