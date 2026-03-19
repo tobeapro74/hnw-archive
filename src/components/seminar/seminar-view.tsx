@@ -60,7 +60,7 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
   const [editingRequest, setEditingRequest] = useState<SeminarRequest | null>(null);
 
   // 월별 세미나 시간 필터
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
 
   // 날짜 선택 팝업
   const [datePickerOpen, setDatePickerOpen] = useState(false);
