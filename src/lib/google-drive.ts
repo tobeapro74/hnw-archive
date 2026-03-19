@@ -30,11 +30,16 @@ function getDrive() {
 
 const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID!;
 
-// 세미나용 폴더명 생성 (예: "2026-03-18_N2_Corporate_Finance")
-export function getSeminarFolderName(date: string, title: string): string {
+// 폴더명 생성 (세미나/일정 공통)
+export function getDriveFolderName(date: string, title: string, prefix?: string): string {
   const dateStr = new Date(date).toISOString().slice(0, 10);
   const safeTitle = title.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 50);
-  return `${dateStr}_${safeTitle}`;
+  return prefix ? `[${prefix}]${dateStr}_${safeTitle}` : `${dateStr}_${safeTitle}`;
+}
+
+// 세미나용 폴더명 (하위 호환)
+export function getSeminarFolderName(date: string, title: string): string {
+  return getDriveFolderName(date, title);
 }
 
 // 폴더 생성

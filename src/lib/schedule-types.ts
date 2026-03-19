@@ -40,10 +40,27 @@ export interface Schedule {
   etcTopic?: string;                // 일정 제목 (기타인 경우)
   etcDescription?: string;          // 일정 설명 (기타인 경우)
 
+  // 구글드라이브 폴더 연결
+  driveFolderId?: string;
+
   // 메타데이터
   createdAt: Date | string;
   updatedAt: Date | string;
   createdBy?: string;
+}
+
+// 일정 자료 (구글드라이브 동기화)
+export interface ScheduleFile {
+  _id?: string;
+  scheduleId: string;
+  driveFileId: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  modifiedTime: Date | string;
+  webViewLink: string;
+  webContentLink: string;
+  syncedAt: Date | string;
 }
 
 // 일정 생성 요청

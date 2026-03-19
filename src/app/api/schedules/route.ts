@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { getCurrentUser } from "@/lib/auth";
 import { Schedule, CreateScheduleRequest } from "@/lib/schedule-types";
+import { createDriveFolder, getDriveFolderName } from "@/lib/google-drive";
 
 // GET /api/schedules - 일정 목록 조회
 export async function GET(request: Request) {
@@ -130,6 +131,16 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
       createdBy: user.name,
     };
+
+    // 구글드라이브 폴더 생성 (실패해도 일정 생성은 진행)
+    try {
+      const topic = body.meetingTopic || body.outingTopic || body.etcTopic || body.category;
+      const folderName = getDriveFolderName(body.date, topic, body.category);
+      const driveFolderId = await createDriveFolder(folderName);
+      newSchedule.driveFolderId = driveFolderId;
+    } catch (driveError) {
+      console.error("Drive folder creation failed:", driveError);
+    }
 
     const result = await collection.insertOne(newSchedule as Schedule);
 

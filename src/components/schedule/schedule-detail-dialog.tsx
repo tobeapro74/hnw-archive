@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, Edit, Trash2, Calendar, Clock, MapPin, Users, Briefcase } from "lucide-react";
-import { Schedule } from "@/lib/schedule-types";
+import { useState, useEffect } from "react";
+import { X, Edit, Trash2, Calendar, Clock, MapPin, Users, Briefcase, FolderOpen, Download, Eye, FileText, FileSpreadsheet, FileImage, File } from "lucide-react";
+import { Schedule, ScheduleFile } from "@/lib/schedule-types";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+
+function getFileIcon(mimeType: string) {
+  if (mimeType.includes("pdf")) return <FileText className="w-4 h-4 text-red-500" />;
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return <FileSpreadsheet className="w-4 h-4 text-orange-500" />;
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel"))
+    return <FileSpreadsheet className="w-4 h-4 text-green-500" />;
+  if (mimeType.includes("document") || mimeType.includes("word"))
+    return <FileText className="w-4 h-4 text-blue-500" />;
+  if (mimeType.includes("image")) return <FileImage className="w-4 h-4 text-purple-500" />;
+  return <File className="w-4 h-4 text-gray-500" />;
+}
 
 interface ScheduleDetailDialogProps {
   open: boolean;
@@ -24,6 +37,29 @@ export function ScheduleDetailDialog({
   onDelete,
   readOnly,
 }: ScheduleDetailDialogProps) {
+  const [files, setFiles] = useState<ScheduleFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+
+  // 자료 로드
+  useEffect(() => {
+    if (!open || !schedule?._id || !schedule?.driveFolderId) {
+      setFiles([]);
+      return;
+    }
+    const fetchFiles = async () => {
+      setFilesLoading(true);
+      try {
+        const res = await fetch(`/api/schedules/${schedule._id}/files`);
+        if (res.ok) setFiles(await res.json());
+      } catch (error) {
+        console.error("Failed to fetch files:", error);
+      } finally {
+        setFilesLoading(false);
+      }
+    };
+    fetchFiles();
+  }, [open, schedule?._id, schedule?.driveFolderId]);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -161,6 +197,41 @@ export function ScheduleDetailDialog({
             </div>
           )}
           </div>
+
+          {/* 자료 */}
+          {schedule.driveFolderId && (
+            <div className="pt-3 border-t">
+              <div className="flex items-center gap-2 mb-2">
+                <FolderOpen className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">자료</span>
+              </div>
+              {filesLoading ? (
+                <p className="text-xs text-muted-foreground">로딩 중...</p>
+              ) : files.length === 0 ? (
+                <p className="text-xs text-muted-foreground">등록된 자료가 없습니다.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {files.map((file) => (
+                    <div
+                      key={file._id}
+                      className="flex items-center gap-2 p-2 border rounded-lg text-sm"
+                    >
+                      <div className="shrink-0">{getFileIcon(file.mimeType)}</div>
+                      <span className="flex-1 truncate text-xs">{file.name}</span>
+                      {file.webViewLink && (
+                        <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-muted rounded">
+                          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                        </a>
+                      )}
+                      <a href={`/api/drive/${file.driveFileId}`} download className="p-1 hover:bg-muted rounded">
+                        <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 메타 정보 */}
           {schedule.createdBy && (
