@@ -29,20 +29,15 @@ export async function GET(
     const fileName = encodeURIComponent(metadata.name || "download");
 
     const mode = request.nextUrl.searchParams.get("mode");
-
-    // ?mode=view → Google Docs Viewer로 리다이렉트 (모바일 호환)
-    if (mode === "view") {
-      const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(
-        `https://${request.headers.get("host")}/api/drive/${fileId}`
-      )}&embedded=true`;
-      return NextResponse.redirect(viewerUrl);
-    }
+    const isView = mode === "view";
+    const mimeType = metadata.mimeType || "application/octet-stream";
 
     return new NextResponse(buffer, {
       headers: {
-        "Content-Type": metadata.mimeType || "application/octet-stream",
-        "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
+        "Content-Type": mimeType,
+        "Content-Disposition": isView ? "inline" : `attachment; filename*=UTF-8''${fileName}`,
         "Content-Length": buffer.length.toString(),
+        ...(isView ? { "Cache-Control": "public, max-age=3600" } : {}),
       },
     });
   } catch (error) {
