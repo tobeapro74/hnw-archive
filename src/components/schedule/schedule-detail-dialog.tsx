@@ -253,13 +253,23 @@ export function ScheduleDetailDialog({
                       key={file._id}
                       className="flex items-center gap-2 p-2 border rounded-lg text-sm"
                     >
-                      <div className="shrink-0">{getFileIcon(file.mimeType)}</div>
-                      <span className="flex-1 truncate text-xs">{file.name}</span>
-                      <a href={`https://drive.google.com/file/d/${file.driveFileId}/view`} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-muted rounded">
-                        <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                      <a
+                        href={`https://drive.google.com/file/d/${file.driveFileId}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                      >
+                        <div className="shrink-0">{getFileIcon(file.mimeType)}</div>
+                        <span className="flex-1 truncate text-xs">{file.name}</span>
                       </a>
-                      <a href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`} download className="p-1 hover:bg-muted rounded">
-                        <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                      <a
+                        href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 hover:bg-muted rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
+                        title="다운로드"
+                      >
+                        <Download className="w-5 h-5 text-muted-foreground" />
                       </a>
                     </div>
                   ))}

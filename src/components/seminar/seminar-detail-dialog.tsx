@@ -487,32 +487,29 @@ export function SeminarDetailDialog({
                             key={file._id}
                             className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                           >
-                            <div className="text-muted-foreground shrink-0">{icon}</div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)} · {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <a
-                                href={`https://drive.google.com/file/d/${file.driveFileId}/view`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                title="보기"
-                              >
-                                <Eye className="w-4 h-4 text-muted-foreground" />
-                              </a>
-                              <a
-                                href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`}
-                                download
-                                className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                title="다운로드"
-                              >
-                                <Download className="w-4 h-4 text-muted-foreground" />
-                              </a>
-                            </div>
+                            <a
+                              href={`https://drive.google.com/file/d/${file.driveFileId}/view`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 flex-1 min-w-0"
+                            >
+                              <div className="text-muted-foreground shrink-0">{icon}</div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{file.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFileSize(file.size)} · {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
+                                </p>
+                              </div>
+                            </a>
+                            <a
+                              href={`https://drive.google.com/uc?export=download&id=${file.driveFileId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-3 hover:bg-muted rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
+                              title="다운로드"
+                            >
+                              <Download className="w-5 h-5 text-muted-foreground" />
+                            </a>
                           </div>
                         );
                       })}
