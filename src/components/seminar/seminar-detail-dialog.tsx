@@ -496,7 +496,7 @@ export function SeminarDetailDialog({
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <a
-                                href={`/api/drive/${file.driveFileId}?mode=view`}
+                                href={`https://drive.google.com/file/d/${file.driveFileId}/view`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 hover:bg-muted rounded-lg transition-colors"

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
-import { listFolderFiles } from "@/lib/google-drive";
+import { listFolderFiles, makeFilePublic } from "@/lib/google-drive";
 import { Db, Collection } from "mongodb";
 
 // 공통 동기화 함수
@@ -26,6 +26,8 @@ async function syncFolder(
     const existing = existingMap.get(file.driveFileId);
 
     if (!existing) {
+      // 새 파일에 공개 읽기 권한 부여
+      try { await makeFilePublic(file.driveFileId); } catch (e) { /* ignore */ }
       await filesCol.insertOne({ [idFieldName]: itemId, ...file, syncedAt: now });
       added++;
     } else if (existing.modifiedTime !== file.modifiedTime) {

@@ -96,6 +96,18 @@ export async function downloadDriveFile(fileId: string) {
   return res;
 }
 
+// 파일을 공개 링크로 설정 (링크가 있는 모든 사용자 읽기 가능)
+export async function makeFilePublic(fileId: string) {
+  const drive = getDrive();
+  await drive.permissions.create({
+    fileId,
+    requestBody: {
+      role: "reader",
+      type: "anyone",
+    },
+  });
+}
+
 // 파일 메타데이터 조회
 export async function getDriveFileMetadata(fileId: string) {
   const drive = getDrive();
