@@ -7,6 +7,7 @@ import {
   CreateSeminarRequest,
   defaultChecklistTemplates,
 } from "@/lib/seminar-types";
+import { createDriveFolder, getSeminarFolderName } from "@/lib/google-drive";
 
 // GET /api/seminars - 세미나 목록 조회
 export async function GET(request: Request) {
@@ -183,6 +184,16 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
     };
+
+    // 구글드라이브 폴더 생성 (실패해도 세미나 생성은 진행)
+    let driveFolderId: string | undefined;
+    try {
+      const folderName = getSeminarFolderName(body.date, body.title);
+      driveFolderId = await createDriveFolder(folderName);
+      newSeminar.driveFolderId = driveFolderId;
+    } catch (driveError) {
+      console.error("Drive folder creation failed:", driveError);
+    }
 
     // 세미나 생성
     const result = await seminarsCollection.insertOne(newSeminar as Seminar);

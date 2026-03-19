@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, Users, Edit2, Trash2, ClipboardList, FileText, Building2, Target } from "lucide-react";
+import { Calendar, MapPin, Users, Edit2, Trash2, ClipboardList, FileText, Building2, Target, FolderOpen, Download, Eye, FileSpreadsheet, FileImage, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SeminarWithChecklist,
+  SeminarFile,
   ChecklistPhase,
   calculateDday,
   formatDday,
@@ -18,7 +19,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
-type DetailTab = "checklist" | "info";
+type DetailTab = "checklist" | "files" | "info";
+
+function getFileIcon(mimeType: string) {
+  if (mimeType.includes("pdf")) return <FileText className="w-5 h-5 text-red-500" />;
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return <FileSpreadsheet className="w-5 h-5 text-orange-500" />;
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel"))
+    return <FileSpreadsheet className="w-5 h-5 text-green-500" />;
+  if (mimeType.includes("document") || mimeType.includes("word"))
+    return <FileText className="w-5 h-5 text-blue-500" />;
+  if (mimeType.includes("image")) return <FileImage className="w-5 h-5 text-purple-500" />;
+  return <File className="w-5 h-5 text-gray-500" />;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
 
 interface SeminarDetailDialogProps {
   seminarId: string | null;
@@ -39,6 +60,8 @@ export function SeminarDetailDialog({
   const [loading, setLoading] = useState(false);
   const [activePhase, setActivePhase] = useState<ChecklistPhase>("사전");
   const [activeTab, setActiveTab] = useState<DetailTab>("checklist");
+  const [files, setFiles] = useState<SeminarFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
 
   // 모달 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -84,6 +107,23 @@ export function SeminarDetailDialog({
 
     fetchSeminar();
   }, [seminarId, open]);
+
+  // 자료 탭 선택 시 파일 로드
+  useEffect(() => {
+    if (activeTab !== "files" || !seminarId) return;
+    const fetchFiles = async () => {
+      setFilesLoading(true);
+      try {
+        const res = await fetch(`/api/seminars/${seminarId}/files`);
+        if (res.ok) setFiles(await res.json());
+      } catch (error) {
+        console.error("Failed to fetch files:", error);
+      } finally {
+        setFilesLoading(false);
+      }
+    };
+    fetchFiles();
+  }, [activeTab, seminarId]);
 
   // 체크리스트 토글
   const handleToggleItem = async (itemId: string, isCompleted: boolean) => {
@@ -361,6 +401,18 @@ export function SeminarDetailDialog({
                 체크리스트
               </button>
               <button
+                onClick={() => setActiveTab("files")}
+                className={cn(
+                  "flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+                  activeTab === "files"
+                    ? "text-primary border-b-2 border-primary bg-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <FolderOpen className="w-4 h-4" />
+                자료
+              </button>
+              <button
                 onClick={() => setActiveTab("info")}
                 className={cn(
                   "flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors",
@@ -379,7 +431,67 @@ export function SeminarDetailDialog({
               className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
               onTouchMove={(e) => e.stopPropagation()}
             >
-              {activeTab === "checklist" ? (
+              {activeTab === "files" ? (
+                /* 자료 탭 */
+                <div className="p-4 pb-8">
+                  {filesLoading ? (
+                    <div className="py-8 text-center text-muted-foreground text-sm">로딩 중...</div>
+                  ) : files.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <FolderOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {seminar?.driveFolderId
+                          ? "등록된 자료가 없습니다."
+                          : "구글드라이브 폴더가 연결되지 않았습니다."}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        구글드라이브 폴더에 파일을 추가하면 자동 동기화됩니다.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {files.map((file) => {
+                        const icon = getFileIcon(file.mimeType);
+                        return (
+                          <div
+                            key={file._id}
+                            className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="text-muted-foreground shrink-0">{icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{file.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatFileSize(file.size)} · {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {file.webViewLink && (
+                                <a
+                                  href={file.webViewLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                  title="보기"
+                                >
+                                  <Eye className="w-4 h-4 text-muted-foreground" />
+                                </a>
+                              )}
+                              <a
+                                href={`/api/drive/${file.driveFileId}`}
+                                download
+                                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                title="다운로드"
+                              >
+                                <Download className="w-4 h-4 text-muted-foreground" />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : activeTab === "checklist" ? (
                 <>
                   {/* 진행률 */}
                   <div className="p-4 border-b">

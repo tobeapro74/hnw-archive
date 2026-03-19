@@ -49,9 +49,25 @@ export interface Seminar {
   status: SeminarStatus;
   // 비정기 세미나 요청 연결 (비정기인 경우)
   requestId?: string;
+  // 구글드라이브 폴더 연결
+  driveFolderId?: string;
   createdAt: Date | string;
   updatedAt: Date | string;
   createdBy?: string;
+}
+
+// 세미나 자료 (구글드라이브 동기화)
+export interface SeminarFile {
+  _id?: string;
+  seminarId: string;
+  driveFileId: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  modifiedTime: Date | string;
+  webViewLink: string;
+  webContentLink: string;
+  syncedAt: Date | string;
 }
 
 // 비정기 세미나 요청 인터페이스
