@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Edit, Trash2, Calendar, Clock, MapPin, Users, Briefcase, FolderOpen, Download, Eye, FileText, FileSpreadsheet, FileImage, File } from "lucide-react";
+import { X, Edit, Trash2, Calendar, Clock, MapPin, Users, Briefcase, FolderOpen, Download, Eye, FileText, FileSpreadsheet, FileImage, File, RefreshCw } from "lucide-react";
 import { Schedule, ScheduleFile } from "@/lib/schedule-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,35 @@ export function ScheduleDetailDialog({
 }: ScheduleDetailDialogProps) {
   const [files, setFiles] = useState<ScheduleFile[]>([]);
   const [filesLoading, setFilesLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // 자료 로드
+  const loadFiles = async () => {
+    if (!schedule?._id) return;
+    setFilesLoading(true);
+    try {
+      const res = await fetch(`/api/schedules/${schedule._id}/files`);
+      if (res.ok) setFiles(await res.json());
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  // 동기화 후 새로고침
+  const handleSyncFiles = async () => {
+    setSyncing(true);
+    try {
+      await fetch(`/api/cron/sync-drive?key=${encodeURIComponent("hnw-admin-2025")}`);
+      await loadFiles();
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     if (!open || !schedule?._id || !schedule?.driveFolderId) {
       setFiles([]);
@@ -201,9 +228,19 @@ export function ScheduleDetailDialog({
           {/* 자료 */}
           {schedule.driveFolderId && (
             <div className="pt-3 border-t">
-              <div className="flex items-center gap-2 mb-2">
-                <FolderOpen className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">자료</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">자료</span>
+                </div>
+                <button
+                  onClick={handleSyncFiles}
+                  disabled={syncing}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+                  {syncing ? "동기화 중..." : "새로고침"}
+                </button>
               </div>
               {filesLoading ? (
                 <p className="text-xs text-muted-foreground">로딩 중...</p>

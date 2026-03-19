@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, Users, Edit2, Trash2, ClipboardList, FileText, Building2, Target, FolderOpen, Download, Eye, FileSpreadsheet, FileImage, File } from "lucide-react";
+import { Calendar, MapPin, Users, Edit2, Trash2, ClipboardList, FileText, Building2, Target, FolderOpen, Download, Eye, FileSpreadsheet, FileImage, File, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SeminarWithChecklist,
@@ -62,6 +62,7 @@ export function SeminarDetailDialog({
   const [activeTab, setActiveTab] = useState<DetailTab>("checklist");
   const [files, setFiles] = useState<SeminarFile[]>([]);
   const [filesLoading, setFilesLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // 모달 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -108,22 +109,38 @@ export function SeminarDetailDialog({
     fetchSeminar();
   }, [seminarId, open]);
 
+  // 자료 로드
+  const loadFiles = async () => {
+    if (!seminarId) return;
+    setFilesLoading(true);
+    try {
+      const res = await fetch(`/api/seminars/${seminarId}/files`);
+      if (res.ok) setFiles(await res.json());
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
   // 자료 탭 선택 시 파일 로드
   useEffect(() => {
     if (activeTab !== "files" || !seminarId) return;
-    const fetchFiles = async () => {
-      setFilesLoading(true);
-      try {
-        const res = await fetch(`/api/seminars/${seminarId}/files`);
-        if (res.ok) setFiles(await res.json());
-      } catch (error) {
-        console.error("Failed to fetch files:", error);
-      } finally {
-        setFilesLoading(false);
-      }
-    };
-    fetchFiles();
+    loadFiles();
   }, [activeTab, seminarId]);
+
+  // 동기화 후 새로고침
+  const handleSyncFiles = async () => {
+    setSyncing(true);
+    try {
+      await fetch(`/api/cron/sync-drive?key=${encodeURIComponent(process.env.NEXT_PUBLIC_ADMIN_KEY || "hnw-admin-2025")}`);
+      await loadFiles();
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // 체크리스트 토글
   const handleToggleItem = async (itemId: string, isCompleted: boolean) => {
@@ -434,6 +451,19 @@ export function SeminarDetailDialog({
               {activeTab === "files" ? (
                 /* 자료 탭 */
                 <div className="p-4 pb-8">
+                  {/* 새로고침 버튼 */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSyncFiles}
+                      disabled={syncing}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+                      {syncing ? "동기화 중..." : "새로고침"}
+                    </Button>
+                  </div>
                   {filesLoading ? (
                     <div className="py-8 text-center text-muted-foreground text-sm">로딩 중...</div>
                   ) : files.length === 0 ? (
