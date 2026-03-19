@@ -28,6 +28,7 @@ import { exportSeminarsToExcel } from "@/lib/seminar-excel-export";
 
 type ViewMode = "calendar" | "list";
 type FilterType = "all" | "정기" | "비정기";
+type TimeFilter = "all" | "upcoming" | "past";
 
 // 캐시 타입
 interface CacheEntry {
@@ -57,6 +58,9 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
   const [editingSeminar, setEditingSeminar] = useState<Seminar | null>(null);
   const [requestFormDialogOpen, setRequestFormDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<SeminarRequest | null>(null);
+
+  // 월별 세미나 시간 필터
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
 
   // 날짜 선택 팝업
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -176,6 +180,18 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredSeminars, selectedYear, calendarMonth]);
+
+  // 시간 필터 적용된 월별 세미나
+  const filteredMonthSeminars = useMemo(() => {
+    if (timeFilter === "all") return monthSeminars;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return monthSeminars.filter((s) => {
+      const d = new Date(s.date);
+      d.setHours(0, 0, 0, 0);
+      return timeFilter === "upcoming" ? d >= today : d < today;
+    });
+  }, [monthSeminars, timeFilter]);
 
   // 캘린더 월에 해당하는 비정기 요청
   const monthRequests = useMemo(() => {
@@ -433,19 +449,44 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
             {/* 해당 월 세미나 */}
             {monthSeminars.length > 0 && viewMode === "calendar" && (
               <div ref={upcomingSectionRef} className="scroll-mt-32">
-                <h3 className="text-sm font-semibold mb-2">
-                  {calendarMonth + 1}월 세미나
-                </h3>
-                <div className="space-y-2">
-                  {monthSeminars.map((seminar) => (
-                    <SeminarCard
-                      key={seminar._id}
-                      seminar={seminar}
-                      onClick={() => handleSeminarClick(seminar)}
-                      compact
-                    />
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold">
+                    {calendarMonth + 1}월 세미나
+                  </h3>
+                  <Select
+                    value={timeFilter}
+                    onValueChange={(v) => setTimeFilter(v as TimeFilter)}
+                  >
+                    <SelectTrigger className="w-[80px] h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체</SelectItem>
+                      <SelectItem value="upcoming">예정</SelectItem>
+                      <SelectItem value="past">완료</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                {filteredMonthSeminars.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredMonthSeminars.map((seminar) => {
+                      const isPast = new Date(seminar.date) < new Date(new Date().toDateString());
+                      return (
+                        <div key={seminar._id} className={cn(isPast && "opacity-50")}>
+                          <SeminarCard
+                            seminar={seminar}
+                            onClick={() => handleSeminarClick(seminar)}
+                            compact
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {timeFilter === "upcoming" ? "예정된 세미나가 없습니다." : "완료된 세미나가 없습니다."}
+                  </p>
+                )}
               </div>
             )}
 
