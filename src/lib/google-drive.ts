@@ -1,12 +1,22 @@
 import { google } from "googleapis";
 
 // Google Drive 인증 클라이언트
+function getCredentials() {
+  // 방법 1: base64 인코딩된 서비스 계정 키 (Vercel 환경)
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64) {
+    const json = Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf-8");
+    return JSON.parse(json);
+  }
+  // 방법 2: 개별 환경변수 (로컬 환경)
+  return {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  };
+}
+
 function getAuthClient() {
   const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    },
+    credentials: getCredentials(),
     scopes: ["https://www.googleapis.com/auth/drive"],
   });
   return auth;
