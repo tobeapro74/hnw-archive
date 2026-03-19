@@ -262,13 +262,15 @@ export function ScheduleDetailDialog({
                         <div className="shrink-0">{getFileIcon(file.mimeType)}</div>
                         <span className="flex-1 truncate text-xs">{file.name}</span>
                       </a>
-                      <button
-                        onClick={() => { location.href = `/api/drive/${file.driveFileId}`; }}
+                      <a
+                        href={`https://drive.google.com/open?id=${file.driveFileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="p-3 hover:bg-muted rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
-                        title="다운로드"
+                        title="드라이브에서 열기"
                       >
                         <Download className="w-5 h-5 text-muted-foreground" />
-                      </button>
+                      </a>
                     </div>
                   ))}
                 </div>
