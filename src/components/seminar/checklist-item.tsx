@@ -169,7 +169,10 @@ export function ChecklistItemComponent({
               className="w-32 h-7 text-xs"
               defaultValue={formatDateForInput(dueDate)}
               onChange={handleDueDateChange}
-              onBlur={() => setIsEditingDueDate(false)}
+              onBlur={(e) => {
+                // onChange 처리를 위해 약간 지연
+                setTimeout(() => setIsEditingDueDate(false), 300);
+              }}
               autoFocus
               disabled={isLoading}
             />
