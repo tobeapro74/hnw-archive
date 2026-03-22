@@ -28,6 +28,7 @@ export function ChecklistItemComponent({
 }: ChecklistItemProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [editingDateValue, setEditingDateValue] = useState("");
 
   // 세미나 날짜 파싱
   const seminarDateObj = new Date(seminarDate);
@@ -76,13 +77,11 @@ export function ChecklistItemComponent({
     return `${year}-${month}-${day}`;
   };
 
-  // 선택한 날짜로 dueOffset 계산
-  const handleDueDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 확인 버튼으로 목표일 저장
+  const handleDueDateConfirm = async () => {
     if (!onUpdateDueDate) return;
 
-    const selectedDate = e.target.value;
-    if (!selectedDate) {
-      // 날짜 삭제
+    if (!editingDateValue) {
       setIsLoading(true);
       try {
         await onUpdateDueDate(item._id!, undefined);
@@ -93,10 +92,9 @@ export function ChecklistItemComponent({
       return;
     }
 
-    const selected = new Date(selectedDate);
+    const selected = new Date(editingDateValue);
     selected.setHours(0, 0, 0, 0);
 
-    // dueOffset 계산: 선택한 날짜 - 세미나 날짜 (일 단위)
     const diffTime = selected.getTime() - seminarDateObj.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
@@ -168,10 +166,17 @@ export function ChecklistItemComponent({
               <Input
                 type="date"
                 className="w-32 h-7 text-xs"
-                defaultValue={formatDateForInput(dueDate)}
-                onChange={handleDueDateChange}
+                value={editingDateValue}
+                onChange={(e) => setEditingDateValue(e.target.value)}
                 disabled={isLoading}
               />
+              <button
+                onClick={handleDueDateConfirm}
+                disabled={isLoading}
+                className="text-xs text-blue-600 font-medium px-1 hover:text-blue-800"
+              >
+                확인
+              </button>
               <button
                 onClick={() => setIsEditingDueDate(false)}
                 className="text-xs text-muted-foreground px-1 hover:text-foreground"
@@ -181,7 +186,11 @@ export function ChecklistItemComponent({
             </div>
           ) : (
             <button
-              onClick={() => onUpdateDueDate && setIsEditingDueDate(true)}
+              onClick={() => {
+                if (!onUpdateDueDate) return;
+                setEditingDateValue(formatDateForInput(dueDate));
+                setIsEditingDueDate(true);
+              }}
               className={cn(
                 "text-xs font-medium px-2 py-0.5 rounded flex-shrink-0 flex items-center gap-1",
                 onUpdateDueDate && "cursor-pointer hover:opacity-80",
