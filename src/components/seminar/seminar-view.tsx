@@ -203,6 +203,18 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
       .sort((a, b) => new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime());
   }, [filteredRequests, selectedYear, calendarMonth]);
 
+  // 시간 필터 적용된 월별 비정기 요청
+  const filteredMonthRequests = useMemo(() => {
+    if (timeFilter === "all") return monthRequests;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return monthRequests.filter((r) => {
+      const d = new Date(r.requestedDate);
+      d.setHours(0, 0, 0, 0);
+      return timeFilter === "upcoming" ? d >= today : d < today;
+    });
+  }, [monthRequests, timeFilter]);
+
   // 세미나 클릭
   const handleSeminarClick = (seminar: Seminar) => {
     setSelectedSeminarId(seminar._id!);
@@ -495,17 +507,27 @@ export function SeminarView({ initialMonth, onInitialMonthHandled }: SeminarView
               <div ref={irregularSectionRef} className="scroll-mt-32">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">{calendarMonth + 1}월 비정기 요청</h3>
-                  <Badge variant="secondary">{monthRequests.length}건</Badge>
+                  <Badge variant="secondary">{filteredMonthRequests.length}건</Badge>
                 </div>
-                <div className="space-y-2">
-                  {monthRequests.map((request) => (
-                    <SeminarRequestCard
-                      key={request._id}
-                      request={request}
-                      onClick={() => handleRequestClick(request)}
-                    />
-                  ))}
-                </div>
+                {filteredMonthRequests.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredMonthRequests.map((request) => {
+                      const isPast = new Date(request.requestedDate) < new Date(new Date().toDateString());
+                      return (
+                        <div key={request._id} className={cn(isPast && "opacity-50")}>
+                          <SeminarRequestCard
+                            request={request}
+                            onClick={() => handleRequestClick(request)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {timeFilter === "upcoming" ? "예정된 요청이 없습니다." : "완료된 요청이 없습니다."}
+                  </p>
+                )}
               </div>
             )}
 
