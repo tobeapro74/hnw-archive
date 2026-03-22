@@ -164,18 +164,21 @@ export function ChecklistItemComponent({
       {showDueDate && (
         <>
           {isEditingDueDate ? (
-            <Input
-              type="date"
-              className="w-32 h-7 text-xs"
-              defaultValue={formatDateForInput(dueDate)}
-              onChange={handleDueDateChange}
-              onBlur={(e) => {
-                // onChange 처리를 위해 약간 지연
-                setTimeout(() => setIsEditingDueDate(false), 300);
-              }}
-              autoFocus
-              disabled={isLoading}
-            />
+            <div className="flex items-center gap-1">
+              <Input
+                type="date"
+                className="w-32 h-7 text-xs"
+                defaultValue={formatDateForInput(dueDate)}
+                onChange={handleDueDateChange}
+                disabled={isLoading}
+              />
+              <button
+                onClick={() => setIsEditingDueDate(false)}
+                className="text-xs text-muted-foreground px-1 hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => onUpdateDueDate && setIsEditingDueDate(true)}
