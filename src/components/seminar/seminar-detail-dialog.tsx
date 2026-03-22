@@ -289,9 +289,14 @@ export function SeminarDetailDialog({
           ...seminar,
           checklist: updatedChecklist,
         });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("목표일 수정 실패:", res.status, errData);
+        alert(`목표일 수정 실패: ${errData.error || res.statusText}`);
       }
     } catch (error) {
       console.error("Failed to update due date:", error);
+      alert("목표일 수정 중 오류가 발생했습니다.");
     }
   };
 
