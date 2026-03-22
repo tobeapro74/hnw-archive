@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Check, Trash2, GripVertical, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType, getChecklistDueDate } from "@/lib/seminar-types";
@@ -28,7 +28,7 @@ export function ChecklistItemComponent({
 }: ChecklistItemProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
-  const [editingDateValue, setEditingDateValue] = useState("");
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   // 세미나 날짜 파싱
   const seminarDateObj = new Date(seminarDate);
@@ -77,11 +77,12 @@ export function ChecklistItemComponent({
     return `${year}-${month}-${day}`;
   };
 
-  // 확인 버튼으로 목표일 저장
+  // 확인 버튼으로 목표일 저장 (ref에서 직접 값 읽기)
   const handleDueDateConfirm = async () => {
     if (!onUpdateDueDate) return;
 
-    if (!editingDateValue) {
+    const currentValue = dateInputRef.current?.value;
+    if (!currentValue) {
       setIsLoading(true);
       try {
         await onUpdateDueDate(item._id!, undefined);
@@ -92,7 +93,7 @@ export function ChecklistItemComponent({
       return;
     }
 
-    const selected = new Date(editingDateValue);
+    const selected = new Date(currentValue);
     selected.setHours(0, 0, 0, 0);
 
     const diffTime = selected.getTime() - seminarDateObj.getTime();
@@ -163,11 +164,11 @@ export function ChecklistItemComponent({
         <>
           {isEditingDueDate ? (
             <div className="flex items-center gap-1">
-              <Input
+              <input
+                ref={dateInputRef}
                 type="date"
-                className="w-32 h-7 text-xs"
-                value={editingDateValue}
-                onChange={(e) => setEditingDateValue(e.target.value)}
+                className="w-32 h-7 text-xs border rounded px-2"
+                defaultValue={formatDateForInput(dueDate)}
                 disabled={isLoading}
               />
               <button
@@ -188,7 +189,6 @@ export function ChecklistItemComponent({
             <button
               onClick={() => {
                 if (!onUpdateDueDate) return;
-                setEditingDateValue(formatDateForInput(dueDate));
                 setIsEditingDueDate(true);
               }}
               className={cn(
